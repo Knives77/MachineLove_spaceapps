@@ -23,8 +23,8 @@ No instales nada con `pip` global ni `sudo`.
 | Paso | Módulo | Qué hace | Salida |
 |---|---|---|---|
 | 1 ✅ | `etl/ingest.py` | **Hecho.** Lee las fuentes A, B y C, normaliza, calcula `cy`/`cx`, `COPY`. Carga completa: 15.9 M filas en ~90 s. Pruebas en `etl/tests/test_ingest.py` | `detection` (sin `is_veg` final para NRT) |
-| 2 | `etl/mask.py` | Celdas con `type = 2` en ≥ 3 fechas; luego fija `is_veg` | `static_cell`, `detection.is_veg` |
-| 3 | `etl/outages.py` | Días sin detecciones por satélite y país + lista del Readme | `sensor_outage` |
+| 2 ✅ | `etl/mask.py` | **Hecho.** Celdas con `type = 2` en ≥ 3 fechas; luego fija `is_veg` de NRT. Validado sobre archive 2024+: atrapa 94% (MODIS) y 99.9% (VIIRS) de los `type = 2` y quita por error ~2% del fuego real | `static_cell`, `detection.is_veg` |
+| 3 ✅ | `etl/outages.py` | **Hecho.** Días sin detecciones por satélite y país (`detected`), huecos exactos del Readme (`firms_readme`) y periodos sin archivos (`coverage`). Pruebas en `etl/tests/test_outages.py` | `sensor_outage` |
 | 4 | `etl/cells.py` | Agrega a celda-día con la regla del VIIRS de referencia | `cell`, `cell_day` |
 | 5 | `etl/calibrate.py` | `k` por país y validación dejando un año fuera | `calibration_country` |
 | 6 | `etl/run.py` | `--all` o `--step N`; `--country MX|AR`; `--limit-years 2019,2020` para pruebas | |

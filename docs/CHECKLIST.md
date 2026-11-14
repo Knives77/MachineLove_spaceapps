@@ -25,7 +25,7 @@ Reglas para todos:
 
 **Ya**
 - [ ] `git push origin main` de lo pendiente.
-- [ ] Pedir en FIRMS Argentina 2026 (4 sensores, 2026-01-01 → hoy, CSV) y recargar con `uv run python -m etl.run --step 1 --country AR` (pasos en el chat / `docs/CONTEXT.md` §2).
+- [x] Pedir en FIRMS Argentina 2026 (4 sensores, 2026-01-01 → hoy, CSV) y recargar con `uv run python -m etl.run --step 1 --country AR` (pasos en el chat / `docs/CONTEXT.md` §2).
 - [ ] Cuentas y llaves de los 5 compañeros funcionando; cada uno confirma que entra (Wi-Fi y cable).
 - [ ] Crear las ramas y dar acceso de escritura al repo en GitHub.
 - [ ] Mandar a cada rol su sección de este checklist.
@@ -45,17 +45,17 @@ Reglas para todos:
 Skill: `.claude/skills/etl/SKILL.md`. Base de pruebas: `firms_dev`.
 
 **Hasta H1 (18:30)**
-- [ ] **Paso 2 · `etl/mask.py`**: llenar `static_cell` (celdas con `type = 2` en ≥ 3 fechas distintas) y poner `is_veg = false` a las detecciones NRT que caen en esas celdas.
-- [ ] Prueba: ninguna celda de Sierra Gorda con < 3 fechas aparece; contar cuántas detecciones NRT se apagaron.
-- [ ] **Paso 3 · `etl/outages.py`**: llenar `sensor_outage`:
-  - [ ] `detected`: días seguidos sin ninguna detección de un satélite en todo el país, dentro de su periodo operativo (`harmonization.md`).
-  - [ ] `firms_readme`: huecos documentados de MODIS (2001-06/07, 2007-08, 2009-04-21/22).
-  - [ ] `coverage`: periodos sin archivos (Argentina 2026 fuera de lo descargado; todo después de 2026-11-01).
-- [ ] Prueba: existe S-NPP, México, 2024-05-30 → 2024-06-03 y 2026-07-11 → 2026-07-16.
-- [ ] Avisar a Procesamiento B en cuanto `static_cell` y `sensor_outage` estén en `firms_dev`.
+- [x] **Paso 2 · `etl/mask.py`**: llenar `static_cell` (celdas con `type = 2` en ≥ 3 fechas distintas) y poner `is_veg = false` a las detecciones NRT que caen en esas celdas.
+- [x] Prueba: ninguna celda con < 3 fechas; 40,212 de 209,923 detecciones NRT apagadas (19%).
+- [x] **Paso 3 · `etl/outages.py`**: llenar `sensor_outage`:
+  - [x] `detected`: días seguidos sin ninguna detección de un satélite en todo el país, dentro de su periodo operativo (`harmonization.md`).
+  - [x] `firms_readme`: huecos documentados de MODIS (2001-06/07, 2007-08, 2009-04-21/22).
+  - [x] `coverage`: periodos sin archivos (Argentina 2026 fuera de lo descargado; todo después de 2026-11-01).
+- [x] Prueba: existe S-NPP, México, 2024-05-30 → 2024-06-03 y 2026-07-11 → 2026-07-16.
+- [x] Avisar a Procesamiento B en cuanto `static_cell` y `sensor_outage` estén en `firms_dev`.
 
 **Después de H1**
-- [ ] Recargar Argentina cuando llegue 2026 completo y volver a correr pasos 2–5.
+- [x] Recargar Argentina 2026 completo (ene–14 nov) y correr pasos 2–3. Falta 4–5 cuando existan.
 - [ ] Verificar en el mapa si el `type = 2` del sur de Querétaro es Tula u otra cosa (para el pitch).
 - [ ] Ayudar al analista con cifras para las diapositivas (cuánto ruido industrial se quitó por región).
 
