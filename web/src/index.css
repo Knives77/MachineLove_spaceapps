@@ -1,0 +1,184 @@
+@import 'tailwindcss';
+
+/* Tokens tomados de docs/design/exports/ */
+@theme {
+  --color-bg: #07090c;
+  --color-panel: #0d1117;
+  --color-panel-2: #121821;
+  --color-line: #232c38;
+  --color-line-2: #313c4a;
+  --color-ink: #e8edf2;
+  --color-mute: #93a0ad;
+  --color-dim: #66727f;
+  --color-cyan: #22d3ee;
+  --color-cyan-deep: #0b2a33;
+  --color-zero: #161c25;
+  --color-warn: #f5b84a;
+  --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-cyan);
+    outline-offset: 2px;
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+@layer components {
+  .panel {
+    background: color-mix(in srgb, var(--color-panel) 92%, transparent);
+    border: 1px solid var(--color-line);
+    border-radius: 4px;
+  }
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-mute);
+  }
+  .heading {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .btn {
+    border: 1px solid var(--color-line-2);
+    border-radius: 4px;
+    padding: 0.45rem 0.9rem;
+    font-size: 13px;
+    color: var(--color-ink);
+    background: transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .btn:hover:not(:disabled) {
+    border-color: var(--color-cyan);
+  }
+  .btn-on {
+    border-color: var(--color-cyan);
+    background: var(--color-cyan-deep);
+  }
+  .btn:disabled {
+    color: var(--color-dim);
+    border-color: var(--color-line);
+  }
+  /* "Sin dato" ≠ 0: trama diagonal, nunca el color del cero. */
+  .hatch {
+    background-color: #1a2029;
+    background-image: repeating-linear-gradient(
+      135deg,
+      #6b7685 0 1.5px,
+      transparent 1.5px 5px
+    );
+  }
+  .missing {
+    border: 1px dashed var(--color-line-2);
+    background: transparent;
+  }
+  .skeleton {
+    background: linear-gradient(90deg, #121821 0%, #1a222d 50%, #121821 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite linear;
+    border-radius: 4px;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+/* Mapa: teselas de OpenStreetMap oscurecidas para el tema del diseño. */
+.leaflet-container {
+  background: #0a0d12;
+  font-family: var(--font-sans);
+}
+.ml-dark-tiles {
+  filter: invert(1) hue-rotate(180deg) brightness(0.72) contrast(0.9) saturate(0.35);
+}
+.leaflet-control-attribution {
+  background: rgba(7, 9, 12, 0.75) !important;
+  color: var(--color-mute) !important;
+  font-size: 10px;
+}
+.leaflet-control-attribution a {
+  color: var(--color-cyan) !important;
+}
+.leaflet-draw-tooltip {
+  background: var(--color-panel);
+  border-color: var(--color-cyan);
+  color: var(--color-ink);
+}
+.leaflet-draw-tooltip:before {
+  border-right-color: var(--color-cyan);
+}
+
+/* Deslizador de la línea de tiempo: pista invisible, perilla cian como en el diseño. */
+.ml-timeline {
+  appearance: none;
+  background: transparent;
+  margin: 0;
+}
+.ml-timeline::-webkit-slider-runnable-track {
+  height: 2rem;
+  background: transparent;
+}
+.ml-timeline::-moz-range-track {
+  height: 2rem;
+  background: transparent;
+}
+.ml-timeline::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 2rem;
+  border-radius: 3px;
+  background: var(--color-cyan);
+  box-shadow: 0 0 0 2px var(--color-bg);
+}
+.ml-timeline::-moz-range-thumb {
+  width: 12px;
+  height: 2rem;
+  border: 0;
+  border-radius: 3px;
+  background: var(--color-cyan);
+}
+.ml-timeline:focus-visible {
+  outline: none;
+}
+.ml-timeline:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.ml-timeline:focus-visible::-moz-range-thumb {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}

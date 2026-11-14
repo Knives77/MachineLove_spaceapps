@@ -1,0 +1,131 @@
+import { useEffect, useMemo, useState } from 'react';
+import { indexMonths, ymKey } from '../lib/format';
+import { useApp } from '../state';
+import type { CalendarResponse } from '../types';
+
+const MODIS_START = 2000; // Terra desde 2000
+const VIIRS_START = 2012; // S-NPP desde 2012
+
+/** Línea de tiempo de meses con reproducción. Las marcas salen de `status` y `flags`. */
+export function Timeline({ data }: { data: CalendarResponse }) {
+  const { t, selected, setSelected } = useApp();
+  const { start_year, end_year } = data.range;
+  const total = (end_year - start_year + 1) * 12;
+  const toIdx = (y: number, m: number) => (y - start_year) * 12 + (m - 1);
+  const fromIdx = (i: number) => ({ year: start_year + Math.floor(i / 12), month: (i % 12) + 1 });
+  const latestIdx = toIdx(data.latest.year, data.latest.month);
+  const sel = selected ?? data.latest;
+  const idx = toIdx(sel.year, sel.month);
+  const [playing, setPlaying] = useState(false);
+  const byKey = useMemo(() => indexMonths(data.months), [data]);
+
+  useEffect(() => {
+    if (!playing) return;
+    const id = setInterval(() => {
+      const next = idx >= latestIdx ? 0 : idx + 1;
+      setSelected(fromIdx(next));
+      if (next === latestIdx) setPlaying(false);
+    }, 450);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing, idx, latestIdx]);
+
+  const marks = useMemo(() => {
+    const crit: number[] = [];
+    const out: number[] = [];
+    for (const m of data.months) {
+      if (m.status === 'critical') crit.push(toIdx(m.year, m.month));
+      if (m.flags.includes('modis_outage') || m.flags.includes('viirs_outage')) out.push(toIdx(m.year, m.month));
+    }
+    return { crit, out };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
+  const pct = (i: number) => ((i + 0.5) / total) * 100;
+  const row = byKey.get(ymKey(sel.year, sel.month));
+
+  return (
+    <div className="panel flex items-center gap-5 px-4 py-3">
+      <button
+        type="button"
+        onClick={() => setPlaying((p) => !p)}
+        aria-label={playing ? t('time.pause') : t('time.play')}
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded border-2 border-cyan bg-cyan-deep"
+      >
+        {playing ? (
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+            <rect x="3" y="2" width="4" height="14" fill="#e8edf2" />
+            <rect x="11" y="2" width="4" height="14" fill="#e8edf2" />
+          </svg>
+        ) : (
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+            <path d="M4 2 L16 9 L4 16 Z" fill="#e8edf2" />
+          </svg>
+        )}
+      </button>
+      <div className="w-32 shrink-0">
+        <p className="kicker text-[10px]">{t('time.month')}</p>
+        <p className="font-mono text-sm uppercase">
+          {t(`month.${sel.month}`)} {sel.year}
+        </p>
+        {row && <p className="font-mono text-[10px] text-mute">{t(`status.${row.status}`)}</p>}
+      </div>
+
+      <div className="relative min-w-0 flex-1 pt-3">
+        {/* marcas: ▲ meses extremos, ▪ caídas de sensor */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-3" aria-hidden="true">
+          {marks.crit.map((i) => (
+            <span
+              key={`c${i}`}
+              className="absolute top-0 h-0 w-0 -translate-x-1/2 border-x-[4px] border-b-[7px] border-x-transparent border-b-cyan/80"
+              style={{ left: `${pct(i)}%` }}
+            />
+          ))}
+        </div>
+        <div className="relative h-8">
+          <div className="absolute inset-x-0 top-1 flex items-center gap-2">
+            <span className="absolute -top-0.5 left-0 font-mono text-[9px] text-mute" style={{ left: `${pct(toIdx(MODIS_START, 1))}%` }}>
+              MODIS · {MODIS_START} →
+            </span>
+          </div>
+          <div className="absolute inset-x-0 top-3.5 h-1.5 rounded-sm bg-[#8a929e]" style={{ left: `${pct(toIdx(MODIS_START, 1))}%` }} />
+          {marks.out.map((i) => (
+            <span key={`o${i}`} aria-hidden="true" className="absolute top-3 h-2.5 w-1.5 -translate-x-1/2 bg-bg ring-1 ring-mute" style={{ left: `${pct(i)}%` }} />
+          ))}
+          <span className="absolute top-[22px] font-mono text-[9px] text-mute" style={{ left: `${pct(toIdx(VIIRS_START, 1))}%` }}>
+            VIIRS · {VIIRS_START} →
+          </span>
+          <div
+            className="absolute right-0 top-[34px] h-1.5 rounded-sm bg-cyan"
+            style={{ left: `${pct(toIdx(VIIRS_START, 1))}%` }}
+          />
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={total - 1}
+          value={idx}
+          aria-label={t('time.label')}
+          aria-valuetext={`${t(`month.${sel.month}`)} ${sel.year}`}
+          onChange={(e) => {
+            setPlaying(false);
+            setSelected(fromIdx(Number(e.target.value)));
+          }}
+          className="ml-timeline absolute inset-x-0 top-3 h-8 w-full"
+        />
+        <div className="relative mt-3 h-4 font-mono text-[10px] text-mute">
+          {Array.from({ length: end_year - start_year + 1 }, (_, i) => start_year + i)
+            .filter((y) => y % 4 === 0)
+            .map((y) => (
+              <span key={y} className="absolute -translate-x-1/2" style={{ left: `${pct(toIdx(y, 1))}%` }}>
+                {y}
+              </span>
+            ))}
+        </div>
+        <p className="sr-only">
+          ▲ {t('time.critical')} · ▪ {t('time.outage')}
+        </p>
+      </div>
+    </div>
+  );
+}

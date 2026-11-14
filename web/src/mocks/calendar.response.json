@@ -1,0 +1,75 @@
+{
+  "_note": "MOCK. La forma es la del contrato; los valores mensuales son inventados para maquetar. El arreglo real trae un elemento por cada mes del rango.",
+  "aoi": {"preset_id": "qro-sierra-gorda", "area_km2": 14790.2, "country": "MX"},
+  "range": {"start_year": 2000, "end_year": 2026},
+  "basis": "modis_primary",
+  "unit": "modis_equivalent_cell_days",
+  "calibration": {
+    "k": 0.262,
+    "scope": "aoi",
+    "overlap_months": 167,
+    "modis_cell_days": 1297,
+    "viirs_cell_days": 4948,
+    "loyo_annual_mape": 0.147,
+    "loyo_annual_max": 0.426,
+    "monthly_mape": 0.388
+  },
+  "months": [
+    {
+      "year": 2001, "month": 6,
+      "harmonized": 2.0, "source": "modis", "raw_points": 2,
+      "modis_cell_days": 2, "viirs_cell_days": null,
+      "baseline": {"median": 4.0, "p25": 1.0, "p75": 9.0, "p90": 15.0, "n_years": 22},
+      "anomaly_ratio": 0.5, "status": "normal",
+      "flags": ["terra_only", "modis_outage"]
+    },
+    {
+      "year": 2011, "month": 4,
+      "harmonized": 78.0, "source": "modis", "raw_points": 82,
+      "modis_cell_days": 78, "viirs_cell_days": null,
+      "baseline": {"median": 21.0, "p25": 11.0, "p75": 34.0, "p90": 52.0, "n_years": 25},
+      "anomaly_ratio": 3.71, "status": "critical",
+      "flags": []
+    },
+    {
+      "year": 2019, "month": 5,
+      "harmonized": 61.0, "source": "modis", "raw_points": 1043,
+      "modis_cell_days": 61, "viirs_cell_days": 240,
+      "baseline": {"median": 18.0, "p25": 8.0, "p75": 30.0, "p90": 47.0, "n_years": 25},
+      "anomaly_ratio": 3.39, "status": "critical",
+      "flags": []
+    },
+    {
+      "year": 2024, "month": 9,
+      "harmonized": 0.0, "source": "modis", "raw_points": 3,
+      "modis_cell_days": 0, "viirs_cell_days": 2,
+      "baseline": {"median": 0.0, "p25": 0.0, "p75": 1.0, "p90": 2.0, "n_years": 24},
+      "anomaly_ratio": null, "status": "normal",
+      "flags": []
+    },
+    {
+      "year": 2026, "month": 10,
+      "harmonized": 3.0, "source": "modis", "raw_points": 31,
+      "modis_cell_days": 3, "viirs_cell_days": 9,
+      "baseline": {"median": 1.0, "p25": 0.0, "p75": 2.0, "p90": 4.0, "n_years": 24},
+      "anomaly_ratio": 3.0, "status": "above",
+      "flags": ["nrt"]
+    },
+    {
+      "year": 2026, "month": 12,
+      "harmonized": null, "source": null, "raw_points": 0,
+      "modis_cell_days": null, "viirs_cell_days": null,
+      "baseline": null,
+      "anomaly_ratio": null, "status": "no_data",
+      "flags": ["no_coverage"]
+    }
+  ],
+  "years": [
+    {"year": 2011, "harmonized": 167.0, "raw_points": 175, "complete": true},
+    {"year": 2012, "harmonized": 83.0, "raw_points": 565, "complete": true},
+    {"year": 2019, "harmonized": 154.0, "raw_points": 2168, "complete": true},
+    {"year": 2026, "harmonized": 96.0, "raw_points": 1210, "complete": false}
+  ],
+  "seasonality": [0.03, 0.06, 0.16, 0.27, 0.25, 0.08, 0.03, 0.02, 0.01, 0.01, 0.03, 0.05],
+  "latest": {"year": 2026, "month": 10}
+}
