@@ -4,7 +4,7 @@
 import presetsMock from './mocks/presets.response.json';
 import demoSierra from './mocks/calendar.demo.qro-sierra-gorda.json';
 import demoBajio from './mocks/calendar.demo.qro-bajio.json';
-import demoChilecito from './mocks/calendar.demo.ar-chilecito.json';
+import demoRecuadro from './mocks/calendar.demo.qro-recuadro.json';
 import {
   ApiError,
   type CalendarRequest,
@@ -20,7 +20,7 @@ export const usingMocks = BASE === '';
 const DEMO: Record<string, unknown> = {
   'qro-sierra-gorda': demoSierra,
   'qro-bajio': demoBajio,
-  'ar-chilecito': demoChilecito,
+  'qro-recuadro': demoRecuadro,
 };
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));

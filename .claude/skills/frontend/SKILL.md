@@ -48,7 +48,7 @@ La barra superior es igual en todas: nombre, 4 pestañas, región, **Armonizado 
 |---|---|
 | General | Tarjeta del mes (`latest` o el que elijas) + leyenda · mapa con presets y dibujo + barras anuales · calendario 2000–2026 × 12 · línea de tiempo con reproducción |
 | Aprendizaje | Cuaderno de Don Modesto en 4 pasos (crudo → fuentes fijas → celdas-día → factor k) con barras mensuales de `raw_points`, `viirs_cell_days`/`modis_cell_days` y `harmonized`; 3 preguntas |
-| Educacional | Dos regiones lado a lado (Sierra Gorda y Chilecito) con `k` y `seasonality` en la misma escala; MODIS vs VIIRS; qué es la mediana |
+| Educacional | Dos regiones lado a lado (Sierra Gorda y Bajío queretano) con `k` y `seasonality` en la misma escala; MODIS vs VIIRS; qué es la mediana |
 | Experto | Capas del calendario, inspector de k (`calibration`), mapa, calendario, serie del mes con banda p25–p75, descargas |
 
 ## Reglas de visualización
