@@ -1,2 +1,11 @@
+# Workspace de pnpm: la raíz solo agrupa a web/. Un solo lockfile (pnpm-lock.yaml de la raíz).
+packages:
+  - web
+
+# No instalar paquetes publicados hace menos de 1 día (misma regla que la máquina anfitriona).
+minimumReleaseAge: 1440
+overrides:
+  # postcss 8.5.33 salió el 13-nov-2026 y la regla de arriba la rechaza. Quitar después del hackatón.
+  postcss: 8.5.32
 allowBuilds:
-  '@anthropic-ai/claude-code': true
+  esbuild: true

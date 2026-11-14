@@ -25,7 +25,7 @@ Tres ideas que el jurado debe repetir al salir:
 | 0:20–0:50 | Preset **Bajío / Querétaro**, modo **Crudo** | "Según los datos tal cual, el fuego se multiplicó por diez desde 2012" | Barras anuales crudas con el salto en 2012 | `years[].raw_points` |
 | 0:50–1:15 | Interruptor a **Armonizado** | "Es la misma historia vista con la misma regla: el salto desaparece y quedan los años realmente altos" | Barras armonizadas sin escalón en 2012 | `years[].harmonized` |
 | 1:15–1:40 | **Calendario** año × mes | "La temporada de fuego es marzo–mayo; estos son los años extremos" | Matriz con rampa, estacionalidad visible | `months[]`, `seasonality` |
-| 1:40–2:00 | **Panel de validación** | "Calibramos con 14 años de traslape; error anual de X %. Lo mostramos, no lo escondemos" | `k`, meses de traslape, error | `calibration.*` |
+| 1:40–2:00 | **Panel de validación** | "Calibramos con 14 años de traslape; error anual de 10 % en el Bajío. Lo mostramos, no lo escondemos" | `k`, meses de traslape, error | `calibration.*` |
 | 2:00–2:20 | **Tarjeta del mes** | "Este mes está [normal/alto/crítico] frente a su mediana histórica" | Estado y razón contra la mediana | `latest`, `months[].status` |
 | 2:20–2:45 | Presets **Sierra Gorda** y **Bajío** | "Mismo estado, dos fuegos: forestal en la sierra, quemas agrícolas en el Bajío; temporadas y factores distintos" + el caso destacado de I2 / I7 | Dos calendarios con estacionalidad y `k` distintos | `seasonality`, `calibration.k` |
 | 2:45–3:00 | Botón **CSV** + cierre | "Cualquier región de México, descargable, y el método funciona cuando MODIS ya no esté" | Descarga funciona | `/hotspots.csv` |
@@ -38,18 +38,18 @@ Si sobra tiempo en la app: botón **"Simular fin de MODIS"** (`basis = viirs_pri
 
 | # | Afirmación | Evidencia | Estado |
 |---|---|---|---|
-| A1 | Sumar puntos crudos crea un salto falso | Querétaro: 423 puntos (2011) → 4,554 (2019); MODIS solo: 410 → 414 celdas-día | ✅ medido |
+| A1 | Sumar puntos crudos crea un salto falso | App, Querétaro completo: 524 puntos crudos (2011) → 7,304 (2019), ×13.9; armonizado 410 → 414 celdas-día. (El 423 → 4,554 de `CONTEXT.md` cuenta solo `type = 0`; en el pitch se usa la cifra de la app) | ✅ medido con la API |
 | A2 | Los tres VIIRS son equivalentes entre sí | NOAA-20 / S-NPP = 1.00–1.02 en 3 regiones | ✅ medido |
-| A3 | El factor MODIS/VIIRS cambia por región | 0.26 (Sierra Gorda) y 0.31 (Bajío), dentro del mismo estado | ✅ medido; ⏳ confirmar con el paso 5 |
-| A4 | Error anual de la conversión | 7 % Querétaro completo, 15 % Sierra Gorda | ✅ medido; ⏳ confirmar en la app |
-| A5 | Error mensual ~30 % | Mediana de error mensual en las 3 regiones | ✅ medido |
+| A3 | El factor MODIS/VIIRS cambia por región | API: 0.260 Sierra Gorda, 0.304 Bajío, 0.290 Querétaro completo, dentro del mismo estado | ✅ medido con la API |
+| A4 | Error anual de la conversión | API (mediana dejando un año fuera): 6 % Querétaro completo, 10 % Bajío, 17 % Sierra Gorda | ✅ medido con la API |
+| A5 | Error mensual ~35 % | API: 33 % Querétaro, 37 % Bajío, 37 % Sierra Gorda | ✅ medido con la API |
 | A6 | Quitamos fuentes industriales | 3,111 celdas fijas; máscara valida 94–99.9 % | ✅ medido |
 | A7 | Detectamos solos las caídas de sensor | Terra 15-jun → 3-jul-2001, coincide con el Readme de FIRMS | ✅ medido |
 | A8 | S-NPP dejó de operar el 2-nov-2026 | Blog de FIRMS / datos terminan ese día | ⏳ falta la cita (I5) |
 | A9 | Caso destacado de México (mes récord y si coincide con incendios reportados) | Consulta I2 | ⏳ I2 |
 | A10 | El ruido del sur de Querétaro es Tula | Celdas más fuertes en 20.04 N, 99.29 W | ⏳ I3 |
 | A11 | Sin MODIS, la historia **anual** casi no cambia; el nivel **mensual** sí puede moverse un escalón | Serie anual: mediana de diferencia 16 % Sierra Gorda, 9 % Bajío, 6 % Querétaro. Estado mensual 2012–2025: igual en 55–56 % de los meses, a un nivel o menos en ~90 %; de los meses críticos, 60–80 % siguen saliendo alto o crítico | ✅ medido el 14-nov con la API |
-| A12 | Responde en menos de 2 s | Medición en la demo | ⏳ H2 |
+| A12 | Responde en menos de 2 s | Presets 0.35–0.38 s; polígono en Jalisco 0.46 s (anfitriona, 14-nov) | ✅ medido; repetir el día de la demo |
 
 ## 4. Lo que **no** se dice
 
@@ -68,7 +68,7 @@ Si sobra tiempo en la app: botón **"Simular fin de MODIS"** (`basis = viirs_pri
 |---|---|
 | ¿Por qué no multiplican VIIRS por un factor fijo global? | Porque medimos que cambia de 0.26 a 0.40 entre regiones; lo calculamos dentro del área que elige el usuario. |
 | ¿Por qué no regresión o *quantile mapping*? | Lo probamos: la regresión log-log no superó al factor regional (8.8 % vs 6.8 % de error anual en Querétaro). Elegimos lo más simple que mejor funcionó. |
-| ¿Qué error tiene? | ~7–24 % anual según la región, ~30 % mensual. Por eso clasificamos por percentiles y no prometemos precisión mensual. |
+| ¿Qué error tiene? | 6–17 % anual según la región, ~35 % mensual. Por eso clasificamos por percentiles y no prometemos precisión mensual. |
 | ¿Qué pasa cuando se apague MODIS? | Desde 2012 ya tenemos el factor; la serie sigue con VIIRS escalado. Lo probamos simulando el fin de MODIS: los totales anuales cambian entre 6 y 16 % en mediana, y el nivel de cada mes queda igual o a un escalón en 9 de cada 10 meses. |
 | ¿Y Terra en la mañana? | Al apagarse se pierde la ventana de media mañana; el factor absorbe el promedio, no el ciclo diario. Es un límite declarado. |
 | ¿Cómo distinguen "sin dato" de "cero"? | Detectamos días sin ninguna detección del satélite en todo el país y los marcamos; esos meses no entran a la mediana. |
@@ -116,13 +116,14 @@ Si sobra tiempo en la app: botón **"Simular fin de MODIS"** (`basis = viirs_pri
 
 ---
 
-## 7. El analista como dirección
+## 7. El analista como dueño del pitch
 
-El analista es quien tiene la vista completa. Tiene la última palabra en:
+El analista tiene la última palabra en:
 
-- **Contratos:** qué campos existen y qué significan.
-- **Qué se dice:** la tabla de la sección 3.
-- **Si un hito pasa:** con la lista de `acceptance.md` y la sección 6.
-- **Qué se recorta** si vamos tarde, junto con el líder y siguiendo el orden del PRD: mejoras → polígono libre → CSV del calendario. Nunca el interruptor ni el panel de validación.
+- **Qué se dice:** la tabla de la sección 3. Sin ✅, no se dice.
+- **Cómo se muestra:** el orden del guion, qué preset y qué mes se enseñan, qué va en el video.
+- **Si la demo está lista:** los escenarios de la sección 6.
 
-En cada hito, el analista manda al chat un mensaje de 3 líneas: qué pasó, qué falla y de quién es, y qué se recorta (si algo).
+Los contratos los decide el líder (`docs/contracts/README.md`) y le avisa al analista cuando un cambio toca el pitch. Lo que se recorta si vamos tarde lo deciden juntos, siguiendo el orden del PRD: mejoras → polígono libre → CSV del calendario. Nunca el interruptor ni el panel de validación.
+
+En H3 y H4, el analista manda al chat un mensaje de 3 líneas: qué escenarios de la demo pasan, qué falla y de quién es, y qué falta del pitch.

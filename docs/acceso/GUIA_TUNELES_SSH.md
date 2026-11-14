@@ -120,7 +120,7 @@ nano ~/.ssh/authorized_keys
 
 Agrega **una línea por amigo** con este formato (todo en una sola línea):
 ```text
-restrict,port-forwarding,permitopen="localhost:8000",permitopen="localhost:5432",command="/usr/bin/false" ssh-ed25519 AAAA...llave_del_amigo... nombre_amigo
+restrict,port-forwarding,permitopen="localhost:8000",permitopen="localhost:8001",permitopen="localhost:5432",command="/usr/bin/false" ssh-ed25519 AAAA...llave_del_amigo... nombre_amigo
 ```
 
 Qué hace cada opción:

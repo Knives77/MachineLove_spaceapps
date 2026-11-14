@@ -1,117 +1,115 @@
-# Guía del analista
+# Guía del analista · dueño del pitch
 
-Eres el cerebro y la dirección del equipo: que nada de lo que digamos ante los jueces sea falso, que el front y el back no se desalineen, y que la entrega salga a tiempo. Qué decides tú está en `docs/PITCH.md` §7; el guion, la evidencia y las pruebas de la demo, en el resto de ese archivo. Las tareas con casilla están en `docs/CHECKLIST.md`; aquí está **cómo** hacer cada investigación y dónde dejar el resultado.
+Tu trabajo hasta el domingo 11:30 es que **el pitch, el video y la entrega salgan bien y digan solo cosas ciertas**. El código ya funciona con datos reales (H1 y H2 cumplidos el sábado a las 17:00): ya no hace falta que persigas contratos ni hitos técnicos. El líder resuelve los contratos; tú decides qué se dice y cómo se muestra.
 
-Conexión a la base (con túnel al 5432): `postgresql://firms:firms_local@localhost:5432/firms`. Solo lectura: tú no escribes en la base.
+- Guion, afirmaciones y pruebas de la demo: [`PITCH.md`](PITCH.md).
+- Dónde anotar todo: [`HALLAZGOS.md`](HALLAZGOS.md). Si una cifra o un hecho no está ahí con su fuente, no se dice.
+- Las casillas están en [`CHECKLIST.md`](CHECKLIST.md), sección Analista.
 
-Regla: cada hallazgo se escribe en `docs/HALLAZGOS.md` (créalo) con fecha, la consulta o fuente usada, y el resultado. Si no está ahí, no se dice en el pitch.
+## Tus herramientas
+
+**Las cifras salen de la app, no de la base.** Con el túnel al 8000 abierto ([`TOPOLOGIA.md`](TOPOLOGIA.md)):
+
+```bash
+python3 scripts/pitch_numbers.py            # k, errores, salto falso, temporada, meses récord, 2026, "sin MODIS"
+python3 scripts/pitch_numbers.py qro-bajio  # un solo preset
+```
+
+Imprime exactamente lo que el jurado verá en pantalla. Copia a `HALLAZGOS.md` lo que vayas a usar, con la hora en que lo corriste.
+
+Para casos fuera de los presets, usa la propia app (dibuja el polígono) o la base en solo lectura (`postgresql://firms:firms_local@localhost:15432/firms`, túnel al 5432).
 
 ---
 
-## I1 · Requisitos de la entrega (urgente)
+## P1 · Requisitos de la entrega · **ya, antes de las 18:30**
 
-Pregunta a los organizadores locales o lee la página oficial de Space Apps 2026:
+Bloquea todo lo demás: si piden algo que no tenemos (URL pública, otro formato de video), hay que saberlo hoy.
 
-- [ ] ¿Qué campos tiene la página del proyecto? (resumen, enlaces, uso de IA, etc.)
-- [ ] ¿Video o presentación? ¿Duración máxima? ¿Dónde se sube?
+- [ ] Campos de la página del proyecto (resumen, enlaces, uso de IA, equipo…).
+- [ ] Video: duración máxima, formato, dónde se sube. ¿Presentación en vivo ante jueces locales? ¿A qué hora?
 - [ ] ¿El repo debe ser público? ¿Hay que declarar uso de herramientas de IA?
-- [ ] ¿Hora exacta de cierre y zona horaria?
-- [ ] ¿Cómo y cuándo es la presentación ante jueces locales?
+- [ ] Hora exacta de cierre y zona horaria.
 
-Resultado: sección "Entrega" en `HALLAZGOS.md`. Si algo choca con el PRD (por ejemplo, piden URL pública), avisar al líder **de inmediato**.
+Resultado: sección **Entrega** de `HALLAZGOS.md`. Si algo choca con el PRD, avisa al líder **en ese momento**.
 
-## I2 · ¿Cuál es el caso local destacado de México?
+## P2 · El caso del pitch · hasta las 21:00
 
-Sustituye a Chilecito (fase 2). Buscamos el mes o el año que mejor demuestre el calendario en Querétaro. Consulta (celdas-día MODIS de vegetación por mes; cambiar el recuadro para Sierra Gorda o Bajío):
+Es el minuto 2:20 del guion: un mes que la app marca como crítico **y** que salió en las noticias. Pistas que ya da la app (14-nov):
 
-```sql
-SELECT extract(year FROM acq_date)::int AS anio, extract(month FROM acq_date)::int AS mes,
-       count(DISTINCT (cy, cx, acq_date)) AS celdas_dia
-FROM detection
-WHERE family = 'MODIS' AND is_veg AND country = 'MX'
-  AND latitude BETWEEN 20.9 AND 21.7 AND longitude BETWEEN -100.6 AND -99.0   -- Sierra Gorda
-GROUP BY 1, 2 ORDER BY celdas_dia DESC LIMIT 15;
-```
+| Pista | Qué dice la app |
+|---|---|
+| **Febrero de 2026, Bajío** | Mes más alto en 26 años: 150 celdas-día, 5× la mediana. Lo mismo en Querétaro completo (166, 5×) |
+| **2025, Bajío / Querétaro** | Año completo más alto de la serie (447 y 561). Abril de 2025 a 7.3× la mediana en Bajío |
+| **Mayo de 2024, Sierra Gorda** | Mes más alto de la sierra en 26 años (64 celdas-día, 3.4×) |
+| **Abril de 2011 y mayo de 2019, Sierra Gorda** | Años más altos de la sierra (167 y 154) |
 
-- [ ] Los 5 meses más extremos de Sierra Gorda y del Bajío en 26 años, y el mes pico de cada temporada.
-- [ ] ¿Cómo está 2026 frente a su historia? (último mes completo con MODIS: agosto).
-- [ ] Buscar en noticias si esos meses coinciden con incendios reportados (CONAFOR, Protección Civil de Querétaro). Si coinciden, es el mejor momento del pitch.
-- [ ] Conclusión en una frase: "el mes X del año Y fue el más alto en 26 años en Sierra Gorda, y coincide con…".
+- [ ] Buscar en noticias y reportes (CONAFOR, Protección Civil de Querétaro, SEDESU, prensa local) si esos meses tuvieron incendios o quemas reportados. Anotar nombre, municipio, fechas, hectáreas y enlace.
+- [ ] Elegir **uno** como caso principal y uno de respaldo. Para el pitch, febrero de 2026 es el mejor candidato: es este año, y muestra que la herramienta sirve hoy.
+- [ ] Escribir la frase en `HALLAZGOS.md` → **Caso**: "Febrero de 2026 fue el mes con más actividad de fuego en el Bajío queretano en 26 años: cinco veces lo normal. Coincide con…". Si no aparece ninguna noticia, la frase se queda sin el "coincide con".
+- [ ] Si el caso pide otra región (por ejemplo, un incendio grande en otro estado), dibujar el polígono en la app, correr la consulta y pasarle el recuadro al líder si conviene un preset nuevo.
 
-## I3 · ¿El ruido industrial del sur de Querétaro es Tula?
+## P3 · Guion con cifras reales · hasta las 22:00
 
-```sql
-SELECT cy, cx, n_dates,
-       round((cy + 0.5) / 100.0, 3) AS lat, round((cx + 0.5) / 100.0, 3) AS lon
-FROM static_cell
-WHERE cy BETWEEN 2000 AND 2090 AND cx BETWEEN -10060 AND -9900
-ORDER BY n_dates DESC LIMIT 15;
-```
+- [ ] Llenar cada fila de `PITCH.md` §2 con las cifras de `pitch_numbers.py` (no del mock, no de `CONTEXT.md`).
+- [ ] Revisar §3: cada afirmación que vayas a decir debe estar en ✅. A9 (caso) se cierra con P2. A10 (Tula) **se quita del guion** salvo que sobre tiempo para verificarla.
+- [ ] Revisar §4 (lo que no se dice) con quien va a hablar.
+- [ ] Frase de cierre en ES y EN (para el video).
 
-- [ ] Pegar cada `lat, lon` en Google Maps (vista satélite) y anotar qué hay: refinería, cementera, termoeléctrica, ladrillera, relleno sanitario…
-- [ ] Conclusión: qué instalaciones explican el ruido. Si Tula no aparece, **no se menciona**.
+## P4 · Fuentes y citas · hasta las 23:30
 
-## I4 · Límites conocidos (decisiones ya tomadas, escribirlas)
+- [ ] Cita oficial de FIRMS (página de FIRMS o el Readme de las descargas).
+- [ ] Referencias de los productos: MODIS C6.1 (candidato a verificar: Giglio et al. 2016, *Remote Sensing of Environment*) y VIIRS 375 m (candidato: Schroeder et al. 2014, *RSE*). Solo si las encuentras y las lees; no inventar.
+- [ ] Fuente del cese de S-NPP el 2-nov-2026 (blog de FIRMS/LANCE) → cierra A8.
+- [ ] Sección **Fuentes** de `HALLAZGOS.md` con enlaces; el líder las pasa al README.
 
-Agregar a la sección "Límites conocidos" de `docs/contracts/harmonization.md`:
+## P5 · Material del video · hasta H4 (07:00)
 
-- [ ] La máscara solo usa `type = 2`. Plataformas marinas (`type = 3`) y volcanes (`type = 1`) no se filtran en los datos NRT: probamos filtrarlos y las celdas costeras tenían más fuego real (2,938) que de plataformas (2,180) desde 2024.
-- [ ] La máscara, validada en 2024–2026 con `type` conocido, atrapa 94 % (MODIS) y 99.9 % (VIIRS) de las fuentes fijas y quita por error ~2 % del fuego real. En Querétaro sobre-enmascara un poco en temporada de lluvias.
-- [ ] Algunos días tranquilos se registran como "caída" de Terra/Aqua; en México solo marcan 2001-06/07 y 2002-03, que coinciden con fallas reales de Terra y además ya son `terra_only`.
+- [ ] Guion del video en tomas: qué pantalla, qué clic, qué se dice y cuántos segundos (base: `PITCH.md` §2).
+- [ ] 3–5 diapositivas o tarjetas, si el formato las permite: problema (salto de 2012), método en una imagen, validación con su error, caso, quién lo usaría.
+- [ ] Texto de la página del proyecto en ES y EN: resumen (≤ 150 palabras), método en 6 pasos (`PRD.md`), datos usados, uso de IA, enlace al repo.
 
-## I5 · Fuentes y citas para el README y el pitch
+## P6 · Ensayos y pruebas · H3 (00:00) y H4 (07:00)
 
-- [ ] Texto oficial de cita y aviso de FIRMS (página de FIRMS → "Citation" / Readme de las descargas).
-- [ ] Referencia del producto MODIS C6.1 y del VIIRS 375 m C2 (artículos de los algoritmos; candidatos a verificar: Giglio et al. 2016, *Remote Sensing of Environment*, MODIS C6; Schroeder et al. 2014, *RSE*, VIIRS 375 m).
-- [ ] Fuente del cese de Suomi-NPP el 2-nov-2026 (blog de FIRMS/LANCE, noviembre 2026).
-- [ ] 1–2 trabajos que comparen MODIS y VIIRS en conteos de fuego, si existen, para decir "nuestro factor es del mismo orden que lo publicado" (solo si se encuentra; no inventar).
+- [ ] Correr los 13 escenarios de `PITCH.md` §6 con la app real y marcar ✅/❌. Lo que falle va al chat con dueño.
+- [ ] Cruce de números (§6): `k` y totales en pantalla contra `pitch_numbers.py`.
+- [ ] Ensayar las preguntas de jueces (§5) con el equipo: cada quien responde 2 sin leer.
+- [ ] Dos ensayos completos con cronómetro: una persona habla, otra opera.
 
-Resultado: sección "Fuentes" en `HALLAZGOS.md` con enlaces; luego al README.
+## P7 · Entrega · H5–H6 (09:00–11:30)
 
-## I7 · Casos reales para el pitch (y sus datos)
-
-Buscamos 2–3 eventos de fuego en México que los jueces reconozcan y que el calendario muestre con claridad. El mejor caso combina: está en noticias o en reportes oficiales, destaca en el calendario, y ocurrió en el traslape MODIS + VIIRS (2012–2026), para que se vea el interruptor.
-
-**Cómo investigar**
-- [ ] Fuentes: reportes de temporada de CONAFOR, Protección Civil estatal, noticias, y el Sistema Nacional de Información Forestal. Buscar temporadas récord a nivel nacional y eventos grandes en Querétaro y estados vecinos.
-- [ ] Para cada candidato anotar: nombre, estado/municipio, fechas, hectáreas reportadas, fuente con enlace.
-- [ ] Verificar en la base que el evento se ve (cambiar recuadro y fechas):
-
-```sql
-SELECT acq_date, family, count(*) AS detecciones, count(DISTINCT (cy, cx)) AS celdas
-FROM detection
-WHERE is_veg AND country = 'MX'
-  AND latitude BETWEEN 21.0 AND 21.5 AND longitude BETWEEN -99.8 AND -99.2   -- recuadro del evento
-  AND acq_date BETWEEN '2025-03-01' AND '2025-05-31'                          -- fechas del evento
-GROUP BY 1, 2 ORDER BY 1, 2;
-```
-
-- [ ] Si el evento no aparece en la base, **no se usa**.
-
-**Datos**
-- México 2000 → 2026-11-01 ya está completo en la base: para cualquier caso mexicano **no hay que descargar nada**. Para entregar los puntos de un caso, usar la propia app (`/hotspots.csv`) o la consulta de arriba.
-- Si el caso necesita días posteriores al 2026-11-01 (por ejemplo, un incendio de esta semana): pedir en FIRMS *Archive Download* México, 4 sensores, 2026-11-01 → hoy, CSV, y avisar al líder para cargarlo (mismo procedimiento que se usó con Argentina).
-- Casos fuera de México son fase 2: anotarlos, no prepararlos.
-
-**Entregable** (en `HALLAZGOS.md`, sección "Casos")
-- [ ] Una tabla con los candidatos, su fuente y la verificación en la base.
-- [ ] El caso elegido para el minuto 2:20 del guion, con su recuadro (`lat` mín/máx, `lon` mín/máx).
-- [ ] Si conviene un **preset nuevo** para ese caso: pasar el recuadro al líder; se agrega en `docs/contracts/db_schema.sql` (tabla `preset`) y en `examples/presets.response.json`, y se avisa al front.
-
-## I6 · Polígonos reales para los presets (después de H3, solo si sobra tiempo)
-
-- [ ] Reserva de la Biosfera Sierra Gorda (CONANP o Protected Planet / WDPA) y límite estatal de Querétaro (INEGI), en GeoJSON simplificado (< 500 vértices).
-- [ ] Entregarlos al backend; se cambian en `db_schema.sql` (tabla `preset`) y en `examples/presets.response.json`.
+- [ ] Capturas de cada paso del guion y video de respaldo (plan B de §6).
+- [ ] Grabar el video con la app real en la anfitriona (09:00–10:30).
+- [ ] Llenar la página y enviar **antes de las 11:30**.
 
 ---
 
-## Cifras ya verificadas que puedes usar
+## Si sobra tiempo
 
-| Dato | Valor | Origen |
-|---|---|---|
-| Detecciones de México | 9.5 M (nov-2000 → nov-2026); Argentina 6.6 M cargadas para la fase 2 | ETL paso 1 |
-| Salto falso en Querétaro | 423 puntos crudos (2011) → 4,554 (2019); MODIS: 410 → 414 celdas-día | `docs/CONTEXT.md` §3 |
-| VIIRS entre sí | NOAA-20 / S-NPP = 1.00–1.02 | `CONTEXT.md` §3 |
-| `k` y error anual | Qro 0.293 / 6.8 %; Sierra Gorda 0.262 / 14.7 %; Bajío 0.307 / sin medir | `CONTEXT.md` §3 (se recalcula con el paso 5) |
-| Fuentes fijas | 3,111 celdas; 19 % de los datos NRT se apagan | ETL paso 2 |
-| Caída real detectada sola | Terra 15-jun → 3-jul-2001 (coincide con el Readme de FIRMS) | ETL paso 3 |
+- **Tula (A10).** Celdas fijas más fuertes del sur de Querétaro; pegar cada coordenada en Google Maps (vista satélite) y anotar qué instalación es:
+  ```sql
+  SELECT n_dates, round((cy + 0.5) / 100.0, 3) AS lat, round((cx + 0.5) / 100.0, 3) AS lon
+  FROM static_cell WHERE cy BETWEEN 2000 AND 2090 AND cx BETWEEN -10060 AND -9900
+  ORDER BY n_dates DESC LIMIT 15;
+  ```
+- **Caso fuera de Querétaro.** Un incendio grande y conocido de México (2012–2026), verificado en la app con un polígono.
+
+## Ya no te toca
+
+- Redactar los límites del contrato (I4): ya están en `harmonization.md`.
+- Congelar contratos, generar mocks y verificar H1/H2: hecho.
+- Polígonos oficiales de los presets (I6): fuera; nos quedamos con los rectángulos.
+- Decisiones de contrato: las resuelve el líder y te avisa. Si una cambia algo del pitch, te toca revisar §3.
+
+## Cifras verificadas (API, 14-nov 17:30)
+
+| Dato | Sierra Gorda | Bajío | Querétaro completo |
+|---|---|---|---|
+| `k` | 0.260 | 0.303 | 0.289 |
+| Error anual (mediana / peor año) | 17 % / 55 % | 10 % / 44 % | 6 % / 15 % |
+| Error mensual | 37 % | 37 % | 33 % |
+| Crudo 2011 → 2019 | 175 → 2,167 (×12.4) | 349 → 5,137 (×14.7) | 524 → 7,304 (×13.9) |
+| Armonizado 2011 → 2019 | 167 → 154 (×0.92) | 243 → 260 (×1.07) | 410 → 414 (×1.01) |
+| Pico de temporada | mayo (abr–jun = 62 %) | marzo (ene–mar = 46 %) | marzo |
+| Sin MODIS: serie anual / estado mensual igual | 16 % / 56 % | 9 % / 55 % | 6 % / 55 % |
+
+Otros: 3,111 celdas de fuentes fijas quitadas; caída de Terra 15-jun → 3-jul-2001 detectada sola (coincide con el Readme de FIRMS); NOAA-20 / S-NPP = 1.00–1.02.
