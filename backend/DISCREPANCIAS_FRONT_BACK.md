@@ -44,11 +44,14 @@ Este documento registra el análisis línea por línea entre los contratos ofici
 - En [web/src/views/Edu.tsx](../web/src/views/Edu.tsx#L8-L17), la vista Educacional busca específicamente `PAIR = ['qro-sierra-gorda', 'qro-bajio']` dentro de `presets.data.features`, y en [web/src/components/MapPanel.tsx](../web/src/components/MapPanel.tsx#L163) el botón de limpiar polígono vuelve a `features[0]?.id ?? 'qro-sierra-gorda'`.
 - `backend/queries.py` (`fetch_presets`) garantiza siempre el orden fijo `('qro-sierra-gorda', 'qro-bajio', 'qro-recuadro')`, por lo que `features[0]` es siempre `qro-sierra-gorda`.
 
-### D6 · Polígonos libres sin celdas dentro del rectángulo de México (`scope = "country"`)
-- Según [.claude/skills/backend/SKILL.md](../.claude/skills/backend/SKILL.md#L54):
+### D6 · Polígonos sin celdas dentro del rectángulo de México (océano / Golfo de México vs. tierra sin incendios)
+- Según [.claude/skills/backend/SKILL.md](../.claude/skills/backend/SKILL.md#L54) y el Escenario D9 de [docs/PITCH.md](../docs/PITCH.md#L211):
   > *"Si el área no tiene celdas de México y no toca el rectángulo de México (lat 14.5–32.8, lon −118.5 a −86.5) → 422 `aoi_outside_coverage`."*
-- Si un usuario dibuja un polígono pequeño dentro del rectángulo de México donde no hubo incendios (`0` celdas en `cell`), el Backend responde `200 OK` con `calibration.scope = "country"`, `k = 0.3323` (`calibration_country` de México) y los meses con cobertura en `0.0`. En el Frontend, `KInspector.tsx` muestra automáticamente el aviso amarillo `val.scopeWarn` (*"El área tiene pocos datos en el traslape; se usó el factor de respaldo del país"*).
-- Polígonos fuera del rectángulo de México (océano abierto o Argentina) devuelven `422 aoi_outside_coverage`, que el Frontend traduce con `error.aoi_outside_coverage`.
+  > *"D9 · Polígono sobre el océano (o en EE.UU.): el servidor responde que el área está fuera de cobertura."*
+- **Causa detectada:** El rectángulo geográfico de México (`[-118.5, 14.5, -86.5, 32.8]`) abarca también el Golfo de México, parte del Pacífico y parte del sur de EE.UU. (Texas). Si se usaba únicamente el rectángulo cuando `cell_count == 0`, un polígono dibujado en el Golfo de México devolvía `200 OK` en vez de `422 aoi_outside_coverage`.
+- **Solución aplicada en [backend/queries.py](queries.py#L210-L233):** Cuando un polígono tiene `0` celdas dentro (`c_row[0] == 0`), además de verificar el rectángulo del país se comprueba con PostGIS `ST_DWithin(cell.geom, aoi.g, 0.15)` (~15 km) que el polígono esté en proximidad de territorio terrestre con cobertura en `cell`:
+  - Si un usuario dibuja un polígono pequeño en tierra dentro de México donde no hubo incendios (`0` celdas dentro, pero a `< 15 km` de celdas terrestres de México), responde `200 OK` con `calibration.scope = "country"`, `k = 0.3323` y aviso `val.scopeWarn` en `KInspector.tsx`.
+  - Si dibuja sobre el Golfo de México, el océano Pacífico, EE.UU. o Sudamérica, responde `422 aoi_outside_coverage`.
 
 ### D7 · Límite documentado del método en `viirs_primary` para Sierra Gorda (año 2020)
 - En [docs/contracts/acceptance.md](../docs/contracts/acceptance.md#L45), se pide que con `basis = viirs_primary` la diferencia anual 2012–2025 tenga mediana `< 20%` y máximo `< 45%`.
