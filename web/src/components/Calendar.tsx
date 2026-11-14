@@ -204,9 +204,10 @@ export function Calendar({
                 ? t('legend.missing')
                 : v === null
                   ? t('status.no_data')
-                  : `${fmtNum(lang, v, 1)} ${mode === 'harmonized' ? t('unit.cellDays') : t('unit.points')}, ${t(
-                      `status.${row.status}`,
-                    )}`;
+                  : `${fmtNum(lang, v, 1)} ${mode === 'harmonized' ? t('unit.cellDays') : t('unit.points')}, ${
+                      // Mismo nombre que en la tarjeta y la vista por año: 0 → "Sin incendios".
+                      isZero(row) ? t('level.zeroShort') : t(`status.${row.status}`)
+                    }`;
               return (
                 <button
                   key={k}
@@ -302,7 +303,7 @@ function Tooltip({
         {row && (
           <span className="text-mute">
             {' '}
-            · {(simple && isZero(row) ? t('level.zeroShort') : t(`status.${row.status}`)).toUpperCase()}
+            · {(isZero(row) ? t('level.zeroShort') : t(`status.${row.status}`)).toUpperCase()}
           </span>
         )}
       </p>

@@ -24,10 +24,27 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
   const [playing, setPlaying] = useState(false);
   const byKey = useMemo(() => indexMonths(data.months), [data]);
 
+  // Primer mes que trae dato: al repetir desde el final no se arranca en meses "sin dato"
+  // (p. ej. ene–oct 2000, antes de Terra), que parecían un error.
+  const firstDataIdx = useMemo(() => {
+    let first = latestIdx;
+    for (const m of data.months) if (m.status !== 'no_data') first = Math.min(first, toIdx(m.year, m.month));
+    return first;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, latestIdx]);
+
+  const togglePlay = () => {
+    if (playing) return setPlaying(false);
+    // Si ya estás en el último mes, la reproducción vuelve a empezar desde el primero con dato.
+    if (idx >= latestIdx) setSelected(fromIdx(firstDataIdx));
+    setPlaying(true);
+  };
+
   useEffect(() => {
     if (!playing) return;
     const id = setInterval(() => {
-      const next = idx >= latestIdx ? 0 : idx + 1;
+      if (idx >= latestIdx) return setPlaying(false);
+      const next = idx + 1;
       setSelected(fromIdx(next));
       if (next === latestIdx) setPlaying(false);
     }, 450);
@@ -53,7 +70,7 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
     <div className="panel flex items-center gap-5 px-4 py-3">
       <button
         type="button"
-        onClick={() => setPlaying((p) => !p)}
+        onClick={togglePlay}
         aria-label={playing ? t('time.pause') : t('time.play')}
         className="flex h-12 w-12 shrink-0 items-center justify-center rounded border-2 border-cyan bg-cyan-deep"
       >

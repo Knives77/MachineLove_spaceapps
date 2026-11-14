@@ -45,7 +45,7 @@ export function YearPicker({ data }: { data: CalendarResponse }) {
         <select
           value={sel.year}
           onChange={(e) => goYear(Number(e.target.value))}
-          className="bg-transparent font-mono text-[14px] font-semibold text-ink outline-none"
+          className="rounded-sm bg-transparent font-mono text-[14px] font-semibold text-ink"
         >
           {years.map((y) => (
             <option key={y} value={y} className="bg-panel">

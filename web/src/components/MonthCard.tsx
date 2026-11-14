@@ -63,7 +63,9 @@ export function MonthCard({ data }: { data: CalendarResponse }) {
           ) : (
             <>
               <p className="mt-3 text-lg">
-                {row.anomaly_ratio !== null && row.baseline
+                {isZero(row) && row.baseline
+                  ? t('card.zeroRatio', { m: fmtNum(lang, row.baseline.median, 1), n: row.baseline.n_years })
+                  : row.anomaly_ratio !== null && row.baseline
                   ? t('card.ratio', { r: fmtNum(lang, row.anomaly_ratio, 1), n: row.baseline.n_years })
                   : row.status === 'insufficient_baseline'
                     ? t('card.insufficient')
@@ -142,6 +144,16 @@ export function MonthCard({ data }: { data: CalendarResponse }) {
               <span key={s.key}>{t(s.key)}</span>
             ))}
           </div>
+        </div>
+      );
+    }
+    // Todos los percentiles en 0 (casi nunca hubo fuego ese mes): la barra quedaría entera
+    // en "Extremo". Se muestra neutra con una explicación; el nivel sigue siendo el de `status`.
+    if (baseline.p90 === 0) {
+      return (
+        <div className="mt-5">
+          <div className="h-3 rounded-sm bg-panel-2 ring-1 ring-line" />
+          <p className="mt-1.5 text-[12px] text-mute">{t('card.noRange')}</p>
         </div>
       );
     }

@@ -76,7 +76,8 @@ function Controller({
     const shapeOptions = { color: SELECT, weight: 2, fillColor: '#38bdf8', fillOpacity: 0.08 };
     const h =
       drawMode === 'rect'
-        ? new L.Draw.Rectangle(map as L.DrawMap, { shapeOptions })
+        ? // showArea: false evita un bug de leaflet-draw 1.0.4 ("type is not defined" en readableArea).
+          new L.Draw.Rectangle(map as L.DrawMap, { shapeOptions, showArea: false })
         : new L.Draw.Polygon(map as L.DrawMap, { shapeOptions, allowIntersection: false, showArea: false });
     h.enable();
     handler.current = h;
@@ -116,10 +117,53 @@ export function MapPanel({ className = '' }: { className?: string }) {
 
   return (
     <div className={`relative overflow-hidden rounded border border-line ${className}`}>
+      {/* Va antes del mapa en el código para que el Tab llegue primero a las regiones y no a los
+          enlaces de atribución de Leaflet; la posición en pantalla no cambia (es absoluta). */}
+      {/* Regiones de ejemplo + área personalizada */}
+      {/* Ocupa hasta el borde inferior para limitar la altura del panel; deja pasar los clics al mapa. */}
+      <div className="pointer-events-none absolute inset-2 z-[500] flex flex-col items-start gap-2">
+      <div className="pointer-events-auto flex max-w-full flex-wrap gap-1.5">
+        <span className="sr-only">{t('map.presets')}</span>
+        {features.map((f) => (
+          <button
+            key={f.id}
+            type="button"
+            aria-pressed={f.id === selectedId}
+            onClick={() => setAoi({ preset_id: f.id })}
+            className={`btn whitespace-nowrap bg-bg/85 px-2 py-1 text-[11.5px] backdrop-blur ${f.id === selectedId ? 'btn-on' : ''}`}
+          >
+            {presetName(f)}
+          </button>
+        ))}
+        <button
+          type="button"
+          aria-expanded={panel}
+          aria-controls="custom-area"
+          aria-pressed={!!drawn}
+          onClick={() => setPanel((p) => !p)}
+          className={`btn whitespace-nowrap border-dashed bg-bg/85 px-2 py-1 text-[11.5px] backdrop-blur ${drawn || panel ? 'btn-on' : ''}`}
+        >
+          <span aria-hidden="true" className="mr-1 text-cyan">+</span>
+          {t('map.custom')}
+        </button>
+      </div>
+
+      {panel && (
+        <CustomAreaPanel
+          onClose={() => setPanel(false)}
+          onDraw={startDraw}
+          onBox={(g) => {
+            setPanel(false);
+            setAoi({ geometry: g });
+          }}
+        />
+      )}
+      </div>
+
       <MapContainer
         center={[21.3, -99.8]}
         zoom={8}
-        className="h-full w-full"
+        className="isolate h-full w-full"
         zoomControl={false}
         attributionControl
         keyboard
@@ -166,47 +210,6 @@ export function MapPanel({ className = '' }: { className?: string }) {
           onDrawEnd={() => setDrawMode(null)}
         />
       </MapContainer>
-
-      {/* Regiones de ejemplo + área personalizada */}
-      {/* Ocupa hasta el borde inferior para limitar la altura del panel; deja pasar los clics al mapa. */}
-      <div className="pointer-events-none absolute inset-2 z-[500] flex flex-col items-start gap-2">
-      <div className="pointer-events-auto flex max-w-full flex-wrap gap-1.5">
-        <span className="sr-only">{t('map.presets')}</span>
-        {features.map((f) => (
-          <button
-            key={f.id}
-            type="button"
-            aria-pressed={f.id === selectedId}
-            onClick={() => setAoi({ preset_id: f.id })}
-            className={`btn whitespace-nowrap bg-bg/85 px-2 py-1 text-[11.5px] backdrop-blur ${f.id === selectedId ? 'btn-on' : ''}`}
-          >
-            {presetName(f)}
-          </button>
-        ))}
-        <button
-          type="button"
-          aria-expanded={panel}
-          aria-controls="custom-area"
-          aria-pressed={!!drawn}
-          onClick={() => setPanel((p) => !p)}
-          className={`btn whitespace-nowrap border-dashed bg-bg/85 px-2 py-1 text-[11.5px] backdrop-blur ${drawn || panel ? 'btn-on' : ''}`}
-        >
-          <span aria-hidden="true" className="mr-1 text-cyan">+</span>
-          {t('map.custom')}
-        </button>
-      </div>
-
-      {panel && (
-        <CustomAreaPanel
-          onClose={() => setPanel(false)}
-          onDraw={startDraw}
-          onBox={(g) => {
-            setPanel(false);
-            setAoi({ geometry: g });
-          }}
-        />
-      )}
-      </div>
 
       {/* Instrucciones mientras se dibuja */}
       {drawMode && (
