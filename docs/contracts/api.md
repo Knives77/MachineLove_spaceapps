@@ -16,7 +16,7 @@ Los ejemplos completos están en `docs/contracts/examples/`; el frontend los usa
 | 400 | `aoi_too_large` | más de 200,000 km² |
 | 400 | `invalid_range` | `start_year > end_year` o fuera de 2000–2026 |
 | 404 | `unknown_preset` | `preset_id` inexistente |
-| 422 | `aoi_outside_coverage` | el área no toca México ni Argentina |
+| 422 | `aoi_outside_coverage` | el área no toca México (en el MVP; Argentina es fase 2) |
 
 ## El objeto `aoi`
 
@@ -55,7 +55,7 @@ Respuesta: `examples/calendar.response.json`. Campos:
 | Campo | Tipo | Significado |
 |---|---|---|
 | `aoi.area_km2` | número | área del polígono |
-| `aoi.country` | `MX` \| `AR` | |
+| `aoi.country` | `MX` | `AR` reservado para la fase 2 |
 | `unit` | `"modis_equivalent_cell_days"` | unidad de `harmonized` |
 | `calibration.k` | número | factor MODIS/VIIRS usado |
 | `calibration.scope` | `aoi` \| `country` | de dónde salió `k` |
@@ -91,7 +91,7 @@ Misma petición. `text/csv` con una fila por mes:
 Petición:
 
 ```json
-{"aoi": {"preset_id": "ar-chilecito"}, "start_date": "2026-07-01", "end_date": "2026-08-15"}
+{"aoi": {"preset_id": "qro-sierra-gorda"}, "start_date": "2025-03-01", "end_date": "2025-05-31"}
 ```
 
 `text/csv` en streaming, una fila por detección dentro del área:

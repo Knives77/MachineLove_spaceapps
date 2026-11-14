@@ -1,5 +1,7 @@
 # Checklist del equipo
 
+**Alcance del MVP: solo México** (decidido el 14-nov). Argentina está cargada en la base para la fase 2; nadie trabaja en ella hasta que el MVP esté completo.
+
 Hitos (detalle en `docs/PRD.md`):
 
 | Hito | Hora | Qué debe existir |
@@ -66,13 +68,14 @@ Skill: `.claude/skills/etl/SKILL.md`. Base de pruebas: `firms_dev`.
 Skill: `.claude/skills/etl/SKILL.md`. Puede empezar ya contra `firms_dev`, sin esperar a A: con `sensor_outage` vacía, la regla del VIIRS de referencia simplemente no usa respaldo.
 
 **Hasta H1 (18:30)**
-- [ ] **Paso 4 · `etl/cells.py`**:
-  - [ ] `cell`: una fila por celda con al menos una detección, con `country` y `geom` = centro de la celda.
-  - [ ] `cell_day`: `modis_veg`, `viirs_veg` (regla del VIIRS de referencia: SNPP antes de 2018-04-01, N20 después, respaldo si hay caída), `raw_points`, `raw_modis`, `raw_viirs`, `frp_modis`, `frp_viirs`.
-- [ ] Prueba: la consulta de control del skill reproduce la tabla de `acceptance.md` (Querétaro MODIS 410 / 190 / 414 en 2011 / 2012 / 2019).
-- [ ] **Paso 5 · `etl/calibrate.py`**: `calibration_country` (k por país y error dejando un año fuera).
-- [ ] Prueba: con SNPP en todo el traslape, `k` Querétaro ≈ 0.293; con la regla oficial cambia menos de 0.01.
-- [ ] `uv run python -m etl.run --all` corre de principio a fin en `firms_dev`; avisar al líder para correrlo en `firms`.
+- [x] **Paso 4 · `etl/cells.py`**:
+  - [x] `cell`: una fila por celda con al menos una detección, con `country` y `geom` = centro de la celda.
+  - [x] `cell_day`: `modis_veg`, `viirs_veg` (regla del VIIRS de referencia: SNPP antes de 2018-04-01, N20 después, respaldo si hay caída), `raw_points`, `raw_modis`, `raw_viirs`, `frp_modis`, `frp_viirs`.
+- [x] Prueba: la consulta de control del skill reproduce la tabla de `acceptance.md` (Querétaro MODIS 410 / 190 / 414 en 2011 / 2012 / 2019). Ojo: el límite superior del recuadro es exclusivo (`2169` / `-9901`); con `2170` / `-9900` sobran 4–6 %. `uv run python -m etl.verify`: 42/42 cifras de celdas-día.
+- [x] **Paso 5 · `etl/calibrate.py`**: `calibration_country` (k por país y error dejando un año fuera).
+- [x] Prueba: con SNPP en todo el traslape, `k` Querétaro ≈ 0.293; con la regla oficial cambia menos de 0.01. (0.292 / 0.290; Sierra Gorda 0.262 / 0.260; Chilecito 0.395 / 0.394.)
+- [x] `uv run python -m etl.run --all` corre de principio a fin en `firms_dev` (pasos 2–5 en 69 s; el 1 necesita los CSV del anfitrión).
+- [ ] Avisar al líder para correr 4 y 5 en `firms` y luego `uv run python -m etl.verify`.
 
 **Después de H1**
 - [ ] Informe para el pitch: para los 3 presets, `k`, error anual y la serie anual cruda vs armonizada (tabla o CSV para el analista).
@@ -151,22 +154,39 @@ Skill: `.claude/skills/frontend/SKILL.md`.
 
 ## Analista / puente
 
-**Hasta H0 (14:30)**
-- [ ] Leer todos los contratos y congelarlos (anotar la hora en este archivo).
-- [ ] Generar un mock de `/calendar` con los 324 meses (2000–2026) para que el front vea el calendario lleno.
-- [ ] Confirmar con los organizadores qué piden en la entrega (video: duración; página del proyecto; repo público).
+Es el cerebro y la dirección del equipo: decide contratos, qué se dice y si un hito pasa (`docs/PITCH.md` §7).
+Guías: **`docs/ANALISTA.md`** (investigaciones con SQL) y **`docs/PITCH.md`** (guion, evidencia, pruebas de demo). Todo hallazgo va a `docs/HALLAZGOS.md`; si no está ahí, no se dice en el pitch.
 
-**En cada hito**
-- [ ] Pasar la lista de `acceptance.md` correspondiente y anotar qué falla y de quién es.
-- [ ] Resolver dudas de contrato en menos de 15 minutos; cualquier cambio se escribe primero en `docs/contracts/`.
+**Ya (antes de H0, 14:30)**
+- [ ] **I1** · Confirmar requisitos de la entrega con los organizadores (video, duración, página, repo, uso de IA, hora de cierre). Si algo choca con el PRD, avisar al líder.
+- [ ] Leer `CLAUDE.md`, `docs/PRD.md`, `docs/CONTEXT.md` y todos los contratos; anotar aquí la hora en que quedan congelados: ______
+- [ ] Generar un mock de `/calendar` con los 324 meses (2000–2026) en `docs/contracts/examples/calendar.full.json` y pasárselo al front.
+- [ ] Confirmar que front, backend y procesamiento B tienen acceso (túnel o Remote-SSH) y saben qué leer.
+
+**Hasta H1 (18:30) — mientras el equipo programa**
+- [ ] **I2** · Caso local destacado de México: meses récord de Sierra Gorda y Bajío y si coinciden con incendios reportados. Consulta en `ANALISTA.md`.
+- [ ] **I3** · ¿Qué instalaciones explican el ruido industrial del sur de Querétaro? (¿Tula sí o no?)
+- [ ] **I7** · Casos reales para el pitch: 2–3 eventos de fuego en México con fuente, verificados en la base; elegir el del minuto 2:20 y, si hace falta, proponer un preset nuevo.
+- [ ] **I4** · Escribir los límites conocidos en `docs/contracts/harmonization.md` (máscara solo `type = 2`, calidad de la máscara, falsas caídas en 2001–2002).
+- [ ] **I5** · Citas: FIRMS, MODIS C6.1, VIIRS 375 m C2, cese de Suomi-NPP.
+- [ ] Verificar H1: las cifras de control de `acceptance.md` (sección ETL y Calibración) salen en `cell_day` y `calibration_country`.
+
+**En cada hito (H1, H2, H3, H4)**
+- [ ] Pasar la sección de `acceptance.md` del hito y anotar en `HALLAZGOS.md` qué falla y de quién es.
+- [ ] Mensaje de 3 líneas al chat: qué pasó, qué falla y de quién, qué se recorta.
+- [ ] Actualizar el estado (✅/⏳) de la tabla de afirmaciones de `PITCH.md` §3.
+- [ ] Resolver dudas de contrato en menos de 15 minutos; todo cambio se escribe primero en `docs/contracts/` y se avisa en el chat.
 
 **Hasta H4 (07:00)**
-- [ ] Guion de 3 minutos (PRD → "Guion de la demo") con cifras reales, no las del mock.
-- [ ] Comprobar con datos reales qué pasó en Chilecito jul–ago 2026 antes de afirmarlo.
-- [ ] Banco de preguntas de jueces con respuestas (por qué no sumar puntos, cómo validaron, límites del método).
+- [ ] Guion de 3 minutos (`PITCH.md` §2) **con cifras reales** de la app, no del mock.
+- [ ] Correr los 13 escenarios de demo (`PITCH.md` §6) en H3 y H4, y la coherencia de números contra la base.
+- [ ] Completar y ensayar las respuestas de `PITCH.md` §5 con el equipo.
 - [ ] Diapositivas o material de apoyo para el video.
-- [ ] README del repo: qué es, cómo correrlo, fuentes y cita de FIRMS.
+- [ ] README del repo: qué es, cómo correrlo, método en 6 pasos, fuentes y cita de FIRMS.
+- [ ] **I6** (solo si sobra tiempo) · Polígonos reales de Sierra Gorda y del estado de Querétaro para los presets.
 
 **H5–H6 (09:00–11:30)**
+- [ ] Plan B de `PITCH.md` §6: capturas de cada paso y video de respaldo.
+- [ ] Ensayar la demo completa 2 veces con cronómetro: una persona habla, otra opera.
 - [ ] Grabar el video con la app real.
 - [ ] Llenar la página del proyecto y enviar antes de las 11:30.
