@@ -1,0 +1,140 @@
+"""Pruebas de aceptación de los endpoints FastAPI (docs/contracts/acceptance.md)."""
+from __future__ import annotations
+
+import pytest
+from fastapi.testclient import TestClient
+
+from api.main import app
+
+
+@pytest.fixture(autouse=True)
+def enable_mock_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("API_MOCK", "1")
+
+
+client = TestClient(app)
+
+
+def test_health() -> None:
+    res = client.get("/api/v1/health")
+    assert res.status_code == 200
+    body = res.json()
+    assert body["status"] == "ok"
+    assert "data_through" in body
+
+
+def test_get_presets_returns_3_regions() -> None:
+    res = client.get("/api/v1/presets")
+    assert res.status_code == 200
+    body = res.json()
+    assert body["type"] == "FeatureCollection"
+    assert len(body["features"]) == 3
+    ids = [f["id"] for f in body["features"]]
+    assert ids == ["qro-sierra-gorda", "qro-bajio", "ar-chilecito"]
+
+
+def test_post_calendar_preset_sierra_gorda() -> None:
+    res = client.post(
+        "/api/v1/calendar",
+        json={"aoi": {"preset_id": "qro-sierra-gorda"}},
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert len(body["months"]) == 324
+    assert 0.25 <= body["calibration"]["k"] <= 0.28
+    assert body["unit"] == "modis_equivalent_cell_days"
+
+    # Mes con no_coverage tiene harmonized = null
+    no_cov = [m for m in body["months"] if "no_coverage" in m["flags"]]
+    assert no_cov
+    for m in no_cov:
+        assert m["harmonized"] is None
+        assert m["status"] == "no_data"
+
+
+def test_polygon_in_ocean_returns_422() -> None:
+    ocean_poly = {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [-130.0, 0.0],
+                [-129.0, 0.0],
+                [-129.0, 1.0],
+                [-130.0, 1.0],
+                [-130.0, 0.0],
+            ]
+        ],
+    }
+    res = client.post("/api/v1/calendar", json={"aoi": {"geometry": ocean_poly}})
+    assert res.status_code == 422
+    assert res.json()["error"]["code"] == "aoi_outside_coverage"
+
+
+def test_aoi_too_large_returns_400() -> None:
+    huge_poly = {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [-110.0, 18.0],
+                [-95.0, 18.0],
+                [-95.0, 30.0],
+                [-110.0, 30.0],
+                [-110.0, 18.0],
+            ]
+        ],
+    }
+    res = client.post("/api/v1/calendar", json={"aoi": {"geometry": huge_poly}})
+    assert res.status_code == 400
+    assert res.json()["error"]["code"] == "aoi_too_large"
+
+
+def test_unknown_preset_returns_404() -> None:
+    res = client.post(
+        "/api/v1/calendar",
+        json={"aoi": {"preset_id": "no-existe"}},
+    )
+    assert res.status_code == 404
+    assert res.json()["error"]["code"] == "unknown_preset"
+
+
+def test_invalid_range_returns_400() -> None:
+    res = client.post(
+        "/api/v1/calendar",
+        json={
+            "aoi": {"preset_id": "qro-sierra-gorda"},
+            "start_year": 2025,
+            "end_year": 2010,
+        },
+    )
+    assert res.status_code == 400
+    assert res.json()["error"]["code"] == "invalid_range"
+
+
+def test_csv_endpoints() -> None:
+    res_cal = client.post(
+        "/api/v1/calendar.csv",
+        json={"aoi": {"preset_id": "qro-sierra-gorda"}},
+    )
+    assert res_cal.status_code == 200
+    assert "text/csv" in res_cal.headers["content-type"]
+    assert "burn_calendar_qro-sierra-gorda_2000_2026.csv" in res_cal.headers.get(
+        "content-disposition", ""
+    )
+    lines = res_cal.text.strip().splitlines()
+    assert lines[0].startswith("year,month,harmonized,source,raw_points")
+    assert len(lines) == 325  # cabecera + 324 meses
+
+    res_hs = client.post(
+        "/api/v1/hotspots.csv",
+        json={
+            "aoi": {"preset_id": "ar-chilecito"},
+            "start_date": "2026-07-01",
+            "end_date": "2026-08-15",
+        },
+    )
+    assert res_hs.status_code == 200
+    assert "text/csv" in res_hs.headers["content-type"]
+    assert res_hs.text.startswith(
+        "latitude,longitude,acq_date,acq_time,satellite,family,confidence,frp,daynight,type,source,is_vegetation_fire,cell_id"
+    )
+
