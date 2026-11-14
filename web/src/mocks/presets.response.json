@@ -4,20 +4,110 @@
     {
       "type": "Feature",
       "id": "qro-sierra-gorda",
-      "properties": {"name_es": "Sierra Gorda, Querétaro", "name_en": "Sierra Gorda, Querétaro", "country": "MX"},
-      "geometry": {"type": "Polygon", "coordinates": [[[-100.6, 20.9], [-99.0, 20.9], [-99.0, 21.7], [-100.6, 21.7], [-100.6, 20.9]]]}
+      "properties": {
+        "name_es": "Sierra Gorda, Querétaro",
+        "name_en": "Sierra Gorda, Querétaro",
+        "country": "MX"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -100.6,
+              20.9
+            ],
+            [
+              -100.6,
+              21.7
+            ],
+            [
+              -99.0,
+              21.7
+            ],
+            [
+              -99.0,
+              20.9
+            ],
+            [
+              -100.6,
+              20.9
+            ]
+          ]
+        ]
+      }
     },
     {
       "type": "Feature",
       "id": "qro-bajio",
-      "properties": {"name_es": "Bajío queretano", "name_en": "Querétaro lowlands (Bajío)", "country": "MX"},
-      "geometry": {"type": "Polygon", "coordinates": [[[-100.6, 20.0], [-99.0, 20.0], [-99.0, 20.9], [-100.6, 20.9], [-100.6, 20.0]]]}
+      "properties": {
+        "name_es": "Bajío queretano",
+        "name_en": "Querétaro lowlands (Bajío)",
+        "country": "MX"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -100.6,
+              20.0
+            ],
+            [
+              -100.6,
+              20.9
+            ],
+            [
+              -99.0,
+              20.9
+            ],
+            [
+              -99.0,
+              20.0
+            ],
+            [
+              -100.6,
+              20.0
+            ]
+          ]
+        ]
+      }
     },
     {
       "type": "Feature",
       "id": "qro-recuadro",
-      "properties": {"name_es": "Querétaro completo", "name_en": "Querétaro (whole state box)", "country": "MX"},
-      "geometry": {"type": "Polygon", "coordinates": [[[-100.6, 20.0], [-99.0, 20.0], [-99.0, 21.7], [-100.6, 21.7], [-100.6, 20.0]]]}
+      "properties": {
+        "name_es": "Querétaro completo (recuadro)",
+        "name_en": "Querétaro (full box)",
+        "country": "MX"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              -100.6,
+              20.0
+            ],
+            [
+              -100.6,
+              21.7
+            ],
+            [
+              -99.0,
+              21.7
+            ],
+            [
+              -99.0,
+              20.0
+            ],
+            [
+              -100.6,
+              20.0
+            ]
+          ]
+        ]
+      }
     }
   ]
 }

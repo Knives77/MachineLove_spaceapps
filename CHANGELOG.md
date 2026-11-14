@@ -14,6 +14,11 @@ Resumen para quien llega: **hagan `git pull`**. Front instala desde la raíz; el
 
 | Cambio | Quién | Qué hacer |
 |---|---|---|
+| **Los mocks de los presets ahora son copias de la API real** (`scripts/snapshot_mocks.py`). Los valores reales son 4–7 veces más bajos que el DEMO viejo, con muchos ceros y 12 meses sin dato. Se borró `web/scripts/make-demo-mocks.mjs` y el comando `mock:demo` | Front | `git pull`, revisar las 4 vistas con los mocks nuevos y seguir el orden de `CHECKLIST.md` → Frontend |
+| **"Simular fin de MODIS" pasa a MVP** (función 9 del PRD): con datos reales es el único lugar donde `k` cambia lo que se ve | Front | Pasar `basis` a `getCalendar` y al CSV (`state.tsx:77`, `Downloads.tsx:37`) |
+| **Guion v2** con datos reales en `PITCH.md` §2: Bajío, temporada ene–mar, febrero de 2026 récord, "Simular fin de MODIS" | Analista | Usarlo de base para D3 |
+| **El analista ya no programa ni consulta: diseña el pitch** (`ANALISTA.md`, D1–D6). Procesamiento A busca noticias, Tula y fuentes; procesamiento B mantiene las cifras en `HALLAZGOS.md` | Analista, procesamiento | Ver sus secciones de `CHECKLIST.md` |
+| **Solicitudes de FIRMS como release de GitHub** (`datos-2026-11-14`): 8 zips + `SHA256SUMS.txt` | Quien necesite los CSV de 2024–2026 | `scripts/download_requests.sh MX` (verifica SHA-256 y descomprime donde lo busca el ETL) |
 | **pnpm: la raíz es un workspace que incluye `web/`.** Un solo `pnpm-lock.yaml` en la raíz; la configuración (`minimumReleaseAge`, override de `postcss`, `allowBuilds`) está en el `pnpm-workspace.yaml` de la raíz. Se borraron `web/pnpm-lock.yaml` y `web/pnpm-workspace.yaml`. Las 191 versiones son las mismas | Front | `pnpm install --frozen-lockfile` **desde la raíz**. `pnpm dev`, `build` y `typecheck` funcionan desde la raíz o desde `web/` |
 | **Acceso solo por túneles** (pendiente de aplicar en la anfitriona). Las llaves pasan a `restrict,port-forwarding,permitopen=8000/8001/5432`: sin terminal ni Remote-SSH | Todos | Programar en la laptop y abrir los túneles con `docs/acceso/ssh_config.example`. Postgres llega a la laptop en el puerto 15432 |
 | **El analista pasa a ser dueño del pitch.** Los contratos los aprueba el líder (`CLAUDE.md`, regla 1) | Analista | Seguir `docs/ANALISTA.md` (P1–P7) y anotar todo en `docs/HALLAZGOS.md` |

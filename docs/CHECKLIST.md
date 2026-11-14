@@ -29,6 +29,7 @@ Reglas para todos:
 - [ ] `git push origin main`.
 - [ ] Restringir las 3 llaves del equipo a túneles (`docs/acceso/authorized_keys.example`) y avisar que ahora se trabaja desde la laptop (`docs/TOPOLOGIA.md`).
 - [ ] Copiar el respaldo H1 a un disco externo.
+- [ ] Publicar la release `datos-2026-11-14` en GitHub con los 8 zips y `SHA256SUMS.txt` (ver `CHANGELOG.md`). Probar `scripts/download_requests.sh MX` desde otra máquina.
 
 **Durante**
 - [x] API estable en 8000 con lo último de `main` (17:00).
@@ -41,23 +42,29 @@ Reglas para todos:
 
 ---
 
-## Procesamiento A · limpieza y calidad de datos
+## Procesamiento A · investigación para el pitch
 
-Hecho: ingesta (16.17 M detecciones), máscara (3,111 celdas fijas) y caídas (463 intervalos), en `firms` y `firms_dev`.
+Hecho: ingesta (16.17 M detecciones), máscara (3,111 celdas fijas) y caídas (463 intervalos), en `firms` y `firms_dev`. Ahora le das al analista los **hechos externos**; todo va a `docs/HALLAZGOS.md`.
 
-**Ahora: apoyo al pitch**
-- [ ] **Tula (afirmación A10).** Correr la consulta de "Si sobra tiempo" de `docs/ANALISTA.md`, revisar las 15 celdas en Google Maps (vista satélite) y pasarle al analista qué instalación es cada una. Si Tula no aparece, se avisa y no se menciona.
-- [ ] Cuánto ruido industrial se quitó por preset: detecciones NRT apagadas por la máscara en Sierra Gorda, Bajío y Querétaro completo. Va a `docs/HALLAZGOS.md`.
+- [ ] **Noticias del caso (antes de las 21:00).** Para cada candidato de `HALLAZGOS.md` → Caso (febrero de 2026 en el Bajío primero, luego 2025 y mayo de 2024 en Sierra Gorda): buscar incendios o quemas reportados (CONAFOR, Protección Civil de Querétaro, SEDESU, prensa local). Anotar nombre, municipio, fechas, hectáreas y enlace. Si no hay nada, escribir "sin noticia".
+- [ ] **Tula (A10).** Las 15 celdas fijas más fuertes del sur de Querétaro (consulta abajo), cada una en Google Maps (vista satélite): qué instalación es. Si Tula no aparece, se anota y no se menciona.
+  ```sql
+  SELECT n_dates, round((cy + 0.5) / 100.0, 3) AS lat, round((cx + 0.5) / 100.0, 3) AS lon
+  FROM static_cell WHERE cy BETWEEN 2000 AND 2090 AND cx BETWEEN -10060 AND -9900
+  ORDER BY n_dates DESC LIMIT 15;
+  ```
+- [ ] **Fuentes (antes de las 23:30).** Cita oficial de FIRMS, referencias de MODIS C6.1 (candidato: Giglio et al. 2016, *RSE*) y VIIRS 375 m (candidato: Schroeder et al. 2014, *RSE*), y la fuente del cese de S-NPP el 2-nov-2026 (blog de FIRMS/LANCE). Solo lo que encuentres y leas; nada inventado.
 
 ---
 
-## Procesamiento B · celdas-día y calibración
+## Procesamiento B · cifras para el pitch
 
-Hecho: `cell`, `cell_day` y `calibration_country` en `firms`; `etl.verify` 54/54.
+Hecho: `cell`, `cell_day` y `calibration_country` en `firms`; `etl.verify` 54/54. Ahora eres el dueño de **los números** que usa el analista.
 
-**Ahora: apoyo al pitch**
-- [ ] Verificar en la base el caso que elija el analista (P2 de `ANALISTA.md`): que el evento se vea en `detection` y en `cell_day` en sus fechas.
-- [ ] Mejora, solo si sobra tiempo: `k` por temporada (seca/lluvias) y medir si baja el error mensual (hoy 33–37 %). Se adopta solo si mejora y se cambia el contrato.
+- [ ] `python3 scripts/pitch_numbers.py` en H3 y en H4, y reemplazar el bloque de `HALLAZGOS.md` → Cifras con la hora. Si una cifra cambia respecto a la anterior, avisar al analista.
+- [ ] Verificar en la base el caso que elija el analista: que el evento se vea en `detection` y en `cell_day` en sus fechas. Anotarlo junto al caso.
+- [ ] Cruce de la demo (`PITCH.md` §6): `k` y totales en pantalla contra `pitch_numbers.py`.
+- [ ] Mejora, solo si sobra tiempo: `k` por temporada y medir si baja el error mensual (hoy 33–37 %). Solo se adopta si mejora y se cambia el contrato.
 
 ---
 
@@ -74,34 +81,33 @@ Hecho: los 6 endpoints del contrato con datos reales, cobertura solo México, `/
 
 ## Frontend
 
-Skill: `.claude/skills/frontend/SKILL.md`. Hecho: las 4 vistas, mapa con dibujo, calendario, tarjeta, leyenda, paletas, mocks DEMO, pnpm fijado.
+Skill: `.claude/skills/frontend/SKILL.md` (sección **Datos reales**). Hecho: las 4 vistas, mapa con dibujo, calendario, tarjeta, leyenda, paletas, pnpm fijado.
 
-**Hasta H3 (00:00)**
-- [ ] `pnpm install --frozen-lockfile` **desde la raíz del repo** (ahora es un workspace; ver `CHANGELOG.md`).
-- [ ] Conectar a la API real: `VITE_API_URL=http://localhost:8000/api/v1` en `web/.env`, con el túnel al 8000.
-- [ ] Probar contra la API real: los 3 presets, un polígono en Jalisco, uno en Argentina (error), uno en el océano (error) y uno gigante (error).
-- [ ] Quitar Argentina de lo visible: `error.aoi_outside_coverage` y `map.coverage` en `i18n.ts` (ES y EN), y `AR` de `COVERAGE` en el mock de `api.ts`.
-- [ ] `git rm --cached web/tsconfig.tsbuildinfo` en su rama.
-- [ ] Interruptor **Crudo / Armonizado** cambia matriz y barras anuales: con la API real, en Bajío se ve el salto de 2012 en crudo y desaparece en armonizado.
-- [ ] Meses `no_data` (nov–dic 2026) con trama gris; marca en la esquina si hay `flags`.
-- [ ] Panel de validación con `k`, alcance, meses de traslape y errores anual y mensual.
-- [ ] Los dos CSV se descargan y abren en una hoja de cálculo.
+**Ya cambió:** los mocks de los 3 presets ahora son **copias de la API real**. Sin túnel ya ven lo mismo que verá el jurado, y es muy distinto del DEMO viejo: valores 4–7 veces más bajos, 58 meses en 0 en Sierra Gorda y 2000 casi todo en gris.
+
+**En este orden (hasta H3, 00:00)**
+1. [ ] `git pull` y `pnpm install --frozen-lockfile` **desde la raíz**. Abrir las 4 vistas con los mocks nuevos y anotar qué se ve mal con datos reales (celdas casi todas oscuras, barras planas, la fila 2000 gris, textos que ya no cuadran).
+2. [ ] Corregir lo que se vea mal del punto 1. La escala de color y las barras deben leerse con máximos de 64 (Sierra Gorda) a 166 (Querétaro).
+3. [ ] **Botón "Simular fin de MODIS"** (ahora es MVP, función 9 del PRD): pasar `basis` a `getCalendar` y a la descarga del CSV, en lugar del `'modis_primary'` fijo de `state.tsx:77` y `Downloads.tsx:37`. Mostrar sobre todo las barras anuales.
+4. [ ] **Ruta de la demo** (`PITCH.md` §2): preset Bajío → Crudo → Armonizado → clic en febrero de 2026 → Simular fin de MODIS → Sierra Gorda. Que cada paso se vea bien y sin esperas. Valorar que el preset inicial sea Bajío (`DEFAULT_PRESET` en `state.tsx`): con Sierra Gorda, la tarjeta abre en octubre de 2026 = 0.
+5. [ ] Conectar a la API real (`VITE_API_URL=http://localhost:8000/api/v1`, túnel al 8000) y probar: 3 presets, polígono en Jalisco, en Argentina, en el océano y uno gigante (los tres últimos dan error).
+6. [ ] Quitar Argentina de lo visible: `error.aoi_outside_coverage` y `map.coverage` en `i18n.ts` (ES y EN), y `AR` de `COVERAGE` en el mock de `api.ts`.
+7. [ ] `git rm --cached web/tsconfig.tsbuildinfo` en su rama.
+8. [ ] Los dos CSV se descargan y abren en una hoja de cálculo.
 
 **Después de H3**
-- [ ] Botón "Simular fin de MODIS" (`basis = viirs_primary`), mostrando sobre todo las **barras anuales** (ver A11 en `PITCH.md`).
-- [ ] Sección Frontend de `acceptance.md`: escala de grises, daltonismo, teclado, 1366 × 768.
-- [ ] Zoom del navegador probado en el proyector.
+- [ ] Capturas de pantalla con datos reales para el analista (las que pida en D4).
+- [ ] Sección Frontend de `acceptance.md`: escala de grises, daltonismo, teclado, 1366 × 768, zoom del proyector.
 
 ---
 
-## Analista · dueño del pitch
+## Analista · diseñador del pitch
 
-Guía completa con herramientas y plazos: **`docs/ANALISTA.md`**. Todo lo que se diga va antes a `docs/HALLAZGOS.md`.
+Guía completa: **`docs/ANALISTA.md`**. Sin código ni consultas: los números te los da procesamiento B y los hechos externos procesamiento A, todo en `docs/HALLAZGOS.md`.
 
-- [ ] **P1 · ya** · Requisitos de la entrega (video, página, repo, IA, hora de cierre).
-- [ ] **P2 · 21:00** · Caso del pitch: febrero de 2026 en el Bajío u otro, con noticia o reporte.
-- [ ] **P3 · 22:00** · Guion de `PITCH.md` §2 con las cifras de `scripts/pitch_numbers.py`.
-- [ ] **P4 · 23:30** · Fuentes y citas (FIRMS, MODIS, VIIRS, cese de S-NPP).
-- [ ] **P5 · 07:00** · Guion del video en tomas, diapositivas y texto de la página en ES/EN.
-- [ ] **P6 · H3 y H4** · 13 escenarios de la demo, cruce de números y ensayo de preguntas.
-- [ ] **P7 · 09:00–11:30** · Plan B, grabación y envío.
+- [ ] **D1 · ya** · Reglas de la entrega y criterios de los jueces.
+- [ ] **D2 · 21:00** · La historia: problema, momento "ajá", caso, futuro sin MODIS, quién lo usa, cierre.
+- [ ] **D3 · 22:30** · Guion de 3 minutos (`PITCH.md` §2, v2 como base) y ruta de la demo para front.
+- [ ] **D4 · 07:00** · Video en tomas, diapositivas y texto de la página en ES/EN.
+- [ ] **D5 · H3 y H4** · Ensayos con la app real, escenarios de la demo y preguntas de jueces.
+- [ ] **D6 · 09:00–11:30** · Plan B, grabación y envío.

@@ -50,7 +50,8 @@ data/       CSV de FIRMS, fuera de Git
 
 ```bash
 scripts/db_up.sh                 # Postgres + PostGIS en podman, puerto 127.0.0.1:5432
-scripts/download_history.sh      # CSV por país y año de FIRMS a data/historico_pais/
+scripts/download_history.sh      # CSV por país y año de FIRMS a data/historico_pais/ (2000–2025)
+scripts/download_requests.sh     # solicitudes MX 2024–2026 y AR 2026 desde la release de GitHub
 uv run python -m etl.run --all   # ETL completo (paso 1 solo en la anfitriona)
 uv run python -m etl.verify      # cifras de control del ETL
 uv run pytest etl backend        # pruebas

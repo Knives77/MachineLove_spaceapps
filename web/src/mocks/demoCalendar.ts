@@ -1,6 +1,6 @@
 // Generador de calendarios DEMO (forma exacta de docs/contracts/api.md, valores INVENTADOS).
-// Lo usan scripts/make-demo-mocks.mjs (para escribir los JSON de los presets) y src/api.ts
-// (solo con mocks, para áreas dibujadas). La app conectada a la API real nunca lo usa.
+// Solo lo usa src/api.ts con mocks, para áreas dibujadas (los presets usan copias de la API real,
+// ver scripts/snapshot_mocks.py). La app conectada a la API real nunca lo usa.
 // Reglas copiadas de docs/contracts/harmonization.md (banderas, línea base, status, scope de k).
 // Sin imports de valores: Node 24 lo ejecuta tal cual desde el script.
 import type { CalendarResponse, Flag, MonthRow, YearRow } from '../types';
@@ -150,7 +150,7 @@ export function buildDemo(p: DemoParams): CalendarResponse {
 
   return {
     _note:
-      'DEMO generado por web/scripts/make-demo-mocks.mjs. Forma del contrato; valores INVENTADOS para maquetar.',
+      'DEMO generado por web/src/mocks/demoCalendar.ts. Forma del contrato; valores INVENTADOS para maquetar.',
     aoi: p.id ? { preset_id: p.id, area_km2: p.area, country: p.country } : { area_km2: p.area, country: p.country },
     range: { start_year: 2000, end_year: 2026 },
     basis: 'modis_primary',

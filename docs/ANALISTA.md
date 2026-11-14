@@ -1,115 +1,95 @@
-# Guía del analista · dueño del pitch
+# Guía del analista · diseñador del pitch
 
-Tu trabajo hasta el domingo 11:30 es que **el pitch, el video y la entrega salgan bien y digan solo cosas ciertas**. El código ya funciona con datos reales (H1 y H2 cumplidos el sábado a las 17:00): ya no hace falta que persigas contratos ni hitos técnicos. El líder resuelve los contratos; tú decides qué se dice y cómo se muestra.
+Tu trabajo es **diseñar el pitch**: la historia que contamos, lo que se ve en cada segundo, el video, las diapositivas y la página del proyecto. **No programas, no corres consultas ni scripts.** Los números te los entrega procesamiento y quedan en [`HALLAZGOS.md`](HALLAZGOS.md); tú decides cuáles se usan y cómo se cuentan.
 
-- Guion, afirmaciones y pruebas de la demo: [`PITCH.md`](PITCH.md).
-- Dónde anotar todo: [`HALLAZGOS.md`](HALLAZGOS.md). Si una cifra o un hecho no está ahí con su fuente, no se dice.
-- Las casillas están en [`CHECKLIST.md`](CHECKLIST.md), sección Analista.
+- Base del guion, afirmaciones y preguntas de jueces: [`PITCH.md`](PITCH.md). Es tuyo: cámbialo como quieras.
+- Regla única: si una cifra o un hecho no está en `HALLAZGOS.md` con su fuente, no se dice.
+- Para ver la app: pídele a front que te la abra, o úsala en la máquina del líder.
 
-## Tus herramientas
+## Quién te da qué
 
-**Las cifras salen de la app, no de la base.** Con el túnel al 8000 abierto ([`TOPOLOGIA.md`](TOPOLOGIA.md)):
+| Necesitas | Te lo da | Dónde queda |
+|---|---|---|
+| Cifras de la app (k, errores, salto falso, meses récord, temporada, "sin MODIS") | Procesamiento B | `HALLAZGOS.md` → Cifras |
+| Noticias que coincidan con los meses récord | Procesamiento A | `HALLAZGOS.md` → Caso |
+| Qué instalación es el ruido industrial del sur (Tula o no) | Procesamiento A | `HALLAZGOS.md` → Caso |
+| Capturas de pantalla de la app con datos reales | Front | Carpeta compartida del equipo |
+| Cambios en lo que muestra la app | Front, por medio del líder | Chat |
 
-```bash
-python3 scripts/pitch_numbers.py            # k, errores, salto falso, temporada, meses récord, 2026, "sin MODIS"
-python3 scripts/pitch_numbers.py qro-bajio  # un solo preset
-```
-
-Imprime exactamente lo que el jurado verá en pantalla. Copia a `HALLAZGOS.md` lo que vayas a usar, con la hora en que lo corriste.
-
-Para casos fuera de los presets, usa la propia app (dibuja el polígono) o la base en solo lectura (`postgresql://firms:firms_local@localhost:15432/firms`, túnel al 5432).
+Si te falta un dato, pídelo en el chat con el formato: *"Necesito X para el segundo Y del guion, antes de las HH:MM"*.
 
 ---
 
-## P1 · Requisitos de la entrega · **ya, antes de las 18:30**
+## D1 · Las reglas del juego · **ya, antes de las 18:30**
 
-Bloquea todo lo demás: si piden algo que no tenemos (URL pública, otro formato de video), hay que saberlo hoy.
+Lee la página oficial de Space Apps 2026 o pregunta a los organizadores locales:
 
-- [ ] Campos de la página del proyecto (resumen, enlaces, uso de IA, equipo…).
-- [ ] Video: duración máxima, formato, dónde se sube. ¿Presentación en vivo ante jueces locales? ¿A qué hora?
-- [ ] ¿El repo debe ser público? ¿Hay que declarar uso de herramientas de IA?
+- [ ] Qué campos tiene la página del proyecto (resumen, enlaces, uso de IA, equipo…).
+- [ ] Video: duración máxima, formato, dónde se sube. ¿Hay presentación en vivo ante jueces? ¿Cuándo y cuánto dura?
+- [ ] ¿El repo debe ser público? ¿Hay que declarar el uso de IA?
 - [ ] Hora exacta de cierre y zona horaria.
+- [ ] Criterios de evaluación de los jueces: el pitch se diseña para ellos.
 
-Resultado: sección **Entrega** de `HALLAZGOS.md`. Si algo choca con el PRD, avisa al líder **en ese momento**.
+Anótalo en `HALLAZGOS.md` → **Entrega**. Si algo choca con el plan (por ejemplo, piden una URL pública), avisa al líder **en ese momento**.
 
-## P2 · El caso del pitch · hasta las 21:00
+## D2 · La historia · hasta las 21:00
 
-Es el minuto 2:20 del guion: un mes que la app marca como crítico **y** que salió en las noticias. Pistas que ya da la app (14-nov):
+Decide el arco en una página antes de pensar en pantallas:
 
-| Pista | Qué dice la app |
-|---|---|
-| **Febrero de 2026, Bajío** | Mes más alto en 26 años: 150 celdas-día, 5× la mediana. Lo mismo en Querétaro completo (166, 5×) |
-| **2025, Bajío / Querétaro** | Año completo más alto de la serie (447 y 561). Abril de 2025 a 7.3× la mediana en Bajío |
-| **Mayo de 2024, Sierra Gorda** | Mes más alto de la sierra en 26 años (64 celdas-día, 3.4×) |
-| **Abril de 2011 y mayo de 2019, Sierra Gorda** | Años más altos de la sierra (167 y 154) |
+- [ ] **El problema en una frase**, para alguien que nunca oyó de MODIS.
+- [ ] **El momento "ajá"**: el salto falso de 2012 que desaparece. Lo que la app ya muestra: en el Bajío los puntos crudos se multiplican ×14.7 entre 2011 y 2019; armonizado, ×1.07.
+- [ ] **El caso humano**: elegir uno de los candidatos de `HALLAZGOS.md` → Caso. El más fuerte hoy: **febrero de 2026 fue el mes con más fuego en el Bajío en 26 años, cinco veces lo normal**. Cuenta más si procesamiento A encuentra la noticia.
+- [ ] **La prueba de que sirve en el futuro**: "Simular fin de MODIS". Las barras anuales casi no cambian (9 % en mediana en el Bajío).
+- [ ] **Quién lo usaría** y qué decidiría con esto (Protección Civil, brigadas, CONAFOR, Sierra Gorda).
+- [ ] **Cierre** en ES y EN.
 
-- [ ] Buscar en noticias y reportes (CONAFOR, Protección Civil de Querétaro, SEDESU, prensa local) si esos meses tuvieron incendios o quemas reportados. Anotar nombre, municipio, fechas, hectáreas y enlace.
-- [ ] Elegir **uno** como caso principal y uno de respaldo. Para el pitch, febrero de 2026 es el mejor candidato: es este año, y muestra que la herramienta sirve hoy.
-- [ ] Escribir la frase en `HALLAZGOS.md` → **Caso**: "Febrero de 2026 fue el mes con más actividad de fuego en el Bajío queretano en 26 años: cinco veces lo normal. Coincide con…". Si no aparece ninguna noticia, la frase se queda sin el "coincide con".
-- [ ] Si el caso pide otra región (por ejemplo, un incendio grande en otro estado), dibujar el polígono en la app, correr la consulta y pasarle el recuadro al líder si conviene un preset nuevo.
+Entregable: el arco en 6–8 frases, al principio de `PITCH.md`.
 
-## P3 · Guion con cifras reales · hasta las 22:00
+## D3 · El guion de 3 minutos · hasta las 22:30
 
-- [ ] Llenar cada fila de `PITCH.md` §2 con las cifras de `pitch_numbers.py` (no del mock, no de `CONTEXT.md`).
-- [ ] Revisar §3: cada afirmación que vayas a decir debe estar en ✅. A9 (caso) se cierra con P2. A10 (Tula) **se quita del guion** salvo que sobre tiempo para verificarla.
+- [ ] Rehacer `PITCH.md` §2 con tu historia: segundo, pantalla, clic, frase. Ya hay una propuesta v2 armada con los datos reales: úsala o cámbiala.
+- [ ] Marcar en §3 qué afirmaciones usas. Las que no tengan ✅ no entran.
 - [ ] Revisar §4 (lo que no se dice) con quien va a hablar.
-- [ ] Frase de cierre en ES y EN (para el video).
+- [ ] Pasarle a front la **ruta de la demo** (preset, mes, botones, en qué orden), para que la app quede lista para ese recorrido.
 
-## P4 · Fuentes y citas · hasta las 23:30
+## D4 · Video, diapositivas y página · hasta H4 (07:00)
 
-- [ ] Cita oficial de FIRMS (página de FIRMS o el Readme de las descargas).
-- [ ] Referencias de los productos: MODIS C6.1 (candidato a verificar: Giglio et al. 2016, *Remote Sensing of Environment*) y VIIRS 375 m (candidato: Schroeder et al. 2014, *RSE*). Solo si las encuentras y las lees; no inventar.
-- [ ] Fuente del cese de S-NPP el 2-nov-2026 (blog de FIRMS/LANCE) → cierra A8.
-- [ ] Sección **Fuentes** de `HALLAZGOS.md` con enlaces; el líder las pasa al README.
+- [ ] Guion del video en tomas: pantalla, acción, voz y segundos.
+- [ ] 3–5 diapositivas o tarjetas, si el formato las permite: problema, método en una imagen, validación con su error, caso, quién lo usaría.
+- [ ] Texto de la página en ES y EN: resumen (≤ 150 palabras), método en 6 pasos (sale de `PRD.md`), datos usados, uso de IA y enlace al repo.
+- [ ] Lista de capturas que necesitas de front.
 
-## P5 · Material del video · hasta H4 (07:00)
+## D5 · Ensayos · H3 (00:00) y H4 (07:00)
 
-- [ ] Guion del video en tomas: qué pantalla, qué clic, qué se dice y cuántos segundos (base: `PITCH.md` §2).
-- [ ] 3–5 diapositivas o tarjetas, si el formato las permite: problema (salto de 2012), método en una imagen, validación con su error, caso, quién lo usaría.
-- [ ] Texto de la página del proyecto en ES y EN: resumen (≤ 150 palabras), método en 6 pasos (`PRD.md`), datos usados, uso de IA, enlace al repo.
-
-## P6 · Ensayos y pruebas · H3 (00:00) y H4 (07:00)
-
-- [ ] Correr los 13 escenarios de `PITCH.md` §6 con la app real y marcar ✅/❌. Lo que falle va al chat con dueño.
-- [ ] Cruce de números (§6): `k` y totales en pantalla contra `pitch_numbers.py`.
-- [ ] Ensayar las preguntas de jueces (§5) con el equipo: cada quien responde 2 sin leer.
+- [ ] Recorrer la demo con la app real siguiendo la ruta de D3. Lo que no se vea como esperas va al chat, con dueño.
+- [ ] Repasar los 13 escenarios de `PITCH.md` §6 junto con front (ellos operan, tú marcas ✅/❌).
+- [ ] Ensayar las preguntas de jueces (§5): cada quien responde 2 sin leer.
 - [ ] Dos ensayos completos con cronómetro: una persona habla, otra opera.
 
-## P7 · Entrega · H5–H6 (09:00–11:30)
+## D6 · Entrega · H5–H6 (09:00–11:30)
 
-- [ ] Capturas de cada paso del guion y video de respaldo (plan B de §6).
-- [ ] Grabar el video con la app real en la anfitriona (09:00–10:30).
+- [ ] Capturas de cada paso y video de respaldo (plan B de §6).
+- [ ] Grabar el video con la app real en la máquina del líder (09:00–10:30).
 - [ ] Llenar la página y enviar **antes de las 11:30**.
 
 ---
 
-## Si sobra tiempo
+## Lo que ya muestra la app (14-nov, 17:45)
 
-- **Tula (A10).** Celdas fijas más fuertes del sur de Querétaro; pegar cada coordenada en Google Maps (vista satélite) y anotar qué instalación es:
-  ```sql
-  SELECT n_dates, round((cy + 0.5) / 100.0, 3) AS lat, round((cx + 0.5) / 100.0, 3) AS lon
-  FROM static_cell WHERE cy BETWEEN 2000 AND 2090 AND cx BETWEEN -10060 AND -9900
-  ORDER BY n_dates DESC LIMIT 15;
-  ```
-- **Caso fuera de Querétaro.** Un incendio grande y conocido de México (2012–2026), verificado en la app con un polígono.
-
-## Ya no te toca
-
-- Redactar los límites del contrato (I4): ya están en `harmonization.md`.
-- Congelar contratos, generar mocks y verificar H1/H2: hecho.
-- Polígonos oficiales de los presets (I6): fuera; nos quedamos con los rectángulos.
-- Decisiones de contrato: las resuelve el líder y te avisa. Si una cambia algo del pitch, te toca revisar §3.
-
-## Cifras verificadas (API, 14-nov 17:30)
+Para diseñar sin esperar a nadie. Fuente: `HALLAZGOS.md`, salida de `pitch_numbers.py`.
 
 | Dato | Sierra Gorda | Bajío | Querétaro completo |
 |---|---|---|---|
-| `k` | 0.260 | 0.303 | 0.289 |
-| Error anual (mediana / peor año) | 17 % / 55 % | 10 % / 44 % | 6 % / 15 % |
-| Error mensual | 37 % | 37 % | 33 % |
-| Crudo 2011 → 2019 | 175 → 2,167 (×12.4) | 349 → 5,137 (×14.7) | 524 → 7,304 (×13.9) |
-| Armonizado 2011 → 2019 | 167 → 154 (×0.92) | 243 → 260 (×1.07) | 410 → 414 (×1.01) |
-| Pico de temporada | mayo (abr–jun = 62 %) | marzo (ene–mar = 46 %) | marzo |
-| Sin MODIS: serie anual / estado mensual igual | 16 % / 56 % | 9 % / 55 % | 6 % / 55 % |
+| Salto falso (crudo 2011 → 2019) | ×12.4 | ×14.7 | ×13.9 |
+| Armonizado 2011 → 2019 | ×0.92 | ×1.07 | ×1.01 |
+| Temporada | abril–junio (pico en mayo) | enero–marzo (quemas agrícolas) | marzo |
+| Mes récord en 26 años | mayo de 2024 (3.4× lo normal) | **febrero de 2026 (5×)** | **febrero de 2026 (5×)** |
+| Año récord | 2011 | 2025 | 2025 |
+| `k` (factor MODIS/VIIRS) | 0.26 | 0.30 | 0.29 |
+| Error anual / mensual | 17 % / 37 % | 10 % / 37 % | 6 % / 33 % |
+| Sin MODIS: barras anuales cambian | 16 % | 9 % | 6 % |
 
-Otros: 3,111 celdas de fuentes fijas quitadas; caída de Terra 15-jun → 3-jul-2001 detectada sola (coincide con el Readme de FIRMS); NOAA-20 / S-NPP = 1.00–1.02.
+Cosas que hay que saber al diseñar:
+- En modo armonizado normal, la serie es MODIS medido en celdas-día; el factor `k` solo cambia los datos con **"Simular fin de MODIS"** (el panel de validación lo reporta, pero no cambia nada). Si quieres que se vea el factor trabajando, la demo tiene que pasar por ese botón.
+- El nivel mensual (normal, alto, crítico) tiene ~35 % de error: se habla de niveles, no de cifras exactas por mes.
+- Los meses de 2000 antes de noviembre, y noviembre y diciembre de 2026, se ven en gris: "sin dato" no es cero. Es un punto a favor, no un error.

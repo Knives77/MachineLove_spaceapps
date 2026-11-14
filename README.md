@@ -19,7 +19,8 @@ data/       CSV de FIRMS (fuera de Git; se regenera con scripts/download_history
 
 ```bash
 scripts/db_up.sh                                   # Postgres + PostGIS en 127.0.0.1:5432
-scripts/download_history.sh                        # histórico de FIRMS a data/
+scripts/download_history.sh                        # histórico 2000–2025 de FIRMS a data/
+scripts/download_requests.sh                       # solicitudes 2024–2026 (release de GitHub)
 uv run python -m etl.run --all                     # ETL completo
 uv run uvicorn backend.main:app --port 8000        # API
 pnpm install --frozen-lockfile && pnpm dev         # frontend (workspace pnpm en la raíz)

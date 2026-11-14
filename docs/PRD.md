@@ -26,15 +26,15 @@ Un gestor de emergencias quiere saber si el fuego de este mes en su región es n
 | 6 | Validación visible | Panel con `k` de la región, meses de traslape y error de validación |
 | 7 | Descargas | CSV de hotspots de la búsqueda y CSV del calendario |
 | 8 | Bilingüe | Selector ES/EN |
+| 9 | Simular el fin de MODIS | Un botón pide `basis = viirs_primary` y las barras anuales se recalculan con VIIRS × `k` desde 2012. **Pasó de mejora a MVP el 14-nov:** con los datos reales, la serie armonizada normal es MODIS en celdas-día, y este botón es el único lugar donde el factor `k` cambia lo que se ve (el panel de validación solo lo reporta) |
 
 ## Mejoras si sobra tiempo (en este orden)
 
-1. **"Simular el fin de MODIS"** (`basis = viirs_primary`, ya existe en la API): recalcular la serie usando solo VIIRS escalado desde 2012. La serie anual cambia 6–16 % en mediana; el estado mensual coincide en ~55 % de los meses, así que se muestra con las barras anuales. Es la prueba de continuidad del reto.
-2. Estacionalidad: barra de 12 meses con el porcentaje histórico de actividad.
-3. Puntos del mes seleccionado sobre el mapa, y capa de celdas estáticas descartadas.
-4. `k` por temporada (seca / lluvias) si reduce el error mensual.
-5. Métrica secundaria de FRP por celda-día.
-6. Exportar la gráfica como PNG.
+1. Estacionalidad: barra de 12 meses con el porcentaje histórico de actividad.
+2. Puntos del mes seleccionado sobre el mapa, y capa de celdas estáticas descartadas.
+3. `k` por temporada (seca / lluvias) si reduce el error mensual.
+4. Métrica secundaria de FRP por celda-día.
+5. Exportar la gráfica como PNG.
 
 ## Después del MVP
 

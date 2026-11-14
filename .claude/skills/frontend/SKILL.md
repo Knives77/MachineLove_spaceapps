@@ -37,16 +37,38 @@ pnpm build                       # debe pasar antes de abrir PR
 | `src/lib/color.ts` | Rampas Inferno / Cividis, escala raíz, marcas de nivel |
 | `src/components/` | Calendario, tarjeta del mes, leyenda, mapa, línea de tiempo, barras anuales, inspector de k, serie mensual, descargas |
 | `src/views/` | `General`, `Learn` (Aprendizaje), `Edu` (Educacional), `Expert` |
-| `src/mocks/` | Ejemplos del contrato + mocks DEMO completos |
-| `scripts/make-demo-mocks.mjs` | Genera `calendar.demo.<preset>.json` (324 meses, valores inventados) |
+| `src/mocks/` | Copias de la API real por preset + generador DEMO para polígonos dibujados (`demoCalendar.ts`) |
 
 Ningún componente hace `fetch` directo. **CSV del calendario:** el endpoint es `POST`, así que no existe una URL directa; `downloadCalendarCsv` hace el `POST` y guarda el archivo.
 
 ## Mocks
 
 - `presets.response.json` y `calendar.response.json`: copias de `docs/contracts/examples/`.
-- `calendar.demo.*.json`: un calendario completo por preset, con la forma del contrato y las reglas de `harmonization.md`, para que las vistas se vean llenas. Los valores son inventados; la interfaz muestra "DEMO" mientras se usen mocks.
-- Con mocks, un polígono dibujado devuelve el DEMO de Sierra Gorda y el CSV de hotspots trae solo la cabecera.
+- `calendar.demo.*.json` y `presets.response.json`: **copias de la API real** (base `firms`). Sin túnel, los presets se ven igual que con la API. Se actualizan con `python3 scripts/snapshot_mocks.py` (con la API en 8000).
+- Con mocks, un polígono dibujado devuelve un calendario **inventado** (`demoCalendar.ts`) y el CSV de hotspots trae solo la cabecera. La interfaz muestra "DEMO" mientras se usen mocks.
+- Los valores reales son 4–7 veces más bajos que los del DEMO viejo y hay muchos meses en 0 (58 en Sierra Gorda): el diseño tiene que verse bien con eso.
+
+## Datos reales (lo que cambia frente al DEMO viejo)
+
+Medido el 14-nov comparando los mocks DEMO contra la API real. La **forma** es idéntica (mismas claves, mismos códigos); los **valores** no.
+
+| | DEMO viejo | Real |
+|---|---|---|
+| Máximo mensual armonizado | 234 (Sierra Gorda) a 1,155 | **64** (Sierra Gorda), 150 (Bajío), 166 (Querétaro) |
+| Mediana mensual | 12–37 | **3** (Sierra Gorda), 11, 17 |
+| Meses en 0 | 12 | **58** en Sierra Gorda |
+| Meses `no_data` | 1 | **12**: ene–oct de 2000 (sin MODIS todavía), nov-2026 (parcial) y dic-2026 |
+| `source = viirs_scaled` | nunca | nunca en `modis_primary`; solo aparece con `basis = viirs_primary` |
+| Bandera `viirs_outage` | 1 | ninguna en los presets |
+| Temporada | pico en abril en todos | Bajío **ene–mar** (+ dic), Sierra Gorda **abr–jun**, Querétaro marzo |
+| Tarjeta al abrir (`latest`) | — | oct-2026: Sierra Gorda **0.0**, Bajío 7.0 |
+| Peor año en validación | 19–43 % | 15–55 % |
+
+Qué implica:
+- La escala y las barras tienen que leerse bien con números chicos y muchos ceros.
+- La fila 2000 sale casi toda en gris: es correcto ("sin dato" no es cero).
+- `k` solo cambia lo que se ve con el botón "Simular fin de MODIS" (`basis = viirs_primary`). Sin él, el modo armonizado es MODIS en celdas-día.
+- Los textos y capturas de `docs/design/` (abril de 2026 alto, abril de 2012 extremo, marzo de 2007 sin dato) eran del DEMO y **no se cumplen** con datos reales.
 
 ## Vistas
 

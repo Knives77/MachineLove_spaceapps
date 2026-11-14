@@ -13,26 +13,27 @@ Dueño: **analista**. Este documento decide qué se dice, qué se muestra y con 
 Tres ideas que el jurado debe repetir al salir:
 1. **El salto de 2012 es falso** y lo quitamos.
 2. **Lo validamos** con 14 años en que ambos sensores midieron juntos, y decimos el error.
-3. **Sirve hoy** en Querétaro, y el mismo método funciona en cualquier región de México.
+3. **Sirve hoy** en Querétaro (febrero de 2026 fue récord en el Bajío) y sigue funcionando cuando MODIS se apague.
 
 ---
 
-## 2. Guion de 3 minutos (qué se ve, qué se dice, qué dato debe existir)
+## 2. Guion de 3 minutos · v2 con datos reales (propuesta; la decide el analista)
 
-| Tiempo | En pantalla | Qué se dice | Dato que la app debe mostrar | Endpoint / campo |
+La v1 suponía que la temporada era marzo–mayo en todo Querétaro y que el factor `k` se veía en el modo armonizado. Con los datos reales: el Bajío quema en **enero–marzo** y la sierra en **abril–junio**, y `k` solo cambia los datos en pantalla con **"Simular fin de MODIS"** (en el modo normal, el panel de validación solo lo reporta). Esta versión sigue lo que la app muestra hoy.
+
+**Ruta de la demo:** preset **Bajío** → Crudo → Armonizado → calendario → clic en **febrero de 2026** → "Simular fin de MODIS" → panel de validación → preset **Sierra Gorda** → CSV.
+
+| Tiempo | En pantalla | Qué se dice | Dato en la app | Campo |
 |---|---|---|---|---|
-| 0:00–0:20 | Portada / mapa | El problema en una frase: MODIS se apaga, S-NPP ya se apagó (2-nov-2026), y la historia no se puede comparar | — | — |
-| 0:20–0:50 | Preset **Bajío / Querétaro**, modo **Crudo** | "Según los datos tal cual, el fuego se multiplicó por diez desde 2012" | Barras anuales crudas con el salto en 2012 | `years[].raw_points` |
-| 0:50–1:15 | Interruptor a **Armonizado** | "Es la misma historia vista con la misma regla: el salto desaparece y quedan los años realmente altos" | Barras armonizadas sin escalón en 2012 | `years[].harmonized` |
-| 1:15–1:40 | **Calendario** año × mes | "La temporada de fuego es marzo–mayo; estos son los años extremos" | Matriz con rampa, estacionalidad visible | `months[]`, `seasonality` |
-| 1:40–2:00 | **Panel de validación** | "Calibramos con 14 años de traslape; error anual de 10 % en el Bajío. Lo mostramos, no lo escondemos" | `k`, meses de traslape, error | `calibration.*` |
-| 2:00–2:20 | **Tarjeta del mes** | "Este mes está [normal/alto/crítico] frente a su mediana histórica" | Estado y razón contra la mediana | `latest`, `months[].status` |
-| 2:20–2:45 | Presets **Sierra Gorda** y **Bajío** | "Mismo estado, dos fuegos: forestal en la sierra, quemas agrícolas en el Bajío; temporadas y factores distintos" + el caso destacado de I2 / I7 | Dos calendarios con estacionalidad y `k` distintos | `seasonality`, `calibration.k` |
-| 2:45–3:00 | Botón **CSV** + cierre | "Cualquier región de México, descargable, y el método funciona cuando MODIS ya no esté" | Descarga funciona | `/hotspots.csv` |
-
-Si sobra tiempo en la app: botón **"Simular fin de MODIS"** (`basis = viirs_primary`) en el minuto 1:40, mostrando las **barras anuales**: casi no cambian. No decir que el calendario mensual queda igual: solo coincide el 55 % de los meses (A11).
-
----
+| 0:00–0:20 | Portada / mapa | MODIS se apaga, S-NPP ya se apagó (2-nov-2026), y la historia no se puede comparar | — | — |
+| 0:20–0:45 | Bajío, modo **Crudo**, barras anuales | "Según los datos tal cual, el fuego se multiplicó por 15 entre 2011 y 2019" | 349 → 5,137 puntos | `years[].raw_points` |
+| 0:45–1:05 | Interruptor a **Armonizado** | "Misma historia, misma regla: el salto desaparece" | 243 → 260 celdas-día (×1.07) | `years[].harmonized` |
+| 1:05–1:30 | **Calendario** año × mes | "Aquí se quema en enero–marzo: quemas agrícolas. Y este febrero…" | Columnas ene–mar más claras | `months[]`, `seasonality` |
+| 1:30–1:50 | Clic en **febrero de 2026** → tarjeta | "…fue el mes con más fuego en 26 años: cinco veces lo normal" (+ la noticia, si la hay) | 150 celdas-día, 5.0×, crítico | `months[].status`, `anomaly_ratio` |
+| 1:50–2:15 | **Simular fin de MODIS** | "¿Y cuando MODIS se apague? Usamos VIIRS con un factor medido en 14 años de traslape: las barras casi no cambian" | Barras anuales con 9 % de diferencia en mediana; `k` = 0.30 | `basis = viirs_primary`, `calibration.k` |
+| 2:15–2:35 | **Panel de validación** | "Y decimos cuánto nos equivocamos: 10 % al año, ~35 % al mes. Por eso hablamos de niveles, no de cifras exactas" | Errores LOYO y mensual | `calibration.*` |
+| 2:35–2:50 | Preset **Sierra Gorda** | "En la sierra, en el mismo estado, el fuego es forestal, en abril–junio, y el factor es otro: 0.26" | Calendario con otra temporada y otro `k` | `seasonality`, `calibration.k` |
+| 2:50–3:00 | Botón **CSV** + cierre | "Cualquier región de México, descargable, y sigue funcionando cuando MODIS ya no esté" | Descarga | `/calendar.csv` |
 
 ## 3. Afirmaciones y su evidencia
 
@@ -92,7 +93,7 @@ Si sobra tiempo en la app: botón **"Simular fin de MODIS"** (`basis = viirs_pri
 | D4 | Interruptor a Armonizado | Salto desaparece; matriz y barras cambian juntas | |
 | D5 | Pasar el cursor por un mes de 2001 | Muestra banderas (`terra_only`, `modis_outage` si aplica) | |
 | D6 | Meses de nov–dic 2026 | Gris con trama ("sin dato"), no color de cero. Noviembre es mes parcial: puede mostrar su valor en el tooltip, pero su nivel es "sin dato" | |
-| D7 | Presets Sierra Gorda y Bajío | Estacionalidad y `k` distintos (≈ 0.26 y ≈ 0.31) | |
+| D7 | Presets Sierra Gorda y Bajío | Estacionalidad y `k` distintos (≈ 0.26 y ≈ 0.30) | |
 | D8 | Dibujar polígono pequeño en Jalisco | Responde en < 8 s | |
 | D9 | Dibujar polígono en el océano o en Argentina | Mensaje de error traducido, la app no se rompe | |
 | D10 | Dibujar polígono enorme (todo México) | Mensaje "área demasiado grande" | |

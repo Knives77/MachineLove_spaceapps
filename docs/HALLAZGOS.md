@@ -1,10 +1,10 @@
 # Hallazgos
 
-Dueño: **analista**. Todo lo que se diga en el pitch, el video o la página del proyecto tiene que estar aquí con su fuente y su hora. Si no está, no se dice.
+Lo usa el **analista** para diseñar el pitch; lo llenan **procesamiento A** (noticias, Tula), **procesamiento B** (cifras) y el analista (entrega). Todo lo que se diga en el pitch, el video o la página tiene que estar aquí con su fuente y su hora. Si no está, no se dice.
 
 Formato de cada entrada: **qué** · **valor** · **fuente** (enlace, consulta o `pitch_numbers.py` + hora).
 
-## Entrega (P1)
+## Entrega · la llena el analista (D1)
 
 | Pregunta | Respuesta | Fuente |
 |---|---|---|
@@ -14,7 +14,7 @@ Formato de cada entrada: **qué** · **valor** · **fuente** (enlace, consulta o
 | ¿Repo público? ¿Declarar uso de IA? | | |
 | Hora de cierre y zona horaria | | |
 
-## Caso del pitch (P2)
+## Caso · noticias y Tula · lo llena procesamiento A
 
 | Candidato | Lo que muestra la app | Noticia o reporte | Enlace |
 |---|---|---|---|
@@ -22,14 +22,70 @@ Formato de cada entrada: **qué** · **valor** · **fuente** (enlace, consulta o
 | 2025, Bajío / Querétaro | Año más alto de la serie | | |
 | Mayo de 2024, Sierra Gorda | 64 celdas-día, 3.4× la mediana, `critical` | | |
 
-**Caso elegido:**
+**Caso elegido (lo decide el analista):**
 **Frase para el pitch:**
 
-## Cifras del guion (P3)
+### Tula y ruido industrial del sur de Querétaro
 
-Pegar aquí la salida de `python3 scripts/pitch_numbers.py` que se usó, con la hora.
+| Celda (lat, lon) | Días como fuente fija | Qué hay en el mapa |
+|---|---|---|
+| | | |
 
-## Fuentes (P4)
+## Cifras · las actualiza procesamiento B
+
+Salida de `python3 scripts/pitch_numbers.py` contra la API real (base `firms`), **14-nov 17:43**. Procesamiento B la vuelve a correr en H3 y H4 y reemplaza este bloque.
+
+```text
+=== qro-sierra-gorda  (14,706 km², respuesta en 0.01 s)
+k = 0.260 (aoi), 167 meses de traslape
+error anual (mediana dejando un año fuera) 17.2%, peor año 55.2%; error mensual 36.9%
+salto falso: crudo 2011 → 2019 = 175 → 2,167 puntos (×12.4); armonizado 167.0 → 154.0 (×0.92)
+temporada: pico en may; abr, may, jun concentran 62% del fuego
+5 meses más altos en 26 años:
+    may-2024    64.0 celdas-día  critical, 3.37× la mediana  fuente modis
+    abr-2011    61.0 celdas-día  critical, 5.55× la mediana  fuente modis
+    may-2019    61.0 celdas-día  critical, 3.21× la mediana  fuente modis
+    mar-2013    57.0 celdas-día  critical, 6.71× la mediana  fuente modis
+    may-2009    50.0 celdas-día  critical, 2.63× la mediana  fuente modis
+3 años completos más altos: 2011 (167.0), 2019 (154.0), 2013 (123.0)
+último mes completo (tarjeta): oct-2026 = 0.0, normal, mediana 1.0
+2026 por mes: ene critical, feb critical, mar normal, abr normal, may below, jun below, jul below, ago normal, sep critical, oct normal
+sin MODIS (viirs_primary): serie anual cambia 16% en mediana (peor año 51%); estado mensual igual en 56%, a un nivel o menos en 90%
+
+=== qro-bajio  (16,636 km², respuesta en 0.00 s)
+k = 0.303 (aoi), 167 meses de traslape
+error anual (mediana dejando un año fuera) 10.1%, peor año 43.6%; error mensual 37.3%
+salto falso: crudo 2011 → 2019 = 349 → 5,137 puntos (×14.7); armonizado 243.0 → 260.0 (×1.07)
+temporada: pico en mar; ene, feb, mar concentran 46% del fuego
+5 meses más altos en 26 años:
+    feb-2026   150.0 celdas-día  critical, 5.0× la mediana  fuente modis
+    abr-2025   113.0 celdas-día  critical, 7.29× la mediana  fuente modis
+    mar-2025    91.0 celdas-día  critical, 2.53× la mediana  fuente modis
+    feb-2016    80.0 celdas-día  critical, 2.67× la mediana  fuente modis
+    ene-2026    79.0 celdas-día  critical, 3.59× la mediana  fuente modis
+3 años completos más altos: 2025 (447.0), 2017 (317.0), 2016 (295.0)
+último mes completo (tarjeta): oct-2026 = 7.0, normal, mediana 8.0
+2026 por mes: ene critical, feb critical, mar critical, abr normal, may critical, jun normal, jul normal, ago critical, sep below, oct normal
+sin MODIS (viirs_primary): serie anual cambia 9% en mediana (peor año 37%); estado mensual igual en 55%, a un nivel o menos en 89%
+
+=== qro-recuadro  (31,342 km², respuesta en 0.00 s)
+k = 0.289 (aoi), 167 meses de traslape
+error anual (mediana dejando un año fuera) 5.9%, peor año 15.4%; error mensual 33.2%
+salto falso: crudo 2011 → 2019 = 524 → 7,304 puntos (×13.9); armonizado 410.0 → 414.0 (×1.01)
+temporada: pico en mar; mar, abr, may concentran 43% del fuego
+5 meses más altos en 26 años:
+    feb-2026   166.0 celdas-día  critical, 5.03× la mediana  fuente modis
+    abr-2025   149.0 celdas-día  critical, 5.05× la mediana  fuente modis
+    mar-2025   107.0 celdas-día  critical, 2.3× la mediana  fuente modis
+    mar-2022    93.0 celdas-día  critical, 2.0× la mediana  fuente modis
+    mar-2021    91.0 celdas-día  critical, 1.96× la mediana  fuente modis
+3 años completos más altos: 2025 (561.0), 2017 (416.0), 2019 (414.0)
+último mes completo (tarjeta): oct-2026 = 7.0, normal, mediana 9.0
+2026 por mes: ene critical, feb critical, mar above, abr normal, may normal, jun below, jul normal, ago critical, sep normal, oct normal
+sin MODIS (viirs_primary): serie anual cambia 6% en mediana (peor año 14%); estado mensual igual en 55%, a un nivel o menos en 93%
+```
+
+## Fuentes · las llena procesamiento A
 
 | Para qué | Referencia | Enlace |
 |---|---|---|
@@ -38,7 +94,7 @@ Pegar aquí la salida de `python3 scripts/pitch_numbers.py` que se usó, con la 
 | VIIRS 375 m C2 | | |
 | Cese de S-NPP (2-nov-2026) | | |
 
-## Resultados de las pruebas de la demo (P6)
+## Pruebas de la demo · las llena el analista (D5)
 
 | Hora | Escenarios OK | Fallos y dueño |
 |---|---|---|
