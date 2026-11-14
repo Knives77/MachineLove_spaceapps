@@ -22,7 +22,7 @@ Dónde corre cada pieza, cómo llega cada persona, qué puerto usa y por dónde 
 ```
 
 - La anfitriona escucha **solo en `127.0.0.1`**: la API y Postgres no se exponen a la red. Desde fuera se llega únicamente por túnel SSH.
-- Para la demo y el video todo corre en la anfitriona, sin túneles ni red: API en 8000 y front con `pnpm dev`.
+- Para la presentación todo corre en la anfitriona, sin túneles ni red: API en 8000 y front con `pnpm dev`.
 
 ## Redes
 

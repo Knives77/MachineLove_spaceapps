@@ -1,6 +1,6 @@
 # Hallazgos
 
-Lo usa el **analista** para diseñar el pitch; lo llenan **procesamiento A** (noticias, Tula), **procesamiento B** (cifras) y el analista (entrega). Todo lo que se diga en el pitch, el video o la página tiene que estar aquí con su fuente y su hora. Si no está, no se dice.
+Lo usa el **analista** para diseñar el pitch; lo llenan **procesamiento A** (noticias, Tula), **procesamiento B** (cifras) y el analista (entrega). Todo lo que se diga en la presentación o en la página tiene que estar aquí con su fuente y su hora. Si no está, no se dice.
 
 Formato de cada entrada: **qué** · **valor** · **fuente** (enlace, consulta o `pitch_numbers.py` + hora).
 
@@ -9,8 +9,9 @@ Formato de cada entrada: **qué** · **valor** · **fuente** (enlace, consulta o
 | Pregunta | Respuesta | Fuente |
 |---|---|---|
 | Campos de la página del proyecto | | |
-| Video: duración, formato, dónde se sube | | |
-| Presentación en vivo: cuándo y cuánto dura | | |
+| Presentación en vivo: cuándo, cuánto dura, si hay preguntas | | |
+| ¿Piden video o algo más para la entrega? | | |
+| Criterios de evaluación de los jueces | | |
 | ¿Repo público? ¿Declarar uso de IA? | | |
 | Hora de cierre y zona horaria | | |
 
@@ -30,6 +31,19 @@ Formato de cada entrada: **qué** · **valor** · **fuente** (enlace, consulta o
 | Celda (lat, lon) | Días como fuente fija | Qué hay en el mapa |
 |---|---|---|
 | | | |
+
+## Lugares probados para "Elijan un lugar" · los prueba procesamiento B
+
+Rectángulos dibujados en la API real (14-nov 18:00). Las pistas marcadas con 🔎 hay que confirmarlas con noticias antes de decirlas.
+
+| Lugar | Recuadro (O, S, E, N) | Respuesta | `k` | Peor mes en 26 años | Pico de temporada | 2026 |
+|---|---|---|---|---|---|---|
+| Ajusco / sur de CDMX | -99.40, 19.10, -99.05, 19.30 | 0.21 s | 0.24 | mar-2011 (10.8×) | marzo | sin críticos |
+| La Primavera, Jalisco | -103.70, 20.55, -103.45, 20.75 | 0.19 s | 0.69 | 🔎 abr-2012 (11.8×) | abril | 2 críticos |
+| Selva Lacandona, Chiapas | -91.60, 16.20, -90.60, 17.00 | 0.22 s | 0.34 | may-2003 (3.5×) | abril | 1 crítico |
+| Sierra Tarahumara | -108.20, 27.00, -107.00, 28.20 | 0.24 s | 0.28 | may-2011 (11.7×) | mayo | sin críticos |
+| Península de Yucatán (centro) | -89.50, 19.50, -88.00, 20.80 | 0.28 s | 0.40 | abr-2011 (2.9×) | abril | 1 crítico |
+| Chimalapas, Oaxaca | -94.60, 16.60, -94.00, 17.20 | 0.22 s | 0.34 | 🔎 abr-2024 (5.1×) | abril | 2 críticos |
 
 ## Cifras · las actualiza procesamiento B
 

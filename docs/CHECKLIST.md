@@ -10,9 +10,9 @@ Estado al sábado 14-nov, 17:30: **H1 y H2 cumplidos antes de tiempo.** La API c
 | H1 | Sáb 18:30 | ETL completo y verificado en `firms` | ✅ 14:54 · `etl.verify` 54/54 |
 | H2 | Sáb 21:30 | API con datos reales para los 3 presets | ✅ 17:00 · 0.35 s por preset |
 | H3 | Dom 00:00 | **MVP completo**: front contra la API real, interruptor crudo/armonizado | ⏳ front |
-| H4 | Dom 07:00 | Pulido, polígono libre, bilingüe revisado, ensayo del pitch | |
+| H4 | Dom 07:00 | Pulido, polígono libre, bilingüe revisado, presentación y dinámica ensayadas | |
 | H5 | Dom 09:00 | Código congelado | |
-| H6 | Dom 11:30 | Video y entrega enviados | |
+| H6 | Dom 11:30 | Presentación en vivo lista y entrega enviada (sin video) | |
 
 Reglas para todos:
 
@@ -64,6 +64,7 @@ Hecho: `cell`, `cell_day` y `calibration_country` en `firms`; `etl.verify` 54/54
 - [ ] `python3 scripts/pitch_numbers.py` en H3 y en H4, y reemplazar el bloque de `HALLAZGOS.md` → Cifras con la hora. Si una cifra cambia respecto a la anterior, avisar al analista.
 - [ ] Verificar en la base el caso que elija el analista: que el evento se vea en `detection` y en `cell_day` en sus fechas. Anotarlo junto al caso.
 - [ ] Cruce de la demo (`PITCH.md` §6): `k` y totales en pantalla contra `pitch_numbers.py`.
+- [ ] **Lugares para "Elijan un lugar"** (acto 3 de la dinámica): ya hay 6 en `HALLAZGOS.md`. Agregar 6 más que un juez podría pedir: Guadalajara, Monterrey, Puebla, Michoacán, Veracruz, Sonora. De cada uno: recuadro, tiempo de respuesta, `k`, peor mes y temporada. Si alguno sale raro (por ejemplo, `k` muy alto o `scope = country`), anotarlo para que el analista tenga la frase lista.
 - [ ] Mejora, solo si sobra tiempo: `k` por temporada y medir si baja el error mensual (hoy 33–37 %). Solo se adopta si mejora y se cambia el contrato.
 
 ---
@@ -95,19 +96,22 @@ Skill: `.claude/skills/frontend/SKILL.md` (sección **Datos reales**). Hecho: la
 7. [ ] `git rm --cached web/tsconfig.tsbuildinfo` en su rama.
 8. [ ] Los dos CSV se descargan y abren en una hoja de cálculo.
 
+9. [ ] **Para la dinámica en vivo** (`PITCH.md` §2): dibujar un rectángulo debe ser rápido y obvio (un clic para la herramienta); la tarjeta del lugar se tiene que leer desde lejos; el botón "Simular fin de MODIS" debe ser grande, para que un juez lo presione sin explicación, y debe poder volver al modo normal.
+
 **Después de H3**
-- [ ] Capturas de pantalla con datos reales para el analista (las que pida en D4).
+- [ ] Opcional, solo si el analista lo pide antes de las 23:00: **"Escuchen 26 años"**. En `Timeline.tsx`, que la reproducción toque `playStatus(row.status)` en cada mes y tenga una velocidad rápida (~100 ms por mes; hoy son 450 ms y 26 años tardan más de 2 minutos).
+- [ ] Capturas de pantalla con datos reales para el plan B (las que pida el analista).
 - [ ] Sección Frontend de `acceptance.md`: escala de grises, daltonismo, teclado, 1366 × 768, zoom del proyector.
 
 ---
 
-## Analista · diseñador del pitch
+## Analista · diseñador de la presentación
 
-Guía completa: **`docs/ANALISTA.md`**. Sin código ni consultas: los números te los da procesamiento B y los hechos externos procesamiento A, todo en `docs/HALLAZGOS.md`.
+Guía completa: **`docs/ANALISTA.md`**. Se presenta **en vivo, sin video**, con una dinámica en la que participa el jurado. Sin código ni consultas: los números te los da procesamiento B y los hechos externos procesamiento A, todo en `docs/HALLAZGOS.md`.
 
-- [ ] **D1 · ya** · Reglas de la entrega y criterios de los jueces.
+- [ ] **D1 · ya** · Reglas de la entrega, formato de la presentación en vivo y criterios de los jueces.
 - [ ] **D2 · 21:00** · La historia: problema, momento "ajá", caso, futuro sin MODIS, quién lo usa, cierre.
-- [ ] **D3 · 22:30** · Guion de 3 minutos (`PITCH.md` §2, v2 como base) y ruta de la demo para front.
-- [ ] **D4 · 07:00** · Video en tomas, diapositivas y texto de la página en ES/EN.
-- [ ] **D5 · H3 y H4** · Ensayos con la app real, escenarios de la demo y preguntas de jueces.
-- [ ] **D6 · 09:00–11:30** · Plan B, grabación y envío.
+- [ ] **D3 · 22:30** · La dinámica con el jurado (propuesta en 4 actos en `PITCH.md` §2).
+- [ ] **D4 · 23:30** · Guion minuto a minuto, ruta de la demo para front, apoyos y texto de la página.
+- [ ] **D5 · H3 y H4** · Ensayos con alguien haciendo de jurado, escenarios de la demo y preguntas.
+- [ ] **D6 · 09:00–11:30** · Plan B, ensayo en la sala y envío.

@@ -65,7 +65,7 @@ Detalle exacto: `docs/contracts/harmonization.md`.
 | Procesamiento A | `etl/ingest`, `etl/mask` | `detection` y `static_cell` cargadas |
 | Procesamiento B | `etl/cells`, `etl/calibrate`, `etl/outages` | `cell_day`, `sensor_outage`, cifras de control reproducidas |
 | Backend | `backend/` | 4 endpoints según contrato, < 2 s en presets |
-| Analista | Pitch, video y entrega (`docs/ANALISTA.md`, `docs/PITCH.md`, `docs/HALLAZGOS.md`) | Caso del pitch, guion con cifras reales, fuentes, video y página enviados |
+| Analista | Diseño de la presentación en vivo y su dinámica (`docs/ANALISTA.md`, `docs/PITCH.md`) | Historia, guion con cifras reales, dinámica con el jurado, materiales, ensayos y entrega |
 | Líder | Máquina anfitriona, `main`, base `firms`, decisiones de contrato | API estable en 8000, ETL en `firms`, respaldos, PRs fusionados |
 | Frontend A | Mapa, presets, dibujo, selector de idioma | Front conectado a la API real |
 | Frontend B | Calendario, interruptor, tarjeta, panel de validación, descargas | Interruptor y validación funcionando con datos reales |
@@ -80,7 +80,7 @@ Detalle exacto: `docs/contracts/harmonization.md`.
 | H3 Integración | Dom 00:00 | Frontend contra API real, interruptor crudo/armonizado funcionando: **MVP completo** | Todos | ⏳ |
 | H4 Pulido | Dom 07:00 | Polígono libre, banderas de caída, bilingüe revisado, mejora 1 si hay tiempo, pitch ensayado | Analista |  |
 | H5 Congelamiento | Dom 09:00 | Rama `main` congelada. Solo correcciones de fallos | Líder |  |
-| H6 Entrega | Dom 11:30 | Video grabado (09:00–10:30), página del proyecto llena, enlace al repo | Analista |  |
+| H6 Entrega | Dom 11:30 | Presentación ensayada (09:00–10:30), página del proyecto llena, enlace al repo | Analista |  |
 
 Integración obligatoria en cada hito: todos hacen `git pull`, se corre la app completa y se pasa la lista de `acceptance.md`.
 
@@ -95,8 +95,9 @@ Descanso: nadie programa de 02:00 a 06:00 sin relevo; al menos 2 personas duerme
 | El frontend de Figma Make no encaja con la API | Construyen desde el minuto cero contra los JSON de `docs/contracts/examples/`; la API no cambia de forma sin pasar por el analista |
 | El polígono libre es lento | Límite de 200,000 km²; consulta sobre `cell_day`, no sobre puntos |
 | El error de calibración es alto en zonas con poco fuego | Si el traslape tiene < 100 celdas-día MODIS se usa el `k` del país y la respuesta lo declara |
+| La dinámica en vivo sale mal (un juez pide un lugar sin datos, la app tarda) | 12 lugares probados en `HALLAZGOS.md`, frases preparadas para cada caso, y capturas y grabación de pantalla como plan B |
 | Se acaba el tiempo | Orden de recorte: mejoras → polígono libre → CSV del calendario. Nunca se recorta el interruptor crudo/armonizado ni la validación |
 
 ## Guion de la demo
 
-El guion de 3 minutos, las afirmaciones con su evidencia y las pruebas de la demo están en `docs/PITCH.md`.
+Se presenta **en vivo, sin video**, con una dinámica en la que participa el jurado. La presentación, las afirmaciones con su evidencia y las pruebas de la demo están en `docs/PITCH.md`.

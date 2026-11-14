@@ -1,6 +1,6 @@
 # MachineLove · NASA Space Apps 2026 · Harmonization of MODIS and VIIRS Hot Spots
 
-Entrega: **domingo 15-nov-2026, 12:00 PM**. Demo local + video + repo público. Congelamiento de código: domingo 09:00.
+Entrega: **domingo 15-nov-2026, 12:00 PM**. Presentación en vivo con demo local y dinámica con el jurado (sin video) + repo público. Congelamiento de código: domingo 09:00.
 
 **Alcance del MVP: solo México.** Argentina queda cargada en la base para la fase 2; después, el mundo.
 

@@ -14,6 +14,7 @@ Resumen para quien llega: **hagan `git pull`**. Front instala desde la raíz; el
 
 | Cambio | Quién | Qué hacer |
 |---|---|---|
+| **Sin video: presentación en vivo con dinámica.** `PITCH.md` §2 v3: el jurado adivina, vota, elige un lugar de México (0.2 s) y apaga MODIS. 6 lugares ya probados en `HALLAZGOS.md` | Analista, front, procesamiento B | Analista: D3 de `ANALISTA.md`. Front: punto 9 de su checklist. Procesamiento B: probar 6 lugares más |
 | **Los mocks de los presets ahora son copias de la API real** (`scripts/snapshot_mocks.py`). Los valores reales son 4–7 veces más bajos que el DEMO viejo, con muchos ceros y 12 meses sin dato. Se borró `web/scripts/make-demo-mocks.mjs` y el comando `mock:demo` | Front | `git pull`, revisar las 4 vistas con los mocks nuevos y seguir el orden de `CHECKLIST.md` → Frontend |
 | **"Simular fin de MODIS" pasa a MVP** (función 9 del PRD): con datos reales es el único lugar donde `k` cambia lo que se ve | Front | Pasar `basis` a `getCalendar` y al CSV (`state.tsx:77`, `Downloads.tsx:37`) |
 | **Guion v2** con datos reales en `PITCH.md` §2: Bajío, temporada ene–mar, febrero de 2026 récord, "Simular fin de MODIS" | Analista | Usarlo de base para D3 |
