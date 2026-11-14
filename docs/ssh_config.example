@@ -1,31 +1,32 @@
 # Pegar al final de ~/.ssh/config (Windows: C:\Users\<usuario>\.ssh\config)
-# Conectar:  ssh machinelove-cable   o   ssh machinelove-wifi
-# La terminal se queda en blanco = túnel abierto. Ctrl+C para cerrar.
-# Deja solo las LocalForward de tu rol:
-#   frontend/analista: 8000 | procesamiento: 8000 + 5432 | backend: 8001 + 5432
+# Cambia <tu_usuario> por el tuyo (kalozano o lar) e IdentityFile por tu llave.
+#
+# Antigravity: Ctrl+Shift+P -> "Remote-SSH: Connect to Host..." -> machinelove-wifi / machinelove-cable
+#   Abrir carpeta: /srv/machinelove  (o ~/MachineLove_spaceapps)
+#   Puertos: el IDE los reenvía solo (pestaña "Ports"). Si no aparecen, agrega 8000, 8001, 5432 ahí.
+#
+# Desde terminal normal también sirve:  ssh machinelove-wifi
 
 Host machinelove-cable machinelove-direct
     HostName 10.0.0.1
-    User equimanthorn
+    User <tu_usuario>
     IdentityFile ~/.ssh/id_ed25519
     IdentitiesOnly yes
     IPQoS throughput
-    SessionType none
-    ExitOnForwardFailure yes
     ServerAliveInterval 30
-    LocalForward 8000 localhost:8000
-    LocalForward 8001 localhost:8001
-    LocalForward 5432 localhost:5432
+    # Túneles fijos sin depender del IDE (descomenta si los quieres siempre).
+    # Postgres en 15432 para no chocar con un Postgres local en tu PC.
+    # LocalForward 8000 localhost:8000
+    # LocalForward 8001 localhost:8001
+    # LocalForward 15432 localhost:5432
 
 Host machinelove machinelove-wifi
     HostName 10.61.5.140
-    User equimanthorn
+    User <tu_usuario>
     IdentityFile ~/.ssh/id_ed25519
     IdentitiesOnly yes
     IPQoS throughput
-    SessionType none
-    ExitOnForwardFailure yes
     ServerAliveInterval 30
-    LocalForward 8000 localhost:8000
-    LocalForward 8001 localhost:8001
-    LocalForward 5432 localhost:5432
+    # LocalForward 8000 localhost:8000
+    # LocalForward 8001 localhost:8001
+    # LocalForward 15432 localhost:5432

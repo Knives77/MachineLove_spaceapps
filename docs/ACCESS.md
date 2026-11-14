@@ -53,9 +53,14 @@ Crear la de pruebas una vez: `podman exec firms_postgis createdb -U firms firms_
 
 La ingesta completa solo se corre en el anfitrión: los CSV completos no salen de esa máquina.
 
-## Si además se quiere VS Code Remote-SSH
+## Antigravity / VS Code Remote-SSH (esquema activo)
 
-Se puede, pero **no con el esquema de la guía**: Remote-SSH necesita terminal, y una llave sin restricciones en la cuenta `equimanthorn` da acceso a todos sus archivos. Para permitirlo hay que crear una cuenta Linux aparte por persona (`sudo useradd -m -s /bin/bash <nombre>`), poner ahí su llave, y darle lectura solo a la carpeta `data/`. Es decisión de quien lidera; el plan funciona sin esto.
+Remote-SSH necesita terminal, así que cada persona tiene **su propia cuenta Linux** (`kalozano`, `lar`) con acceso solo al proyecto:
+
+- El proyecto está montado en `/srv/machinelove` (bind mount de la carpeta real; `/home/equimanthorn` sigue cerrado).
+- El grupo `machinelove` tiene `rwX` sobre el proyecto (ACL).
+- Sin `sudo`. Se crea con `setup_amigos.sh` (fuera del repo).
+- En Antigravity: `Remote-SSH: Connect to Host...` → `machinelove-wifi` / `machinelove-cable` → abrir `/srv/machinelove`. Los puertos se reenvían desde la pestaña **Ports**.
 
 ## Cuidados
 
