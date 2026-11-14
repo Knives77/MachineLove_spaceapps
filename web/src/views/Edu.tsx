@@ -4,7 +4,8 @@ import { fmtNum, fmtPct } from '../lib/format';
 import { useApp, useCalendar } from '../state';
 import type { CalendarResponse, PresetFeature } from '../types';
 
-const PAIR = ['qro-sierra-gorda', 'ar-chilecito'];
+// Cerro forestal vs valle agrícola (diseño: docs/design/exports/10-*). MVP solo México.
+const PAIR = ['qro-sierra-gorda', 'qro-bajio'];
 
 export function Edu() {
   const { t, presets, setTab, presetName } = useApp();
