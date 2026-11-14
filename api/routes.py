@@ -21,6 +21,7 @@ from api.models import (
 from api.queries import (
     DATABASE_URL,
     HOTSPOTS_CSV_HEADER,
+    check_hotspots_limit,
     fetch_calendar_inputs,
     fetch_data_through,
     fetch_presets,
@@ -218,6 +219,7 @@ def post_hotspots_csv(req: HotspotsRequest) -> StreamingResponse:
 
     with get_connection() as conn:
         resolved = resolve_aoi_db(conn, req.aoi)
+        check_hotspots_limit(conn, resolved, req.start_date, req.end_date)
 
     return StreamingResponse(
         stream_hotspots_csv(

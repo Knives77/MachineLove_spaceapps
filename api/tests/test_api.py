@@ -156,3 +156,58 @@ def test_csv_endpoints() -> None:
         "latitude,longitude,acq_date,acq_time,satellite,family,confidence,frp,daynight,type,source,is_vegetation_fire,cell_id"
     )
 
+
+def test_db_queries_mx_only_and_health_date() -> None:
+    """Verifica que fetch_data_through y resolve_aoi_db filtren exclusivamente México (MX)."""
+    from datetime import date
+    from api.models import AoiInput, ApiException
+    from api.queries import fetch_data_through, resolve_aoi_db
+
+    executed_sql: list[str] = []
+
+    class DummyCursor:
+        def __enter__(self) -> DummyCursor:
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            pass
+
+        def execute(self, sql: str, params: object = None) -> None:
+            executed_sql.append(sql)
+
+        def fetchone(self) -> tuple[object, ...]:
+            last = executed_sql[-1]
+            if "max(d.acq_date)" in last:
+                assert "c.country = 'MX'" in last
+                return (date(2026, 11, 1),)
+            if "ST_Area" in last:
+                return (15000.0,)
+            if "SELECT count(*)" in last:
+                assert "cell.country = 'MX'" in last
+                return (0,)
+            return (None,)
+
+    class DummyConn:
+        def cursor(self) -> DummyCursor:
+            return DummyCursor()
+
+    conn = DummyConn()
+    assert fetch_data_through(conn) == "2026-11-01"  # type: ignore[arg-type]
+
+    ar_poly = {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [-68.3, -29.9],
+                [-66.8, -29.9],
+                [-66.8, -28.4],
+                [-68.3, -28.4],
+                [-68.3, -29.9],
+            ]
+        ],
+    }
+    with pytest.raises(ApiException) as exc_info:
+        resolve_aoi_db(conn, AoiInput(geometry=ar_poly))  # type: ignore[arg-type]
+    assert exc_info.value.status_code == 422
+    assert exc_info.value.code == "aoi_outside_coverage"
+

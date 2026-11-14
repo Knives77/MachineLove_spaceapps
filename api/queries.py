@@ -7,8 +7,10 @@ from datetime import date
 from typing import Iterator
 
 import psycopg
+from shapely.geometry import box, mapping
 
 from api.aoi import (
+    BUILTIN_PRESETS,
     MAX_AREA_KM2,
     ResolvedAoi,
     detect_country_from_bbox,
@@ -31,19 +33,30 @@ DATABASE_URL = os.environ.get(
     "postgresql://firms:firms_local@127.0.0.1:5432/firms",
 )
 
+MAX_HOTSPOTS_ROWS = 2_000_000
+
 
 def get_connection(dsn: str | None = None) -> psycopg.Connection:
     return psycopg.connect(dsn or DATABASE_URL)
 
 
 def fetch_data_through(conn: psycopg.Connection) -> str:
-    """Obtiene la última fecha disponible en cell_day o detection."""
+    """Obtiene la última fecha disponible para México (MVP) en cell_day o detection."""
     with conn.cursor() as cur:
-        cur.execute("SELECT max(acq_date) FROM cell_day")
+        cur.execute(
+            """
+            SELECT max(d.acq_date)
+            FROM cell_day d
+            JOIN cell c USING (cy, cx)
+            WHERE c.country = 'MX'
+            """
+        )
         row = cur.fetchone()
         if row and row[0] is not None:
             return row[0].isoformat()
-        cur.execute("SELECT max(acq_date) FROM detection")
+        cur.execute(
+            "SELECT max(acq_date) FROM detection WHERE country = 'MX'"
+        )
         row = cur.fetchone()
         if row and row[0] is not None:
             return row[0].isoformat()
@@ -51,34 +64,41 @@ def fetch_data_through(conn: psycopg.Connection) -> str:
 
 
 def fetch_presets(conn: psycopg.Connection) -> PresetCollection:
-    """Devuelve la colección GeoJSON de regiones predefinidas desde la tabla preset."""
+    """Devuelve la colección GeoJSON de las 3 regiones predefinidas de México (MVP)."""
     with conn.cursor() as cur:
         cur.execute(
             """
             SELECT id, name_es, name_en, country, ST_AsGeoJSON(geom)
             FROM preset
             WHERE country = 'MX'
-            ORDER BY CASE id
-                WHEN 'qro-sierra-gorda' THEN 1
-                WHEN 'qro-bajio' THEN 2
-                WHEN 'qro-recuadro' THEN 3
-                ELSE 4
-            END, id
+              AND id IN ('qro-sierra-gorda', 'qro-bajio', 'qro-recuadro')
             """
         )
-        rows = cur.fetchall()
+        rows = {r[0]: r for r in cur.fetchall()}
 
+    order = ("qro-sierra-gorda", "qro-bajio", "qro-recuadro")
     features: list[PresetFeature] = []
-    for pid, name_es, name_en, country_raw, geojson_str in rows:
-        country: Country = "MX" if country_raw.strip() == "MX" else "AR"
-        geom_dict = json.loads(geojson_str)
+    for pid in order:
+        if pid in rows:
+            _, name_es, name_en, _, geojson_str = rows[pid]
+            geom_dict = json.loads(geojson_str)
+        else:
+            info = BUILTIN_PRESETS[pid]
+            name_es = info["name_es"]
+            name_en = info["name_en"]
+            minx, miny, maxx, maxy = info["bbox"]
+            geom_dict = mapping(box(minx, miny, maxx, maxy))
+            geom_dict = {
+                "type": "Polygon",
+                "coordinates": [list( list(pt) for pt in geom_dict["coordinates"][0] )],
+            }
         features.append(
             PresetFeature(
                 id=pid,
                 properties=PresetProperties(
                     name_es=name_es,
                     name_en=name_en,
-                    country=country,
+                    country="MX",
                 ),
                 geometry=GeoJSONPolygon(**geom_dict),
             )
@@ -87,13 +107,18 @@ def fetch_presets(conn: psycopg.Connection) -> PresetCollection:
 
 
 def resolve_aoi_db(conn: psycopg.Connection, aoi: AoiInput) -> ResolvedAoi:
-    """Resuelve y valida preset_id o geometry usando PostGIS."""
+    """Resuelve y valida preset_id o geometry usando PostGIS (MVP: solo México)."""
     if aoi.preset_id is not None:
+        if aoi.preset_id not in BUILTIN_PRESETS:
+            raise ApiException(
+                404,
+                "unknown_preset",
+                f"Unknown preset_id: '{aoi.preset_id}'",
+            )
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT country,
-                       ST_AsGeoJSON(geom),
+                SELECT ST_AsGeoJSON(geom),
                        ST_Area(geom::geography) / 1e6
                 FROM preset
                 WHERE id = %(preset_id)s AND country = 'MX'
@@ -101,18 +126,33 @@ def resolve_aoi_db(conn: psycopg.Connection, aoi: AoiInput) -> ResolvedAoi:
                 {"preset_id": aoi.preset_id},
             )
             row = cur.fetchone()
-        if row is None:
-            # Si la tabla preset aún está vacía pero es uno de los 3 presets oficiales, usar offline
-            return resolve_aoi_offline(aoi)
-        country_raw, geojson_str, area_km2 = row
-        country: Country = "MX"
-        poly = parse_and_validate_polygon(json.loads(geojson_str))
+            if row is not None:
+                geojson_str, area_km2 = row
+                poly = parse_and_validate_polygon(json.loads(geojson_str))
+            else:
+                offline = resolve_aoi_offline(aoi)
+                poly = offline.polygon
+                geojson_str = offline.geojson_str
+                cur.execute(
+                    """
+                    SELECT ST_Area(
+                        ST_GeomFromGeoJSON(%(geojson)s)::geometry(Polygon, 4326)::geography
+                    ) / 1e6
+                    """,
+                    {"geojson": geojson_str},
+                )
+                area_row = cur.fetchone()
+                area_km2 = (
+                    float(area_row[0])
+                    if area_row and area_row[0] is not None
+                    else offline.area_km2
+                )
         return ResolvedAoi(
             preset_id=aoi.preset_id,
             polygon=poly,
             geojson_str=geojson_str,
             area_km2=float(area_km2),
-            country=country,
+            country="MX",
         )
 
     assert aoi.geometry is not None
@@ -138,7 +178,7 @@ def resolve_aoi_db(conn: psycopg.Connection, aoi: AoiInput) -> ResolvedAoi:
                 f"AOI area ({area_km2:,.1f} km²) exceeds maximum of {MAX_AREA_KM2:,.0f} km²",
             )
 
-        # MVP solo México: verificar si tiene celdas de México
+        # MVP solo México: contar celdas de México dentro del polígono
         cur.execute(
             """
             WITH aoi AS (
@@ -154,8 +194,9 @@ def resolve_aoi_db(conn: psycopg.Connection, aoi: AoiInput) -> ResolvedAoi:
         c_row = cur.fetchone()
 
     if c_row and c_row[0] and int(c_row[0]) > 0:
-        country = "MX"
+        country: Country = "MX"
     else:
+        # Si no toca celdas de México, verificar contra el rectángulo de México (si tampoco, lanza 422)
         country = detect_country_from_bbox(poly)
 
     return ResolvedAoi(
@@ -179,7 +220,7 @@ def fetch_calendar_inputs(
     """Ejecuta la consulta central de /calendar (2000..2026) y metadatos de calibración/caídas."""
     counts: dict[MonthKey, MonthlyCounts] = {}
     with conn.cursor() as cur:
-        # 1. Meses con datos NRT en este país (usando índice detection_date)
+        # 1. Meses con datos NRT en México (usando índice detection_date)
         cur.execute(
             """
             SELECT DISTINCT
@@ -194,7 +235,7 @@ def fetch_calendar_inputs(
         )
         nrt_months: set[MonthKey] = {(r[0], r[1]) for r in cur.fetchall()}
 
-        # 2. Consulta central de /calendar sobre cell_day (siempre 2000-01-01 a 2027-01-01)
+        # 2. Consulta central de /calendar sobre cell_day (siempre 2000-01-01 a 2027-01-01, filtrando cell.country = 'MX')
         cur.execute(
             """
             WITH aoi AS (
@@ -231,7 +272,6 @@ def fetch_calendar_inputs(
                 has_nrt=(ym in nrt_months),
             )
 
-        # Marcar has_nrt incluso en meses del rango con 0 detecciones en el AOI si el país tiene NRT ese mes
         for ym in nrt_months:
             if ym not in counts:
                 counts[ym] = MonthlyCounts(has_nrt=True)
@@ -265,15 +305,14 @@ def fetch_calendar_inputs(
         cal_row = cur.fetchone()
         country_k = float(cal_row[0]) if cal_row and cal_row[0] is not None else None
 
-        # 5. Fecha tope de datos para este país
+        # 5. Fecha tope de datos para México (MVP)
         cur.execute(
             """
             SELECT max(d.acq_date)
             FROM cell_day d
             JOIN cell c USING (cy, cx)
-            WHERE c.country = %(country)s
+            WHERE c.country = 'MX'
             """,
-            {"country": resolved_aoi.country},
         )
         max_row = cur.fetchone()
         data_through = (
@@ -289,6 +328,47 @@ HOTSPOTS_CSV_HEADER = (
     "latitude,longitude,acq_date,acq_time,satellite,family,"
     "confidence,frp,daynight,type,source,is_vegetation_fire,cell_id\n"
 )
+
+
+def check_hotspots_limit(
+    conn: psycopg.Connection,
+    resolved_aoi: ResolvedAoi,
+    start_date: date,
+    end_date: date,
+) -> None:
+    """Verifica que el total de puntos en el rango no supere MAX_HOTSPOTS_ROWS (2,000,000)."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            WITH aoi AS (
+                SELECT ST_GeomFromGeoJSON(%(geojson)s)::geometry(Polygon, 4326) AS g
+            ),
+            c AS (
+                SELECT cy, cx
+                FROM cell, aoi
+                WHERE cell.country = 'MX'
+                  AND ST_Intersects(cell.geom, aoi.g)
+            )
+            SELECT coalesce(sum(d.raw_points), 0)
+            FROM cell_day d
+            JOIN c USING (cy, cx)
+            WHERE d.acq_date >= %(start_date)s
+              AND d.acq_date <= %(end_date)s
+            """,
+            {
+                "geojson": resolved_aoi.geojson_str,
+                "start_date": start_date,
+                "end_date": end_date,
+            },
+        )
+        row = cur.fetchone()
+        est_rows = int(row[0] or 0) if row else 0
+        if est_rows > MAX_HOTSPOTS_ROWS:
+            raise ApiException(
+                400,
+                "aoi_too_large",
+                f"Requested hotspots ({est_rows:,}) exceed maximum of {MAX_HOTSPOTS_ROWS:,} rows",
+            )
 
 
 def stream_hotspots_csv(
@@ -311,7 +391,8 @@ def stream_hotspots_csv(
                 c AS (
                     SELECT cy, cx
                     FROM cell, aoi
-                    WHERE ST_Intersects(cell.geom, aoi.g)
+                    WHERE cell.country = 'MX'
+                      AND ST_Intersects(cell.geom, aoi.g)
                 )
                 SELECT d.latitude,
                        d.longitude,
@@ -330,7 +411,8 @@ def stream_hotspots_csv(
                 FROM detection d
                 JOIN c USING (cy, cx)
                 CROSS JOIN aoi
-                WHERE d.acq_date >= %(start_date)s
+                WHERE d.country = 'MX'
+                  AND d.acq_date >= %(start_date)s
                   AND d.acq_date <= %(end_date)s
                   AND ST_Intersects(
                       ST_SetSRID(ST_MakePoint(d.longitude, d.latitude), 4326),
@@ -368,4 +450,3 @@ def stream_hotspots_csv(
                     f"{sat},{fam},{conf},{frp},{dn.strip()},{type_str},"
                     f"{src},{veg_str},{cell_id}\n"
                 )
-
