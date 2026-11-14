@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
-import { ramp, statusColor } from '../lib/color';
+import { statusColor } from '../lib/color';
 import { fmtNum, fmtPct, indexMonths, ymKey } from '../lib/format';
 import { showsRawToggle, useApp } from '../state';
 import type { Baseline, CalendarResponse } from '../types';
 import { StatusIcon } from './ui';
-import { NAV_BTN, shiftMonth } from './YearView';
+import { isZero, NAV_BTN, shiftMonth, ZERO_ACCENT } from './YearView';
 
 /** Tarjeta del mes elegido (por defecto `latest`). Solo muestra campos de la API. */
 export function MonthCard({ data }: { data: CalendarResponse }) {
@@ -48,9 +48,10 @@ export function MonthCard({ data }: { data: CalendarResponse }) {
       {row && (
         <>
           <div className="mt-2 flex items-center gap-3">
-            <StatusIcon status={row.status} color={statusColor(palette, row.status)} size={20} />
-            <p className="text-[34px] font-semibold uppercase leading-none tracking-tight">
-              {t(`status.${row.status}`)}
+            {/* 0 celdas-día = "sin incendios", con indicador neutro (no el color de "Normal"). */}
+            <StatusIcon status={isZero(row) ? 'zero' : row.status} color={isZero(row) ? ZERO_ACCENT : statusColor(palette, row.status)} size={20} />
+            <p className={`font-semibold uppercase leading-none tracking-tight ${isZero(row) ? 'text-[28px] text-mute' : 'text-[34px]'}`}>
+              {isZero(row) ? t('level.zero') : t(`status.${row.status}`)}
             </p>
           </div>
 
@@ -127,10 +128,10 @@ export function MonthCard({ data }: { data: CalendarResponse }) {
   function LevelBar({ baseline, value }: { baseline: Baseline | null; value: number | null }) {
     // Dibuja los percentiles que manda la API; no decide el nivel (eso ya viene en `status`).
     const segs = [
-      { key: 'bar.low', t: 0.08 },
-      { key: 'bar.normal', t: 0.3 },
-      { key: 'bar.high', t: 0.68 },
-      { key: 'bar.extreme', t: 1 },
+      { key: 'bar.low', s: 'below' as const },
+      { key: 'bar.normal', s: 'normal' as const },
+      { key: 'bar.high', s: 'above' as const },
+      { key: 'bar.extreme', s: 'critical' as const },
     ];
     if (!baseline) {
       return (
@@ -154,7 +155,7 @@ export function MonthCard({ data }: { data: CalendarResponse }) {
             {segs.map((s, i) => (
               <div
                 key={s.key}
-                style={{ width: `${stops[i + 1] - stops[i]}%`, background: ramp(palette, s.t) }}
+                style={{ width: `${stops[i + 1] - stops[i]}%`, background: statusColor(palette, s.s) }}
                 title={t(s.key)}
               />
             ))}

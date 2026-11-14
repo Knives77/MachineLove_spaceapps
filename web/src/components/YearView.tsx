@@ -3,7 +3,7 @@ import { readableOn, statusColor } from '../lib/color';
 import { indexMonths, ymKey } from '../lib/format';
 import { playStatus } from '../lib/sound';
 import { useApp } from '../state';
-import type { CalendarResponse, Palette, Status } from '../types';
+import type { CalendarResponse, MonthRow, Palette, Status } from '../types';
 
 type Ym = { year: number; month: number };
 
@@ -74,11 +74,23 @@ export function YearPicker({ data }: { data: CalendarResponse }) {
 export const NAV_BTN =
   'flex h-9 w-9 items-center justify-center rounded border border-line text-[18px] leading-none text-mute transition-colors hover:border-cyan hover:text-ink disabled:opacity-30 disabled:hover:border-line disabled:hover:text-mute';
 
-/** Acento legible del nivel: barra lateral, texto y fondo translúcido del badge. */
+/** Color del nivel: barra lateral, puntos de la leyenda y fondo translúcido del badge. */
 export function levelAccent(palette: Palette, status: Status): string {
-  if (status === 'no_data') return '#93a0ad';
-  return readableOn(statusColor(palette, status));
+  if (status === 'no_data') return ZERO_ACCENT;
+  return statusColor(palette, status);
 }
+
+/** Texto del badge: el color del nivel, aclarado solo si no llega a 4.5:1 sobre la tarjeta. */
+export const levelText = (accent: string) => readableOn(accent);
+
+/** Acento neutro para los meses medidos con 0 celdas-día: "sin incendios", nunca un color de nivel. */
+export const ZERO_ACCENT = '#64748b';
+
+/** Un mes medido con 0: se muestra como "Sin incendios" aunque `status` diga otra cosa (p. ej. mediana 0). */
+export const isZero = (row: MonthRow) => row.status !== 'no_data' && row.harmonized === 0;
+
+/** Acento de un mes: neutro si es 0, si no el de su nivel. */
+export const rowAccent = (palette: Palette, row: MonthRow) => (isZero(row) ? ZERO_ACCENT : levelAccent(palette, row.status));
 
 /**
  * Los 12 meses del año elegido en 3 × 4. Tarjetas oscuras: el nivel (`status` de la API) va en
@@ -108,8 +120,8 @@ export function YearView({ data }: { data: CalendarResponse }) {
         const isSel = !!row && sel.month === m;
         const name = t(`month.${m}`);
         const hasFlags = !!row && row.flags.length > 0;
-        const accent = row ? levelAccent(palette, row.status) : null;
-        const statusText = row ? t(`status.${row.status}`) : '';
+        const accent = row ? rowAccent(palette, row) : null;
+        const statusText = !row ? '' : isZero(row) ? t('level.zeroShort') : t(`status.${row.status}`);
         const flagsText = hasFlags ? row!.flags.map((f) => t(`flag.${f}`)).join(' ') : '';
 
         return (
@@ -128,8 +140,8 @@ export function YearView({ data }: { data: CalendarResponse }) {
               !row
                 ? 'border-dashed border-line text-dim'
                 : isSel
-                  ? 'border-cyan bg-[#1b2433] ring-1 ring-cyan'
-                  : 'border-line bg-[#121822] hover:border-line-2 hover:bg-[#161e2a]'
+                  ? 'sel-glow bg-[#1a2436]'
+                  : 'border-line bg-panel hover:border-line-2 hover:bg-[#151e2e]'
             }`}
           >
             {/* Barra de acento de 4 px con el color del nivel; rayada si no hay dato. */}
@@ -154,7 +166,7 @@ export function YearView({ data }: { data: CalendarResponse }) {
                 style={
                   row.status === 'no_data'
                     ? undefined
-                    : { background: `${accent}26`, color: accent!, boxShadow: `inset 0 0 0 1px ${accent}40` }
+                    : { background: `${accent}26`, color: levelText(accent!), boxShadow: `inset 0 0 0 1px ${accent}40` }
                 }
               >
                 {row.status === 'no_data' ? (

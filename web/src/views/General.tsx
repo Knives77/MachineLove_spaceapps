@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Calendar, useScaleMax } from '../components/Calendar';
-import { Legend, LevelLegend } from '../components/Legend';
+import { Calendar } from '../components/Calendar';
+import { LevelLegend } from '../components/Legend';
 import { MapPanel } from '../components/MapPanel';
 import { MonthCard } from '../components/MonthCard';
 import { Timeline } from '../components/Timeline';
@@ -74,7 +74,7 @@ function CalendarPanel({ data: d }: { data: CalendarResponse }) {
       </header>
 
       <div data-cal-scroll className="min-h-0 flex-1 overflow-y-auto px-3 pb-2 pt-1">
-        {history ? <Calendar data={d} stickyHeader /> : <YearView data={d} />}
+        {history ? <Calendar data={d} stickyHeader variant="levels" /> : <YearView data={d} />}
       </div>
 
       <div className="shrink-0 px-4 pb-2">
@@ -88,15 +88,10 @@ function CalendarPanel({ data: d }: { data: CalendarResponse }) {
         </button>
       </div>
 
-      <div className={`shrink-0 border-t border-line px-4 ${history ? 'py-3' : 'py-2.5'}`}>
-        {history ? <LegendFor data={d} /> : <LevelLegend />}
+      {/* Misma leyenda en la vista por año y en la comparativa histórica. */}
+      <div className="shrink-0 border-t border-line px-4 py-2.5">
+        <LevelLegend />
       </div>
     </section>
   );
-}
-
-function LegendFor({ data }: { data: CalendarResponse }) {
-  const { mode } = useApp();
-  const max = useScaleMax(data, mode);
-  return <Legend max={max} />;
 }

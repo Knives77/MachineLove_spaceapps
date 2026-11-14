@@ -4,11 +4,10 @@ import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { GeoJSON, MapContainer, TileLayer, useMap } from 'react-leaflet';
-import { usingMocks } from '../api';
 import { DEFAULT_PRESET, useApp } from '../state';
 import type { Polygon, PresetFeature } from '../types';
 
-const CYAN = '#22d3ee';
+const SELECT = '#f8fafc'; // contorno activo (interacción), con resplandor cian vía .ml-aoi-glow
 
 /** Cierra el anillo (primer punto = último) y deja [lon, lat] como pide el contrato. */
 function closeRing(geom: Polygon): Polygon {
@@ -65,7 +64,7 @@ function Controller({
     handler.current?.disable();
     handler.current = null;
     if (!drawMode) return;
-    const shapeOptions = { color: CYAN, weight: 2, fillOpacity: 0.08 };
+    const shapeOptions = { color: SELECT, weight: 2, fillColor: '#38bdf8', fillOpacity: 0.08 };
     const h =
       drawMode === 'rect'
         ? new L.Draw.Rectangle(map as L.DrawMap, { shapeOptions })
@@ -122,18 +121,20 @@ export function MapPanel({ className = '' }: { className?: string }) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           maxZoom={12}
         />
-        {features.map((f) => {
+        {/* La región activa se dibuja al final para que ningún contorno gris quede encima. */}
+        {[...features].sort((a, b) => Number(a.id === selectedId) - Number(b.id === selectedId)).map((f) => {
           const on = f.id === selectedId;
           return (
             <GeoJSON
               key={`${f.id}-${on}`}
               data={f as unknown as GeoJSON.Feature}
               style={{
-                color: on ? CYAN : '#93a0ad',
+                color: on ? SELECT : '#64748b',
+                className: on ? 'ml-aoi-glow' : undefined,
                 weight: on ? 2.5 : 1,
                 dashArray: on ? undefined : '4 4',
                 fillOpacity: on ? 0.1 : 0.02,
-                fillColor: on ? CYAN : '#93a0ad',
+                fillColor: on ? '#38bdf8' : '#64748b',
               }}
               eventHandlers={{ click: () => setAoi({ preset_id: f.id }) }}
             />
@@ -143,7 +144,7 @@ export function MapPanel({ className = '' }: { className?: string }) {
           <GeoJSON
             key={JSON.stringify(drawn)}
             data={{ type: 'Feature', properties: {}, geometry: drawn } as GeoJSON.Feature}
-            style={{ color: CYAN, weight: 2.5, fillOpacity: 0.12 }}
+            style={{ color: SELECT, weight: 2.5, fillColor: '#38bdf8', fillOpacity: 0.1, className: 'ml-aoi-glow' }}
           />
         )}
         <Controller
@@ -159,8 +160,8 @@ export function MapPanel({ className = '' }: { className?: string }) {
 
       {/* Regiones de ejemplo + área personalizada */}
       {/* Ocupa hasta el borde inferior para limitar la altura del panel; deja pasar los clics al mapa. */}
-      <div className="pointer-events-none absolute bottom-2 left-2 top-2 z-[500] flex max-w-[calc(100%-1rem)] flex-col items-start gap-2">
-      <div className="pointer-events-auto flex flex-wrap gap-1.5">
+      <div className="pointer-events-none absolute inset-2 z-[500] flex flex-col items-start gap-2">
+      <div className="pointer-events-auto flex max-w-full flex-wrap gap-1.5">
         <span className="sr-only">{t('map.presets')}</span>
         {features.map((f) => (
           <button
@@ -168,7 +169,7 @@ export function MapPanel({ className = '' }: { className?: string }) {
             type="button"
             aria-pressed={f.id === selectedId}
             onClick={() => setAoi({ preset_id: f.id })}
-            className={`btn bg-bg/85 px-2.5 py-1 text-xs backdrop-blur ${f.id === selectedId ? 'btn-on' : ''}`}
+            className={`btn whitespace-nowrap bg-bg/85 px-2 py-1 text-[11.5px] backdrop-blur ${f.id === selectedId ? 'btn-on' : ''}`}
           >
             {presetName(f)}
           </button>
@@ -179,7 +180,7 @@ export function MapPanel({ className = '' }: { className?: string }) {
           aria-controls="custom-area"
           aria-pressed={!!drawn}
           onClick={() => setPanel((p) => !p)}
-          className={`btn border-dashed bg-bg/85 px-2.5 py-1 text-xs backdrop-blur ${drawn || panel ? 'btn-on' : ''}`}
+          className={`btn whitespace-nowrap border-dashed bg-bg/85 px-2 py-1 text-[11.5px] backdrop-blur ${drawn || panel ? 'btn-on' : ''}`}
         >
           <span aria-hidden="true" className="mr-1 text-cyan">+</span>
           {t('map.custom')}
@@ -216,11 +217,6 @@ export function MapPanel({ className = '' }: { className?: string }) {
         >
           ← {t('map.back')}
         </button>
-      )}
-      {drawn && usingMocks && (
-        <p className="absolute right-2 top-12 z-[500] max-w-[220px] rounded border border-warn/50 bg-bg/90 px-2 py-1 text-[11px] text-warn">
-          {t('map.mockPoly')}
-        </p>
       )}
     </div>
   );

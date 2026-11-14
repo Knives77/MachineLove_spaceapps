@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ramp } from '../lib/color';
+import { ramp, statusColor } from '../lib/color';
 import { fmtNum } from '../lib/format';
 import { useApp } from '../state';
 import type { CalendarResponse } from '../types';
@@ -20,7 +20,8 @@ export function YearBars({ data, height = 120 }: { data: CalendarResponse; heigh
   const H = height;
   const pad = 18;
   const bw = W / n;
-  const color = mode === 'harmonized' ? ramp(palette, 0.45) : ramp(palette, 0.8);
+  // Armonizado: el coral de "Normal" de la escala de niveles; crudo: un tono de la rampa.
+  const color = mode === 'harmonized' ? statusColor(palette, 'normal') : ramp(palette, 0.8);
 
   return (
     <figure>
@@ -53,7 +54,7 @@ export function YearBars({ data, height = 120 }: { data: CalendarResponse; heigh
                 y={H - pad - h}
                 height={Math.max(h, 1)}
                 fill={r.complete ? color : 'transparent'}
-                stroke={r.complete ? (sel ? '#22d3ee' : 'none') : color}
+                stroke={r.complete ? (sel ? '#f8fafc' : 'none') : color}
                 strokeWidth={sel ? 3 : 2}
                 strokeDasharray={r.complete ? undefined : '5 4'}
                 vectorEffect="non-scaling-stroke"

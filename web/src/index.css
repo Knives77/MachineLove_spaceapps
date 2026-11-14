@@ -2,16 +2,19 @@
 
 /* Tokens tomados de docs/design/exports/ */
 @theme {
-  --color-bg: #07090c;
-  --color-panel: #0d1117;
-  --color-panel-2: #121821;
-  --color-line: #232c38;
-  --color-line-2: #313c4a;
+  /* Superficies: lienzo #090D14, paneles y tarjetas #111827 con borde #1E293B */
+  --color-bg: #090d14;
+  --color-panel: #111827;
+  --color-panel-2: #172033;
+  --color-line: #1e293b;
+  --color-line-2: #334155;
   --color-ink: #e8edf2;
   --color-mute: #93a0ad;
   --color-dim: #66727f;
-  --color-cyan: #22d3ee;
-  --color-cyan-deep: #0b2a33;
+  /* Interacción (nunca datos): resplandor cian y blanco de selección */
+  --color-cyan: #38bdf8;
+  --color-cyan-deep: #0c2a3d;
+  --color-select: #f8fafc;
   --color-zero: #161c25;
   --color-warn: #f5b84a;
   --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
@@ -73,9 +76,20 @@
   .btn:hover:not(:disabled) {
     border-color: var(--color-cyan);
   }
+  /* Estado activo: blanco con resplandor cian, reservado para la interacción. */
   .btn-on {
-    border-color: var(--color-cyan);
+    border-color: var(--color-select);
     background: var(--color-cyan-deep);
+    color: var(--color-select);
+    box-shadow: 0 0 0 1px var(--color-select), 0 0 10px 0 color-mix(in srgb, var(--color-cyan) 45%, transparent);
+  }
+  .sel-glow {
+    border-color: var(--color-select) !important;
+    box-shadow: 0 0 0 1px var(--color-select), 0 0 12px 0 color-mix(in srgb, var(--color-cyan) 50%, transparent);
+  }
+  /* Contorno del área elegida en el mapa (Leaflet SVG). */
+  .ml-aoi-glow {
+    filter: drop-shadow(0 0 4px #38bdf8);
   }
   .btn:disabled {
     color: var(--color-dim);
