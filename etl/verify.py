@@ -42,21 +42,23 @@ class Box:
 
 QRO = Box("Recuadro Querétaro", "MX", (20.0, 21.7), (-100.6, -99.0))
 SG = Box("Sierra Gorda", "MX", (20.9, 21.7), (-100.6, -99.0))
-CHI = Box("Chilecito", "AR", (-29.9, -28.4), (-68.3, -66.8))
+BAJ = Box("Bajío", "MX", (20.0, 20.9), (-100.6, -99.0))
+CHI = Box("Chilecito", "AR", (-29.9, -28.4), (-68.3, -66.8))  # fase 2, sin cifras de control
 
 # acceptance.md, sección ETL: celdas-día por año. None = no aplica.
-#            año   Qro MODIS, S-NPP, N20   SG MODIS, S-NPP   Chi MODIS, S-NPP
+#            año   Qro MODIS, S-NPP, N20   SG MODIS, S-NPP   Bajío MODIS, S-NPP
 CONTROL = {
-    2003: ((268, None, None), (117, None), (496, None)),
-    2011: ((410, None, None), (167, None), (104, None)),
-    2012: ((190, 557, None), (83, 363), (45, 157)),
-    2017: ((416, 1486, None), (99, 387), (713, 1637)),
-    2019: ((414, 1374, 1409), (154, 563), (64, 218)),
-    2024: ((306, 1017, 1033), (120, 332), (416, 840)),
-    2025: ((562, 1688, 1702), (115, 389), (78, 289)),
+    2003: ((268, None, None), (117, None), (151, None)),
+    2011: ((410, None, None), (167, None), (243, None)),
+    2012: ((190, 557, None), (83, 363), (107, 194)),
+    2017: ((416, 1486, None), (99, 387), (317, 1099)),
+    2019: ((414, 1374, 1409), (154, 563), (260, 811)),
+    2024: ((306, 1017, 1033), (120, 332), (186, 685)),
+    2025: ((562, 1688, 1702), (115, 389), (447, 1299)),
 }
 # acceptance.md, sección Calibración: (k, loyo_annual_mape), con S-NPP en todo el traslape.
-CALIBRATION = {QRO: (0.293, 0.068), SG: (0.262, 0.147), CHI: (0.395, 0.237)}
+# None = "sin medir: registrar el valor".
+CALIBRATION = {QRO: (0.293, 0.068), SG: (0.262, 0.147), BAJ: (0.307, None)}
 
 TOL_COUNT = 0.01   # 1 %
 TOL_K = 0.01       # la regla oficial debe mover k menos de 0.01
@@ -118,9 +120,9 @@ def verify(conn: psycopg.Connection) -> Report:
     rep = Report()
     with conn.cursor() as cur:
         print("\n== Celdas-día por año (acceptance.md, ETL)")
-        data = {b: yearly_cell_days(cur, b) for b in (QRO, SG, CHI)}
-        for year, (qro, sg, chi) in CONTROL.items():
-            for box, want in ((QRO, qro), (SG, sg), (CHI, chi)):
+        data = {b: yearly_cell_days(cur, b) for b in (QRO, SG, BAJ)}
+        for year, (qro, sg, baj) in CONTROL.items():
+            for box, want in ((QRO, qro), (SG, sg), (BAJ, baj)):
                 row = data[box].get(year, {})
                 rep.check(f"{box.name} {year} MODIS (cell_day)", row.get("modis"), want[0], close(row.get("modis"), want[0]))
                 if want[1] is not None:
@@ -147,8 +149,11 @@ def verify(conn: psycopg.Connection) -> Report:
             # Las cifras de control se midieron con la mediana ALTA (elemento n/2 de los 14 años
             # ordenados). El contrato y calibration_country usan la mediana estándar: se informan ambas.
             upper = median_high(calibrate.loyo_errors(series, all_months).values())
-            rep.check(f"{box.name} LOYO anual S-NPP (mediana alta)", round(upper, 3), loyo_want,
-                      abs(upper - loyo_want) <= 0.003)
+            if loyo_want is None:
+                print(f"        {box.name} LOYO anual S-NPP (mediana alta), para registrar: {upper:.3f}")
+            else:
+                rep.check(f"{box.name} LOYO anual S-NPP (mediana alta)", round(upper, 3), loyo_want,
+                          abs(upper - loyo_want) <= 0.003)
             print(f"        mediana estándar (contrato): {snpp.loyo_annual_mape:.3f}")
             rep.check(f"{box.name} k regla oficial (excluye {len(excl)} meses)", round(official.k, 3), k_want,
                       abs(official.k - k_want) < TOL_K)
