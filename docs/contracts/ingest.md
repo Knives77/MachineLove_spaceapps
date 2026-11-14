@@ -1,5 +1,7 @@
 # Contrato de ingesta: de los CSV de FIRMS a `detection`
 
+La ingesta carga México y Argentina; **el MVP solo usa México** (Argentina es fase 2).
+
 ## Fuentes y precedencia
 
 | Fuente | Ruta | Se usa para |

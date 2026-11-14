@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 -- 1. Detecciones normalizadas (una fila por hotspot). Alimenta el modo crudo y el CSV.
 CREATE TABLE IF NOT EXISTS detection (
     id             BIGSERIAL PRIMARY KEY,
-    country        CHAR(2)  NOT NULL,              -- MX | AR
+    country        CHAR(2)  NOT NULL,              -- MX | AR (AR fuera del MVP)
     latitude       DOUBLE PRECISION NOT NULL,
     longitude      DOUBLE PRECISION NOT NULL,
     acq_date       DATE     NOT NULL,
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS calibration_country (
 
 -- 7. Regiones predefinidas.
 CREATE TABLE IF NOT EXISTS preset (
-    id      TEXT PRIMARY KEY,                      -- qro-sierra-gorda | qro-bajio | ar-chilecito
+    id      TEXT PRIMARY KEY,                      -- qro-sierra-gorda | qro-bajio | qro-recuadro
     name_es TEXT NOT NULL,
     name_en TEXT NOT NULL,
     country CHAR(2) NOT NULL,
@@ -95,7 +95,7 @@ INSERT INTO preset VALUES
   ST_MakeEnvelope(-100.6, 20.9, -99.0, 21.7, 4326)),
  ('qro-bajio', 'Bajío queretano', 'Querétaro lowlands (Bajío)', 'MX',
   ST_MakeEnvelope(-100.6, 20.0, -99.0, 20.9, 4326)),
- ('ar-chilecito', 'Chilecito, La Rioja', 'Chilecito, La Rioja', 'AR',
-  ST_MakeEnvelope(-68.3, -29.9, -66.8, -28.4, 4326))
+ ('qro-recuadro', 'Querétaro completo (recuadro)', 'Querétaro (full box)', 'MX',
+  ST_MakeEnvelope(-100.6, 20.0, -99.0, 21.7, 4326))
 ON CONFLICT (id) DO NOTHING;
 -- Los presets son rectángulos provisionales. Mejora: sustituirlos por los polígonos oficiales.

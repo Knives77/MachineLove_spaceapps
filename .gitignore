@@ -29,6 +29,7 @@ __pycache__/
 # Node / frontend
 node_modules/
 web/dist/
+*.tsbuildinfo
 .vite/
 
 # Claude Code: ajustes personales (los skills sí se suben)

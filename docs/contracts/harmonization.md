@@ -45,7 +45,7 @@ Redondear a 1 decimal. Si no hay ningún sensor con cobertura, `harmonized = nul
 | `viirs_outage` | el VIIRS de referencia y su respaldo faltan ≥ 3 días del mes |
 | `nrt` | el mes incluye datos `source = nrt` (provisionales) |
 | `partial_month` | el mes no está completo (mes en curso o cobertura cortada) |
-| `no_coverage` | no hay archivos para ese país y mes (hoy: Argentina 2026 fuera de jul–ago) |
+| `no_coverage` | no hay archivos para ese país y mes (hoy: noviembre–diciembre 2026) |
 
 ## Línea base y anomalía
 
@@ -71,8 +71,8 @@ Para cada satélite y país: días consecutivos con **cero** detecciones en todo
 
 ## Límites conocidos (decirlos en el pitch)
 
-- El error mensual de la conversión ronda 30%; el anual, 7–24% según la región.
+- El error mensual de la conversión ronda 30%; el anual, 7–15% en Querétaro según la región.
 - `k` depende de la región y del tipo de fuego; no hay un valor global.
 - Antes de julio de 2002 solo observaba Terra: esos meses subestiman.
-- La malla de 0.01° no es de área constante (cambia ~10% entre Querétaro y La Rioja).
+- La malla de 0.01° no es de área constante: una celda es ~13 % más chica en el norte de México que en el sur.
 - Terra pasa a media mañana y VIIRS no: al apagarse MODIS se pierde esa ventana y `k` absorbe solo el promedio.
