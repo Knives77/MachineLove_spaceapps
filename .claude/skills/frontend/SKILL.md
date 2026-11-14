@@ -1,88 +1,82 @@
 ---
 name: frontend
-description: Guía para el frontend (carpeta web/) generado con Figma Make en React + Vite + Tailwind - mapa, calendario año x mes, interruptor crudo/armonizado, bilingüe. Úsala antes de tocar web/ o de redactar un prompt para Figma Make.
+description: Guía para el frontend (carpeta web/) en React + Vite + Tailwind - 4 vistas (General, Aprendizaje, Educacional, Experto), mapa, calendario año x mes, interruptor crudo/armonizado, bilingüe, tema oscuro del diseño de Figma. Úsala antes de tocar web/ o de redactar un prompt para Figma Make.
 ---
 
 # Frontend
 
-El frontend **solo pinta** lo que devuelve la API. No calcula medianas, estados ni factores. La forma de los datos está en `docs/contracts/api.md` y los ejemplos en `docs/contracts/examples/`.
+El frontend **solo pinta** lo que devuelve la API. No calcula medianas, estados ni factores. La forma de los datos está en `docs/contracts/api.md` y los ejemplos en `docs/contracts/examples/`. La referencia visual está en `docs/design/` (capturas de Figma y tabla de qué se tomó del diseño).
 
-## Flujo de trabajo con Figma Make
+## Correr
 
-1. Generar la interfaz con el prompt de abajo, adjuntando `calendar.response.json` y `presets.response.json` como datos de ejemplo.
-2. Exportar el código a `web/` en cuanto exista la primera pantalla usable (no esperar a que esté "terminado") y subirlo al repo.
-3. Desde ahí, los ajustes de lógica se hacen en el código; Figma Make solo para rediseños grandes, re-exportando componente por componente.
+```bash
+cd web
+npx pnpm@10 install --ignore-workspace   # web/ es independiente del workspace raíz
+npx vite                                 # http://localhost:5173
+npx tsc -p tsconfig.json                 # revisar tipos antes de subir
+```
 
-## Capa de datos (única puerta a la API)
+`web/.env` (copiar de `.env.example`): `VITE_API_URL` vacío → mocks; `VITE_API_URL=http://localhost:8000/api/v1` → API por túnel.
 
-`web/src/api.ts` expone `getPresets()`, `getCalendar(req)`, `calendarCsvUrl(req)`, `downloadHotspotsCsv(req)`.
+## Estructura
 
-- `VITE_API_URL` definido → llama a la API (por túnel: `http://localhost:8000/api/v1`).
-- `VITE_API_URL` vacío → devuelve los JSON de ejemplo copiados a `web/src/mocks/`.
-
-Ningún componente hace `fetch` directo.
-
-## Pantalla
-
-| Zona | Contenido |
+| Archivo | Qué hace |
 |---|---|
-| Barra superior | Nombre, selector ES/EN, interruptor **Crudo / Armonizado** |
-| Izquierda | Mapa: 3 botones de preset, dibujar rectángulo o polígono, borrar |
-| Derecha arriba | Tarjeta del mes (`latest`): valor, mediana, razón, estado |
-| Derecha centro | Calendario: filas = años (2000–2026), columnas = 12 meses |
-| Derecha abajo | Barras anuales y panel de validación (`calibration`) |
-| Pie | Descargar CSV de hotspots, descargar CSV del calendario, fuentes y aviso de FIRMS |
+| `src/api.ts` | **Única puerta a la API.** `getPresets()`, `getCalendar(req)`, `downloadCalendarCsv(req)`, `downloadHotspotsCsv(req)`, `downloadAoiGeoJson(geom, name)` |
+| `src/types.ts` | Tipos del contrato. Si el contrato cambia, se cambia aquí primero |
+| `src/i18n.ts` | Diccionario ES/EN de todos los textos, incluidos `status.*`, `flag.*`, `source.*`, `error.*` |
+| `src/state.tsx` | Estado global: idioma, pestaña, modo, paleta, área (`aoi`), calendario cargado, mes elegido |
+| `src/lib/color.ts` | Rampas Inferno / Cividis, escala raíz, marcas de nivel |
+| `src/components/` | Calendario, tarjeta del mes, leyenda, mapa, línea de tiempo, barras anuales, inspector de k, serie mensual, descargas |
+| `src/views/` | `General`, `Learn` (Aprendizaje), `Edu` (Educacional), `Expert` |
+| `src/mocks/` | Ejemplos del contrato + mocks DEMO completos |
+| `scripts/make-demo-mocks.mjs` | Genera `calendar.demo.<preset>.json` (324 meses, valores inventados) |
+
+Ningún componente hace `fetch` directo. **CSV del calendario:** el endpoint es `POST`, así que no existe una URL directa; `downloadCalendarCsv` hace el `POST` y guarda el archivo.
+
+## Mocks
+
+- `presets.response.json` y `calendar.response.json`: copias de `docs/contracts/examples/`.
+- `calendar.demo.*.json`: un calendario completo por preset, con la forma del contrato y las reglas de `harmonization.md`, para que las vistas se vean llenas. Los valores son inventados; la interfaz muestra "DEMO" mientras se usen mocks.
+- Con mocks, un polígono dibujado devuelve el DEMO de Sierra Gorda y el CSV de hotspots trae solo la cabecera.
+
+## Vistas
+
+La barra superior es igual en todas: nombre, 4 pestañas, región, **Armonizado / Crudo**, ES/EN, **Inferno / Cividis**.
+
+| Vista | Contenido |
+|---|---|
+| General | Tarjeta del mes (`latest` o el que elijas) + leyenda · mapa con presets y dibujo + barras anuales · calendario 2000–2026 × 12 · línea de tiempo con reproducción |
+| Aprendizaje | Cuaderno de Don Modesto en 4 pasos (crudo → fuentes fijas → celdas-día → factor k) con barras mensuales de `raw_points`, `viirs_cell_days`/`modis_cell_days` y `harmonized`; 3 preguntas |
+| Educacional | Dos regiones lado a lado (Sierra Gorda y Chilecito) con `k` y `seasonality` en la misma escala; MODIS vs VIIRS; qué es la mediana |
+| Experto | Capas del calendario, inspector de k (`calibration`), mapa, calendario, serie del mes con banda p25–p75, descargas |
 
 ## Reglas de visualización
 
-- **Armonizado:** color de celda por `harmonized`. **Crudo:** color por `raw_points`. Cada modo con su propia escala; avisar en la leyenda que no son comparables.
-- Rampa secuencial apta para daltonismo (viridis o cividis), de claro a oscuro. Escala de raíz cuadrada o cuantiles, porque los valores son muy asimétricos.
-- `harmonized = null` (`status = "no_data"`) → celda con trama gris, nunca el color del cero.
-- Banderas `modis_outage`, `viirs_outage`, `nrt`, `partial_month`, `terra_only` → marca pequeña en la esquina de la celda y explicación al pasar el cursor.
-- El estado se comunica con texto e icono además del color.
-- Al pasar el cursor por una celda: mes, valor, mediana, razón, estado, fuente (`modis` / `viirs_scaled`), banderas.
-- Panel de validación: `k`, `scope`, meses de traslape, error anual y mensual en porcentaje. Si `scope = "country"`, avisar que el área tiene poco traslape.
-- Mientras carga, esqueleto; si la API responde error, mensaje según `error.code`.
+- Tema oscuro (tokens en `src/index.css`, tomados de `docs/design/exports/`).
+- **Armonizado:** color de celda por `harmonized`. **Crudo:** color por `raw_points`. Cada modo con su propia escala; la leyenda avisa que no son comparables.
+- Rampas Inferno o Cividis, recortadas para que el valor más bajo se vea sobre fondo oscuro. Luminancia monótona: se leen en grises y con daltonismo. Escala de raíz cuadrada.
+- Cero = celda oscura con "0". `harmonized = null` (`status = "no_data"`) → trama gris, nunca el color del cero. Mes que no viene en la respuesta → borde punteado.
+- El nivel se comunica con texto y marca además del color: `below` ↓ Bajo, `normal` Normal, `above` • Alto (p75–p90), `critical` •• Extremo (> p90), `insufficient_baseline` ? Historia insuficiente.
+- Banderas (`flags`) → triángulo cian en la esquina de la celda y explicación en el tooltip y en la tarjeta.
+- Tooltip de celda: mes, valor, puntos crudos, mediana (n), rango p25–p75, razón, fuente, banderas.
+- Panel de validación: `k`, `scope`, meses de traslape, sumas, errores LOYO y mensual en porcentaje. Si `scope = "country"`, aviso de poco traslape.
+- El margen que se muestra es `calibration.monthly_mape`, no un ±30 % fijo.
+- Mientras carga, esqueleto; si la API responde error, mensaje según `error.code` con botón de reintentar.
+- **No hay mapa de píxeles de 1 km ni puntos crudos en pantalla:** la API no los devuelve. Para agregarlos, primero se cambia el contrato.
 
 ## Mapa
 
-`react-leaflet` + `leaflet-draw` con teselas de OpenStreetMap. El polígono dibujado se envía como GeoJSON `[lon, lat]`, cerrado (primer punto = último). Al elegir un preset, el mapa encuadra su geometría.
+`react-leaflet` + `leaflet-draw` con teselas de OpenStreetMap (oscurecidas con CSS). El polígono dibujado se envía como GeoJSON `[lon, lat]`, cerrado (primer punto = último). Al elegir un preset, el mapa encuadra su geometría.
 
 ## Bilingüe
 
-Un diccionario `web/src/i18n.ts` con claves para todos los textos, incluidos los códigos de la API: `status.critical`, `flag.modis_outage`, `error.aoi_too_large`, `source.viirs_scaled`. Idioma guardado en `localStorage`; por defecto, el del navegador. Los nombres de preset vienen en `name_es` / `name_en`.
+`src/i18n.ts` con claves para todos los textos. Idioma guardado en `localStorage`; por defecto, el del navegador. Los nombres de preset vienen en `name_es` / `name_en`. Texto nuevo → clave nueva en **los dos** diccionarios.
 
-## Prompt base para Figma Make
+## Prompt base para Figma Make (solo para rediseños grandes)
 
-```
-Build a single-page React + Vite + Tailwind dashboard called "Burn Activity Calendar"
-for wildfire emergency managers. Use react-leaflet and leaflet-draw for the map.
-All data comes from one module src/api.ts; for now it returns the attached JSON files.
-Do not compute statistics in the UI; render the fields exactly as given.
-
-Layout (desktop 1366x768 minimum, two columns):
-- Top bar: title, ES/EN language switch, a prominent two-state toggle "Raw / Harmonized".
-- Left column: map with three preset buttons (from presets JSON, use name_es/name_en),
-  draw-rectangle and draw-polygon tools, clear button.
-- Right column, top: summary card for the month in `latest`: value, historical median,
-  anomaly ratio, status badge (below / normal / above / critical) with icon and text.
-- Right column, middle: heatmap calendar, rows = years 2000-2026, columns = 12 months,
-  one cell per element of `months`. Harmonized mode colors by `harmonized`, Raw mode by
-  `raw_points`. Viridis sequential ramp with square-root scale and a legend.
-  Cells with harmonized = null show a grey hatch pattern, not the zero color.
-  Cells with non-empty `flags` show a small corner marker. Tooltip on hover with year,
-  month, value, baseline median, anomaly ratio, status, source and flags.
-- Right column, bottom: yearly bar chart from `years` (same toggle), and a "Validation"
-  panel showing calibration.k, scope, overlap_months, loyo_annual_mape and monthly_mape
-  as percentages.
-- Footer: buttons "Download hotspots CSV" and "Download calendar CSV", data source note
-  "NASA FIRMS (MODIS C6.1, VIIRS C2)".
-
-All visible strings go through a t(key) function with Spanish and English dictionaries,
-including API codes (status.*, flag.*, source.*, error.*). Keyboard accessible,
-visible focus states, WCAG AA contrast, light theme.
-```
+El código ya existe; Figma Make solo para rediseñar un componente y re-exportarlo. Si se usa, pedir: React + Vite + Tailwind, tema oscuro con los tokens de `src/index.css`, datos solo desde `src/api.ts`, todos los textos por `t(key)`, sin calcular estadísticas en la interfaz, nivel con texto e icono, "sin dato" con trama distinta del cero.
 
 ## Antes de decir que está listo
 
-Pasar la sección Frontend de `docs/contracts/acceptance.md`: primero con mocks, después con la API real por túnel.
+Pasar la sección Frontend de `docs/contracts/acceptance.md`: primero con mocks, después con la API real por túnel. `npx tsc -p tsconfig.json` sin errores.
