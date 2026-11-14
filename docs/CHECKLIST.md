@@ -34,9 +34,13 @@ Reglas para todos:
 
 **Durante**
 - [ ] Revisar y fusionar PRs a `main`.
-- [ ] Correr el ETL completo en `firms` cuando procesamiento lo pida (nadie más carga la base oficial).
+- [ ] Correr el ETL completo en `firms` cuando procesamiento lo pida (nadie más carga la base oficial). Anotar cada corrida en `docs/BITACORA_BASE.md`.
+  - [x] Pasos 4 y 5 + `etl.verify` en `firms` (14:54): 53/54.
 - [ ] Mantener la API estable en el puerto 8000 con lo último de `main`.
-- [ ] Respaldo de la base en H1, H3 y H5: `podman exec firms_postgis pg_dump -U firms -Fc firms > <disco externo>/firms_$(date +%H%M).dump`.
+- [ ] Respaldo de `firms` y `firms_dev` en H1, H3 y H5 (comando en `docs/BITACORA_BASE.md`) y copia a un disco externo.
+  - [x] H1: 16:34, `~/backups/machinelove/*_20261114_1634.dump` (falta copiarlo al disco externo).
+  - [ ] H3 (00:00).
+  - [ ] H5 (09:00).
 - [ ] En cada hito, decidir qué se recorta si vamos tarde (orden: mejoras → polígono libre → CSV del calendario; **nunca** el interruptor ni el panel de validación).
 - [ ] La máquina no se suspende ni cambia de red.
 
@@ -75,7 +79,7 @@ Skill: `.claude/skills/etl/SKILL.md`. Puede empezar ya contra `firms_dev`, sin e
 - [x] **Paso 5 · `etl/calibrate.py`**: `calibration_country` (k por país y error dejando un año fuera).
 - [x] Prueba: con SNPP en todo el traslape, `k` Querétaro ≈ 0.293; con la regla oficial cambia menos de 0.01. (0.292 / 0.290; Sierra Gorda 0.262 / 0.260; Chilecito 0.395 / 0.394.)
 - [x] `uv run python -m etl.run --all` corre de principio a fin en `firms_dev` (pasos 2–5 en 69 s; el 1 necesita los CSV del anfitrión).
-- [ ] Avisar al líder para correr 4 y 5 en `firms` y luego `uv run python -m etl.verify`.
+- [x] Avisar al líder para correr 4 y 5 en `firms` y luego `uv run python -m etl.verify`. (Corrido a las 14:54: 53/54; ver `docs/BITACORA_BASE.md`.)
 
 **Después de H1**
 - [ ] Informe para el pitch: para los 3 presets, `k`, error anual y la serie anual cruda vs armonizada (tabla o CSV para el analista).
