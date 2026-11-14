@@ -1,0 +1,23 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "qro-sierra-gorda",
+      "properties": {"name_es": "Sierra Gorda, Querétaro", "name_en": "Sierra Gorda, Querétaro", "country": "MX"},
+      "geometry": {"type": "Polygon", "coordinates": [[[-100.6, 20.9], [-99.0, 20.9], [-99.0, 21.7], [-100.6, 21.7], [-100.6, 20.9]]]}
+    },
+    {
+      "type": "Feature",
+      "id": "qro-bajio",
+      "properties": {"name_es": "Bajío queretano", "name_en": "Querétaro lowlands (Bajío)", "country": "MX"},
+      "geometry": {"type": "Polygon", "coordinates": [[[-100.6, 20.0], [-99.0, 20.0], [-99.0, 20.9], [-100.6, 20.9], [-100.6, 20.0]]]}
+    },
+    {
+      "type": "Feature",
+      "id": "ar-chilecito",
+      "properties": {"name_es": "Chilecito, La Rioja", "name_en": "Chilecito, La Rioja", "country": "AR"},
+      "geometry": {"type": "Polygon", "coordinates": [[[-68.3, -29.9], [-66.8, -29.9], [-66.8, -28.4], [-68.3, -28.4], [-68.3, -29.9]]]}
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 Maqueta de la interfaz del **Calendario de actividad de quema** (Figma). Es la referencia visual para `web/`; las reglas de datos y de visualización siguen en `.claude/skills/frontend/SKILL.md` y `docs/contracts/api.md`.
 
-**Figma:** _(pegar aquí el enlace al archivo)_
+**Figma:** _[(pegar aquí el enlace al archivo)](https://www.figma.com/design/8Lp4CU71vJpGeNd8aVEJti/MACHINELOVE-%E2%80%94-Earth-Fire-Observatory?node-id=80-2&p=f&t=bQQfRVpAb4WAy5dW-0)_
 
 > Las cifras de las capturas son **DEMO**. No son datos reales de FIRMS.
 
@@ -56,11 +56,19 @@ Capas activables, inspector del factor k por región, calendario con leyenda NaN
 | `exports/11-experto-armonizado.png` | Armonizado + fuentes fijas + sin dato + margen ±30 % |
 | `exports/12-experto-crudo.png` | Crudo (puntos VIIRS y MODIS) + fuentes fijas + sin dato |
 
-## Diferencias con el skill de frontend
+## Cómo se llevó a código (`web/`)
 
-El diseño cambia algunas cosas que el skill (`.claude/skills/frontend/SKILL.md`) describe de otra forma. Hay que decidir cuál manda antes de pasarlo a código:
+Cuando el diseño y los contratos chocan, mandan los contratos (`CLAUDE.md`, regla 1). Lo que se tomó y lo que no:
 
-- **Tema:** el diseño es oscuro; el prompt base pide tema claro.
-- **Paletas:** el diseño usa Inferno o Cividis; el skill pide viridis o cividis.
-- **Niveles:** el diseño usa Cero / Normal / Alto / Extremo / Sin dato; la API devuelve `no_data / insufficient_baseline / below / normal / above / critical` (`docs/contracts/api.md`). Hace falta mapearlos en `i18n.ts`, sin recalcular nada en el front.
-- **Pantallas:** el diseño tiene 4 pestañas; el skill describe una sola pantalla con mapa dibujable, barras anuales y panel de validación.
+| Del diseño | En `web/` |
+|---|---|
+| Tema oscuro, 4 pestañas, paletas Inferno / Cividis | Igual. El skill se actualizó para aceptarlo |
+| Niveles Normal / Alto / Extremo | Se traducen desde `status`: `below` → Bajo, `normal` → Normal, `above` → Alto, `critical` → Extremo, `no_data` → Sin dato, `insufficient_baseline` → Historia insuficiente |
+| "Extremo = el 5 % más alto" | Se escribe "> p90" (10 % más alto), que es la regla de `harmonization.md` |
+| Celda coloreada por nivel | Celda coloreada por **valor** (escala raíz) y el nivel va como marca (`↓`, `•`, `••`) y texto, como pide el skill |
+| Mapa de píxeles de 1 km y puntos crudos en Aprendizaje / Experto | **No hay endpoint** que los devuelva. El centro es el mapa Leaflet (presets + dibujar); Aprendizaje usa `raw_points` → `viirs_cell_days` → `harmonized` |
+| Margen fijo ±30 % | Se muestra `calibration.monthly_mape` de la API; la banda de la serie es `baseline.p25`–`p75` |
+| Mini mapas MODIS/VIIRS en Educacional | Se cambiaron por `seasonality` de cada región, con la misma escala |
+| Exportar PNG | Fuera; quedan CSV del calendario, CSV de hotspots y GeoJSON del área |
+
+Si el equipo quiere el mapa de píxeles, primero hay que agregar un endpoint al contrato (`docs/contracts/api.md`) y que lo apruebe el analista.
