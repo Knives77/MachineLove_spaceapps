@@ -1,6 +1,8 @@
 // Única puerta a la API (ver .claude/skills/frontend/SKILL.md).
 // VITE_API_URL definido → llama a la API. Vacío → devuelve los mocks de src/mocks/.
 // Ningún componente hace fetch directo.
+import { areaKm2, centroid } from './lib/geo';
+import { buildDemo } from './mocks/demoCalendar';
 import presetsMock from './mocks/presets.response.json';
 import demoSierra from './mocks/calendar.demo.qro-sierra-gorda.json';
 import demoBajio from './mocks/calendar.demo.qro-bajio.json';
@@ -10,6 +12,7 @@ import {
   type CalendarRequest,
   type CalendarResponse,
   type HotspotsRequest,
+  type Polygon,
   type PresetCollection,
 } from './types';
 
@@ -62,11 +65,55 @@ export async function getPresets(): Promise<PresetCollection> {
   return (await request('/presets')).json();
 }
 
+// Cajas aproximadas de cobertura (api.md: el área debe tocar México o Argentina).
+const COVERAGE = {
+  MX: { s: 14.5, n: 32.8, w: -118.5, e: -86.7, k: 0.293 },
+  AR: { s: -55.1, n: -21.8, w: -73.6, e: -53.6, k: 0.31 },
+} as const;
+
+/**
+ * Solo con mocks: calendario DEMO determinista para un área dibujada. Imita al backend
+ * (mismos errores del contrato) y varía con la ubicación y el tamaño del área; los valores
+ * son INVENTADOS para ver reaccionar la interfaz.
+ */
+function demoForGeometry(geometry: Polygon): CalendarResponse {
+  const area = areaKm2(geometry);
+  if (area > 200_000) throw new ApiError('aoi_too_large');
+  const [lon, lat] = centroid(geometry);
+  const country = (Object.keys(COVERAGE) as ('MX' | 'AR')[]).find((c) => {
+    const b = COVERAGE[c];
+    return lat >= b.s && lat <= b.n && lon >= b.w && lon <= b.e;
+  });
+  if (!country) throw new ApiError('aoi_outside_coverage');
+
+  let seed = 2166136261;
+  for (const v of [lat, lon, area]) seed = Math.imul(seed ^ Math.round(v * 100), 16777619) >>> 0;
+  const r = (i: number) => (((seed >>> (i * 3)) & 1023) / 1023);
+  // Temporada seca: México ~marzo–mayo (antes hacia el sur); Argentina ~agosto–septiembre.
+  const peak = country === 'MX' ? 4 - Math.max(0, (20 - lat) / 6) + (r(1) - 0.5) : 8.5 + (r(1) - 0.5) * 2;
+  const width = 1.1 + r(2) * 1.2;
+  const w = Array.from({ length: 12 }, (_, i) => {
+    const d = Math.min(Math.abs(i + 1 - peak), 12 - Math.abs(i + 1 - peak));
+    return 0.01 + Math.exp(-(d * d) / (2 * width * width));
+  });
+  const total = w.reduce((a, b) => a + b, 0);
+  return buildDemo({
+    country,
+    area: Math.round(area * 10) / 10,
+    k: 0.18 + r(3) * 0.22,
+    countryK: COVERAGE[country].k,
+    seed,
+    amp: 26 * Math.pow(area / 14790, 0.8) * (0.3 + 1.4 * r(4)),
+    season: w.map((x) => x / total),
+    loyo: [0.06 + r(5) * 0.12, 0.2 + r(6) * 0.25, 0.22 + r(7) * 0.2],
+  });
+}
+
 export async function getCalendar(req: CalendarRequest): Promise<CalendarResponse> {
   if (usingMocks) {
     await wait(350);
-    const id = 'preset_id' in req.aoi ? req.aoi.preset_id : 'qro-sierra-gorda';
-    const demo = DEMO[id];
+    if ('geometry' in req.aoi) return demoForGeometry(req.aoi.geometry);
+    const demo = DEMO[req.aoi.preset_id];
     if (!demo) throw new ApiError('unknown_preset');
     return demo as CalendarResponse;
   }

@@ -1,22 +1,47 @@
 import { useMemo } from 'react';
 import { ramp, statusColor } from '../lib/color';
 import { fmtNum, fmtPct, indexMonths, ymKey } from '../lib/format';
-import { useApp } from '../state';
+import { showsRawToggle, useApp } from '../state';
 import type { Baseline, CalendarResponse } from '../types';
 import { StatusIcon } from './ui';
+import { NAV_BTN, shiftMonth } from './YearView';
 
 /** Tarjeta del mes elegido (por defecto `latest`). Solo muestra campos de la API. */
 export function MonthCard({ data }: { data: CalendarResponse }) {
-  const { t, lang, palette, selected, aoiName } = useApp();
+  const { t, lang, palette, selected, setSelected, aoiName, tab } = useApp();
   const sel = selected ?? data.latest;
   const row = useMemo(() => indexMonths(data.months).get(ymKey(sel.year, sel.month)), [data, sel]);
   const mape = data.calibration.monthly_mape;
 
   return (
     <div aria-live="polite">
-      <p className="kicker text-cyan">
-        {t(`month.${sel.month}`)} {sel.year} · {aoiName}
-      </p>
+      {/* Cambiar de mes desde aquí también mueve el selector de año del calendario. */}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          className={NAV_BTN}
+          disabled={ymKey(sel.year, sel.month) <= ymKey(data.range.start_year, 1)}
+          onClick={() => setSelected(shiftMonth(data, sel, -1))}
+          aria-label={t('card.prevMonth')}
+          title={t('card.prevMonth')}
+        >
+          ‹
+        </button>
+        <p className="kicker min-w-0 flex-1 text-center text-cyan">
+          {t(`month.${sel.month}`)} {sel.year}
+          <span className="block text-mute">{aoiName}</span>
+        </p>
+        <button
+          type="button"
+          className={NAV_BTN}
+          disabled={ymKey(sel.year, sel.month) >= ymKey(data.latest.year, data.latest.month)}
+          onClick={() => setSelected(shiftMonth(data, sel, 1))}
+          aria-label={t('card.nextMonth')}
+          title={t('card.nextMonth')}
+        >
+          ›
+        </button>
+      </div>
 
       {!row && <p className="mt-3 text-mute">{t('card.missing')}</p>}
 
@@ -51,8 +76,8 @@ export function MonthCard({ data }: { data: CalendarResponse }) {
                 })}
               </p>
               <p className="text-xs text-dim">
-                {t('card.raw', { v: fmtNum(lang, row.raw_points) })} · {t('card.source')}:{' '}
-                {t(`source.${row.source ?? 'null'}`)}
+                {showsRawToggle(tab) && <>{t('card.raw', { v: fmtNum(lang, row.raw_points) })} · </>}
+                {t('card.source')}: {t(`source.${row.source ?? 'null'}`)}
               </p>
             </>
           )}
@@ -72,6 +97,14 @@ export function MonthCard({ data }: { data: CalendarResponse }) {
               </>
             )}
           </div>
+
+          {data.calibration.scope === 'country' && (
+            // Poco traslape entre sensores en esta área: el backend usó el k del país (harmonization.md).
+            <p className="mt-3 flex gap-2 rounded border border-warn/40 bg-warn/5 px-3 py-2 text-[12.5px] text-warn">
+              <span aria-hidden="true">!</span>
+              <span>{t('val.scopeWarn')}</span>
+            </p>
+          )}
 
           {row.flags.length > 0 && (
             <div className="mt-3">

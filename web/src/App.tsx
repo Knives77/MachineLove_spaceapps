@@ -1,4 +1,3 @@
-import { usingMocks } from './api';
 import { Downloads } from './components/Downloads';
 import { TopBar } from './components/TopBar';
 import { AppProvider, useApp } from './state';
@@ -15,10 +14,7 @@ function Shell() {
         {t('skip')}
       </a>
       <TopBar />
-      {usingMocks && (
-        <p className="border-b border-line bg-cyan-deep/40 px-4 py-1 font-mono text-[11px] text-cyan">{t('demo.banner')}</p>
-      )}
-      <main id="main" role="tabpanel" aria-labelledby={`tab-${tab}`} className="flex-1" tabIndex={-1}>
+      <main id="main" aria-label={t(`tab.${tab}`)} className="flex-1" tabIndex={-1}>
         <div id={`view-${tab}`}>
           {tab === 'general' && <General />}
           {tab === 'learn' && <Learn />}

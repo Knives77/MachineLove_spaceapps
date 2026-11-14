@@ -11,10 +11,19 @@ El frontend **solo pinta** lo que devuelve la API. No calcula medianas, estados 
 
 ```bash
 cd web
-npx pnpm@10 install --ignore-workspace   # web/ es independiente del workspace raíz
-npx vite                                 # http://localhost:5173
-npx tsc -p tsconfig.json                 # revisar tipos antes de subir
+pnpm install --frozen-lockfile   # web/ tiene su propio pnpm-workspace.yaml
+pnpm dev                         # http://localhost:5173
+pnpm typecheck                   # revisar tipos antes de subir
+pnpm build                       # debe pasar antes de abrir PR
 ```
+
+### Versiones (pnpm)
+
+- Solo **pnpm 12.18.0** y **Node 24**. Están fijados en `web/package.json` (`packageManager`, `engines`); pnpm cambia solo a la versión fijada.
+- Nunca `npm install` ni `yarn`. Si aparece `package-lock.json` o `yarn.lock`, se borra.
+- Instalar siempre con `--frozen-lockfile`. Si falla, avisar; no borrar `pnpm-lock.yaml`.
+- Dependencia nueva solo si hace falta y con versión exacta: `pnpm add -E <paquete>`. `package.json` y `pnpm-lock.yaml` van en el mismo commit.
+- `web/pnpm-workspace.yaml` no se toca sin avisar: `minimumReleaseAge: 1440` rechaza paquetes de menos de 1 día (regla de la máquina anfitriona), el `override` de `postcss` existe por eso, y `allowBuilds` deja correr el instalador de `esbuild`.
 
 `web/.env` (copiar de `.env.example`): `VITE_API_URL` vacío → mocks; `VITE_API_URL=http://localhost:8000/api/v1` → API por túnel.
 
@@ -79,4 +88,4 @@ El código ya existe; Figma Make solo para rediseñar un componente y re-exporta
 
 ## Antes de decir que está listo
 
-Pasar la sección Frontend de `docs/contracts/acceptance.md`: primero con mocks, después con la API real por túnel. `npx tsc -p tsconfig.json` sin errores.
+Pasar la sección Frontend de `docs/contracts/acceptance.md`: primero con mocks, después con la API real por túnel. `pnpm typecheck` y `pnpm build` sin errores.
