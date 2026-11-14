@@ -16,7 +16,7 @@
     {
       "type": "Feature",
       "id": "qro-recuadro",
-      "properties": {"name_es": "Querétaro completo", "name_en": "Querétaro (whole state box)", "country": "MX"},
+      "properties": {"name_es": "Querétaro completo (recuadro)", "name_en": "Querétaro (full box)", "country": "MX"},
       "geometry": {"type": "Polygon", "coordinates": [[[-100.6, 20.0], [-99.0, 20.0], [-99.0, 21.7], [-100.6, 21.7], [-100.6, 20.0]]]}
     }
   ]

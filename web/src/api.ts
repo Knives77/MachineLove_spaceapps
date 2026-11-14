@@ -65,10 +65,9 @@ export async function getPresets(): Promise<PresetCollection> {
   return (await request('/presets')).json();
 }
 
-// Cajas aproximadas de cobertura (api.md: el área debe tocar México o Argentina).
+// Caja aproximada de cobertura (api.md: en el MVP el área debe tocar México; Argentina es fase 2).
 const COVERAGE = {
   MX: { s: 14.5, n: 32.8, w: -118.5, e: -86.7, k: 0.293 },
-  AR: { s: -55.1, n: -21.8, w: -73.6, e: -53.6, k: 0.31 },
 } as const;
 
 /**
@@ -80,7 +79,7 @@ function demoForGeometry(geometry: Polygon): CalendarResponse {
   const area = areaKm2(geometry);
   if (area > 200_000) throw new ApiError('aoi_too_large');
   const [lon, lat] = centroid(geometry);
-  const country = (Object.keys(COVERAGE) as ('MX' | 'AR')[]).find((c) => {
+  const country = (Object.keys(COVERAGE) as (keyof typeof COVERAGE)[]).find((c) => {
     const b = COVERAGE[c];
     return lat >= b.s && lat <= b.n && lon >= b.w && lon <= b.e;
   });
@@ -89,8 +88,8 @@ function demoForGeometry(geometry: Polygon): CalendarResponse {
   let seed = 2166136261;
   for (const v of [lat, lon, area]) seed = Math.imul(seed ^ Math.round(v * 100), 16777619) >>> 0;
   const r = (i: number) => (((seed >>> (i * 3)) & 1023) / 1023);
-  // Temporada seca: México ~marzo–mayo (antes hacia el sur); Argentina ~agosto–septiembre.
-  const peak = country === 'MX' ? 4 - Math.max(0, (20 - lat) / 6) + (r(1) - 0.5) : 8.5 + (r(1) - 0.5) * 2;
+  // Temporada seca de México ~marzo–mayo (antes hacia el sur).
+  const peak = 4 - Math.max(0, (20 - lat) / 6) + (r(1) - 0.5);
   const width = 1.1 + r(2) * 1.2;
   const w = Array.from({ length: 12 }, (_, i) => {
     const d = Math.min(Math.abs(i + 1 - peak), 12 - Math.abs(i + 1 - peak));
