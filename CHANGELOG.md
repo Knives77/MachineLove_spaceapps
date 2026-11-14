@@ -8,23 +8,23 @@ Cambios que importan al equipo: qué cambió, de qué área y qué hay que hacer
 
 ## Sin publicar
 
-### Infra
-- ⚠️ **pnpm: la raíz ahora es un workspace que incluye `web/`.** Hay un solo `pnpm-lock.yaml` (en la raíz) y la configuración (`minimumReleaseAge`, override de `postcss`, `allowBuilds`) está en el `pnpm-workspace.yaml` de la raíz. Se borraron `web/pnpm-lock.yaml` y `web/pnpm-workspace.yaml`. Las 191 versiones resueltas son las mismas. **Front:** `git pull` y `pnpm install --frozen-lockfile` **desde la raíz**; `pnpm dev`, `pnpm build` y `pnpm typecheck` funcionan desde la raíz o desde `web/`.
-- La raíz ya no instala `@anthropic-ai/claude-code`; no era parte del proyecto.
-- ⚠️ **Acceso solo por túneles.** Las llaves del equipo pasan a `restrict,port-forwarding,permitopen=8000/8001/5432`: sin terminal ni Remote-SSH en la anfitriona. **Todos:** programar en la laptop y abrir los túneles con `docs/acceso/ssh_config.example`. Postgres llega a la laptop en el puerto 15432.
-- `scripts/pitch_numbers.py`: imprime desde la API las cifras del pitch (k, errores, salto falso, temporada, meses récord, 2026, "sin MODIS"). Solo usa la biblioteca estándar de Python.
-- Se borraron `data/profiling/*.py`, scripts de un solo uso; su resultado está en `docs/referencia/DATA_PROFILING_FIRMS.md`.
+Resumen para quien llega: **hagan `git pull`**. Front instala desde la raíz; el acceso pasa a ser solo por túneles; el analista se enfoca en el pitch; noviembre de 2026 sale como "sin dato".
 
-### Docs
-- `docs/TOPOLOGIA.md` reemplaza a `docs/ACCESS.md`, que describía cuentas y una carpeta `/srv/machinelove` que no existen. La guía y las plantillas de SSH se movieron a `docs/acceso/`.
-- `docs/contracts/README.md`: índice de contratos (quién produce y quién consume cada uno, cómo se comprueba), cómo se cambia un contrato y la tabla de cambios.
-- ⚠️ **El analista pasa a ser dueño del pitch.** `docs/ANALISTA.md` se reescribió con 7 tareas con hora (P1–P7), y `docs/HALLAZGOS.md` ya existe con su plantilla. Los contratos los aprueba el líder (`CLAUDE.md`, regla 1).
-- `CHECKLIST.md` y `PRD.md` al día: H0–H2 cumplidos, tareas pendientes por rol. Procesamiento A y B pasan a apoyar el pitch.
-- `harmonization.md`: límites conocidos de la máscara y de las caídas falsas, y los errores medidos con la API. `PITCH.md`: A1, A3, A4, A5 y A12 con cifras de la app.
+### ⚠️ Lo que obliga a hacer algo
+
+| Cambio | Quién | Qué hacer |
+|---|---|---|
+| **pnpm: la raíz es un workspace que incluye `web/`.** Un solo `pnpm-lock.yaml` en la raíz; la configuración (`minimumReleaseAge`, override de `postcss`, `allowBuilds`) está en el `pnpm-workspace.yaml` de la raíz. Se borraron `web/pnpm-lock.yaml` y `web/pnpm-workspace.yaml`. Las 191 versiones son las mismas | Front | `pnpm install --frozen-lockfile` **desde la raíz**. `pnpm dev`, `build` y `typecheck` funcionan desde la raíz o desde `web/` |
+| **Acceso solo por túneles** (pendiente de aplicar en la anfitriona). Las llaves pasan a `restrict,port-forwarding,permitopen=8000/8001/5432`: sin terminal ni Remote-SSH | Todos | Programar en la laptop y abrir los túneles con `docs/acceso/ssh_config.example`. Postgres llega a la laptop en el puerto 15432 |
+| **El analista pasa a ser dueño del pitch.** Los contratos los aprueba el líder (`CLAUDE.md`, regla 1) | Analista | Seguir `docs/ANALISTA.md` (P1–P7) y anotar todo en `docs/HALLAZGOS.md` |
+| **Mes parcial = sin dato.** Un mes con `partial_month` conserva `harmonized` y `baseline`, pero lleva `status = "no_data"` y `anomaly_ratio = null`. Antes, noviembre de 2026 (con un día de datos) salía `normal` o `below` | Front | Nada: ya pinta en gris todo mes `no_data` |
+| **Procesamiento A y B pasan a apoyar el pitch** | Procesamiento | Tareas nuevas en `docs/CHECKLIST.md` |
 
 ### Contratos
-- ⚠️ **Mes parcial = sin dato.** Un mes con `partial_month` conserva `harmonized` y `baseline`, pero ahora lleva `status = "no_data"` y `anomaly_ratio = null`. Antes, noviembre de 2026 (con un solo día de datos) salía `normal` o `below`. (`harmonization.md`, `api.md`) **Front:** nada que hacer, ya pinta en gris todo mes `no_data`. **Analista:** revisar la decisión.
-- **Criterio de `viirs_primary` medido.** El peor año ya no se compara contra un 45 % fijo, sino contra el `loyo_annual_max` del mismo preset. Sierra Gorda 2020 da 50.7 %, con un LOYO máximo de 55.2 %. (`acceptance.md`)
+- `harmonization.md`, `api.md`: regla del mes parcial.
+- `acceptance.md`: el peor año de `viirs_primary` se compara con el `loyo_annual_max` del mismo preset, no con un 45 % fijo. Sierra Gorda 2020 da 50.7 %, con un máximo de 55.2 %.
+- `harmonization.md`: límites conocidos de la máscara y de las caídas falsas, y los errores medidos con la API (anual 6–17 %, mensual 33–37 %).
+- Nuevo `docs/contracts/README.md`: índice, quién produce y quién consume cada contrato, cómo se comprueba, cómo se cambia y la tabla de cambios.
 
 ### Backend
 - Aplica la regla del mes parcial; prueba unitaria nueva y prueba E2E actualizada. 46 pruebas en verde.
@@ -33,7 +33,15 @@ Cambios que importan al equipo: qué cambió, de qué área y qué hay que hacer
 - `etl.verify` usa el criterio nuevo de `viirs_primary`: **54/54**.
 
 ### Docs
-- `PITCH.md`, afirmación A11 medida: sin MODIS, la serie anual cambia entre 6 y 16 % en mediana, pero el estado mensual solo coincide en el 55 % de los meses de 2012–2025 (en el 90 % queda a un nivel o menos). Ya no se dice que "el calendario no cambia"; la demo de "Simular fin de MODIS" usa las barras anuales.
+- `docs/TOPOLOGIA.md` reemplaza a `docs/ACCESS.md`, que describía cuentas y una carpeta `/srv/machinelove` que no existen. La guía y las plantillas de SSH se movieron a `docs/acceso/`.
+- `docs/ANALISTA.md` reescrito con 7 tareas con hora; `docs/HALLAZGOS.md` con su plantilla.
+- `CHECKLIST.md` y `PRD.md` al día: H0–H2 cumplidos y lo pendiente por rol.
+- `PITCH.md` con cifras de la app: A1 (crudo 524 → 7,304 en Querétaro), A3, A4, A5, A12, y A11 medida. Sin MODIS, la serie anual cambia 6–16 % en mediana, pero el estado mensual solo coincide en el 55 % de los meses. Ya no se dice que "el calendario no cambia".
+
+### Infra
+- `scripts/pitch_numbers.py`: imprime desde la API las cifras del pitch. Solo usa la biblioteca estándar de Python.
+- La raíz ya no instala `@anthropic-ai/claude-code`; no era parte del proyecto.
+- Se borraron `data/profiling/*.py`, scripts de un solo uso; el perfilado está en `docs/referencia/DATA_PROFILING_FIRMS.md`.
 
 ---
 
