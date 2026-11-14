@@ -49,6 +49,8 @@ Para cada fecha y país: referencia = `SNPP` antes de 2018-04-01, `N20` después
 
 ## Cómo probar
 
+El MVP solo usa México; el ETL procesa ambos países porque cuesta poco y deja lista la fase 2.
+
 1. Primero con poco: `uv run python -m etl.run --all --country MX --limit-years 2011,2012,2019`.
 2. Comparar contra la tabla de `docs/contracts/acceptance.md` con esta consulta:
 

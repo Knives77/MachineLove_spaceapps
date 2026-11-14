@@ -4,17 +4,17 @@ Las cifras salen de una medición independiente del 14-nov sobre `data/historico
 
 ## ETL
 
-Celdas-día por año. Sierra Gorda = lat 20.9–21.7, lon −100.6 a −99.0. Recuadro Querétaro = lat 20.0–21.7, mismo lon. Chilecito = lat −29.9 a −28.4, lon −68.3 a −66.8.
+Celdas-día por año. Sierra Gorda = lat 20.9–21.7, lon −100.6 a −99.0. Recuadro Querétaro = lat 20.0–21.7, mismo lon. Bajío = lat 20.0–20.9, mismo lon.
 
-| Año | Qro MODIS | Qro S-NPP | Qro N20 | S. Gorda MODIS | S. Gorda S-NPP | Chilecito MODIS | Chilecito S-NPP |
+| Año | Qro MODIS | Qro S-NPP | Qro N20 | S. Gorda MODIS | S. Gorda S-NPP | Bajío MODIS | Bajío S-NPP |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| 2003 | 268 | — | — | 117 | — | 496 | — |
-| 2011 | 410 | — | — | 167 | — | 104 | — |
-| 2012 | 190 | 557 | — | 83 | 363 | 45 | 157 |
-| 2017 | 416 | 1,486 | — | 99 | 387 | 713 | 1,637 |
-| 2019 | 414 | 1,374 | 1,409 | 154 | 563 | 64 | 218 |
-| 2024 | 306 | 1,017 | 1,033 | 120 | 332 | 416 | 840 |
-| 2025 | 562 | 1,688 | 1,702 | 115 | 389 | 78 | 289 |
+| 2003 | 268 | — | — | 117 | — | 151 | — |
+| 2011 | 410 | — | — | 167 | — | 243 | — |
+| 2012 | 190 | 557 | — | 83 | 363 | 107 | 194 |
+| 2017 | 416 | 1,486 | — | 99 | 387 | 317 | 1,099 |
+| 2019 | 414 | 1,374 | 1,409 | 154 | 563 | 260 | 811 |
+| 2024 | 306 | 1,017 | 1,033 | 120 | 332 | 186 | 685 |
+| 2025 | 562 | 1,688 | 1,702 | 115 | 389 | 447 | 1,299 |
 
 Puntos crudos (MODIS + S-NPP + N20, solo `type = 0`) en el recuadro Querétaro: 2011 = 423 · 2012 = 904 · 2019 = 4,554 · 2025 = 5,295.
 
@@ -33,7 +33,7 @@ Otras comprobaciones:
 |---|---:|---:|
 | Recuadro Querétaro | 0.293 | 0.068 |
 | Sierra Gorda | 0.262 | 0.147 |
-| Chilecito | 0.395 | 0.237 |
+| Bajío | 0.307 | sin medir: registrar el valor |
 
 Calculadas con S-NPP como VIIRS en todo 2012-02 → 2025-12. Con la regla oficial (NOAA-20 desde abr-2018) deben moverse menos de 0.01.
 
@@ -45,7 +45,8 @@ Calculadas con S-NPP como VIIRS en todo 2012-02 → 2025-12. Con la regla oficia
 - [ ] Con `basis = viirs_primary`, el total anual `harmonized` de cada año 2012–2025 difiere menos de 45% del de `modis_primary`, y la mediana de esas diferencias es menor a 20%.
 - [ ] Un mes con `no_coverage` tiene `harmonized = null` y no cuenta en `baseline.n_years`.
 - [ ] Polígono en el océano → 422 `aoi_outside_coverage`.
-- [ ] `/hotspots.csv` de Chilecito, 2026-07-01 → 2026-08-15, descarga y abre en una hoja de cálculo.
+- [ ] `/hotspots.csv` de Sierra Gorda, 2025-03-01 → 2025-05-31, descarga y abre en una hoja de cálculo.
+- [ ] Polígono en Argentina → 422 `aoi_outside_coverage` (fuera del MVP).
 
 ## Frontend
 

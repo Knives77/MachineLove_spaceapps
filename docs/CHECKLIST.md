@@ -1,5 +1,7 @@
 # Checklist del equipo
 
+**Alcance del MVP: solo México** (decidido el 14-nov). Argentina está cargada en la base para la fase 2; nadie trabaja en ella hasta que el MVP esté completo.
+
 Hitos (detalle en `docs/PRD.md`):
 
 | Hito | Hora | Qué debe existir |
@@ -151,22 +153,39 @@ Skill: `.claude/skills/frontend/SKILL.md`.
 
 ## Analista / puente
 
-**Hasta H0 (14:30)**
-- [ ] Leer todos los contratos y congelarlos (anotar la hora en este archivo).
-- [ ] Generar un mock de `/calendar` con los 324 meses (2000–2026) para que el front vea el calendario lleno.
-- [ ] Confirmar con los organizadores qué piden en la entrega (video: duración; página del proyecto; repo público).
+Es el cerebro y la dirección del equipo: decide contratos, qué se dice y si un hito pasa (`docs/PITCH.md` §7).
+Guías: **`docs/ANALISTA.md`** (investigaciones con SQL) y **`docs/PITCH.md`** (guion, evidencia, pruebas de demo). Todo hallazgo va a `docs/HALLAZGOS.md`; si no está ahí, no se dice en el pitch.
 
-**En cada hito**
-- [ ] Pasar la lista de `acceptance.md` correspondiente y anotar qué falla y de quién es.
-- [ ] Resolver dudas de contrato en menos de 15 minutos; cualquier cambio se escribe primero en `docs/contracts/`.
+**Ya (antes de H0, 14:30)**
+- [ ] **I1** · Confirmar requisitos de la entrega con los organizadores (video, duración, página, repo, uso de IA, hora de cierre). Si algo choca con el PRD, avisar al líder.
+- [ ] Leer `CLAUDE.md`, `docs/PRD.md`, `docs/CONTEXT.md` y todos los contratos; anotar aquí la hora en que quedan congelados: ______
+- [ ] Generar un mock de `/calendar` con los 324 meses (2000–2026) en `docs/contracts/examples/calendar.full.json` y pasárselo al front.
+- [ ] Confirmar que front, backend y procesamiento B tienen acceso (túnel o Remote-SSH) y saben qué leer.
+
+**Hasta H1 (18:30) — mientras el equipo programa**
+- [ ] **I2** · Caso local destacado de México: meses récord de Sierra Gorda y Bajío y si coinciden con incendios reportados. Consulta en `ANALISTA.md`.
+- [ ] **I3** · ¿Qué instalaciones explican el ruido industrial del sur de Querétaro? (¿Tula sí o no?)
+- [ ] **I7** · Casos reales para el pitch: 2–3 eventos de fuego en México con fuente, verificados en la base; elegir el del minuto 2:20 y, si hace falta, proponer un preset nuevo.
+- [ ] **I4** · Escribir los límites conocidos en `docs/contracts/harmonization.md` (máscara solo `type = 2`, calidad de la máscara, falsas caídas en 2001–2002).
+- [ ] **I5** · Citas: FIRMS, MODIS C6.1, VIIRS 375 m C2, cese de Suomi-NPP.
+- [ ] Verificar H1: las cifras de control de `acceptance.md` (sección ETL y Calibración) salen en `cell_day` y `calibration_country`.
+
+**En cada hito (H1, H2, H3, H4)**
+- [ ] Pasar la sección de `acceptance.md` del hito y anotar en `HALLAZGOS.md` qué falla y de quién es.
+- [ ] Mensaje de 3 líneas al chat: qué pasó, qué falla y de quién, qué se recorta.
+- [ ] Actualizar el estado (✅/⏳) de la tabla de afirmaciones de `PITCH.md` §3.
+- [ ] Resolver dudas de contrato en menos de 15 minutos; todo cambio se escribe primero en `docs/contracts/` y se avisa en el chat.
 
 **Hasta H4 (07:00)**
-- [ ] Guion de 3 minutos (PRD → "Guion de la demo") con cifras reales, no las del mock.
-- [ ] Comprobar con datos reales qué pasó en Chilecito jul–ago 2026 antes de afirmarlo.
-- [ ] Banco de preguntas de jueces con respuestas (por qué no sumar puntos, cómo validaron, límites del método).
+- [ ] Guion de 3 minutos (`PITCH.md` §2) **con cifras reales** de la app, no del mock.
+- [ ] Correr los 13 escenarios de demo (`PITCH.md` §6) en H3 y H4, y la coherencia de números contra la base.
+- [ ] Completar y ensayar las respuestas de `PITCH.md` §5 con el equipo.
 - [ ] Diapositivas o material de apoyo para el video.
-- [ ] README del repo: qué es, cómo correrlo, fuentes y cita de FIRMS.
+- [ ] README del repo: qué es, cómo correrlo, método en 6 pasos, fuentes y cita de FIRMS.
+- [ ] **I6** (solo si sobra tiempo) · Polígonos reales de Sierra Gorda y del estado de Querétaro para los presets.
 
 **H5–H6 (09:00–11:30)**
+- [ ] Plan B de `PITCH.md` §6: capturas de cada paso y video de respaldo.
+- [ ] Ensayar la demo completa 2 veces con cronómetro: una persona habla, otra opera.
 - [ ] Grabar el video con la app real.
 - [ ] Llenar la página del proyecto y enviar antes de las 11:30.

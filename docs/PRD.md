@@ -16,7 +16,7 @@ Un gestor de emergencias quiere saber si el fuego de este mes en su región es n
 
 | # | Función | Criterio de aceptación |
 |---|---|---|
-| 1 | Elegir región | 3 presets de un clic y dibujo de polígono/rectángulo dentro de México o Argentina |
+| 1 | Elegir región | 3 presets de un clic (Sierra Gorda, Bajío, Querétaro completo) y dibujo de polígono/rectángulo dentro de México |
 | 2 | Calendario año × mes | Matriz 2000–2026 con rampa de color apta para daltonismo; valor y estado al pasar el cursor |
 | 3 | Crudo vs armonizado | Un interruptor cambia matriz y serie anual. En crudo se ve el salto de 2012; en armonizado desaparece |
 | 4 | Diagnóstico del mes | Tarjeta: valor del mes, mediana histórica, razón, estado (`below`/`normal`/`above`/`critical`) |
@@ -33,6 +33,13 @@ Un gestor de emergencias quiere saber si el fuego de este mes en su región es n
 4. `k` por temporada (seca / lluvias) si reduce el error mensual.
 5. Métrica secundaria de FRP por celda-día.
 6. Exportar la gráfica como PNG.
+
+## Después del MVP
+
+| Fase | Qué | Esfuerzo |
+|---|---|---|
+| 2 | Argentina y el caso Chilecito del video de la CONAE | Bajo: los datos 2000–2026 ya están cargados y procesados; basta reactivar el preset y aceptar `AR` en la API |
+| 3 | Otros países / el mundo | Alto: descargar cada país con `scripts/download_history.sh` o consultar FIRMS en vivo; revisar volumen y tiempos |
 
 ## Fuera de alcance
 
@@ -64,8 +71,8 @@ Detalle exacto: `docs/contracts/harmonization.md`.
 
 | Hito | Cuándo | Qué debe existir | Quién verifica |
 |---|---|---|---|
-| H0 Cimientos | Sáb 14:30 | Repo en GitHub, acceso SSH probado por los 5, Postgres arriba, contratos congelados, mocks entregados a frontend, solicitud FIRMS de Argentina 2026 enviada | Analista |
-| H1 Datos | Sáb 18:30 | `detection` y `cell_day` con México y Argentina 2000–2026; cifras de control de `acceptance.md` reproducidas | Procesamiento B |
+| H0 Cimientos | Sáb 14:30 | Repo en GitHub, acceso SSH probado por los 5, Postgres arriba, contratos congelados, mocks entregados a frontend | Analista |
+| H1 Datos | Sáb 18:30 | `detection` y `cell_day` con México 2000–2026; cifras de control de `acceptance.md` reproducidas | Procesamiento B |
 | H2 API | Sáb 21:30 | `/presets`, `/calendar` y los CSV respondiendo con datos reales para los 3 presets | Backend + analista |
 | H3 Integración | Dom 00:00 | Frontend contra API real, interruptor crudo/armonizado funcionando: **MVP completo** | Todos |
 | H4 Pulido | Dom 07:00 | Polígono libre, banderas de caída, bilingüe revisado, mejora 1 si hay tiempo | Analista |
@@ -81,7 +88,7 @@ Descanso: nadie programa de 02:00 a 06:00 sin relevo; al menos 2 personas duerme
 | Riesgo | Mitigación |
 |---|---|
 | La máquina anfitriona falla o se queda sin red | `pg_dump` a un disco externo en H1, H3 y H5; el repo siempre al día en GitHub |
-| La ingesta de ~20 M de filas tarda o no cabe | Filtrar al leer (solo columnas del contrato), `COPY`, índices al final. Si aun así no da: quedarse con México completo y solo La Rioja de Argentina |
+| La ingesta de ~20 M de filas tarda o no cabe | Filtrar al leer (solo columnas del contrato), `COPY`, índices al final. Si aun así no da: limitar a los estados del centro de México |
 | El frontend de Figma Make no encaja con la API | Construyen desde el minuto cero contra los JSON de `docs/contracts/examples/`; la API no cambia de forma sin pasar por el analista |
 | El polígono libre es lento | Límite de 200,000 km²; consulta sobre `cell_day`, no sobre puntos |
 | El error de calibración es alto en zonas con poco fuego | Si el traslape tiene < 100 celdas-día MODIS se usa el `k` del país y la respuesta lo declara |
@@ -93,5 +100,5 @@ Descanso: nadie programa de 02:00 a 06:00 sin relevo; al menos 2 personas duerme
 2. Interruptor a **armonizado**: el salto desaparece y quedan los años realmente altos.
 3. Panel de validación: 14 años de traslape, `k` de la región, error medido.
 4. Tarjeta del mes: estado frente a la mediana histórica.
-5. Chilecito, julio–agosto 2026: el caso del video oficial, con lo que digan los datos.
+5. Sierra Gorda contra Bajío: fuego forestal y quemas agrícolas, temporadas distintas y factores `k` distintos dentro del mismo estado.
 6. Descarga del CSV.

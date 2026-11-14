@@ -51,7 +51,7 @@ GROUP BY 1 ORDER BY 1;
 - Siempre parámetros; nunca concatenar texto en el SQL.
 - Para `k` se necesita el traslape 2012-02 → 2025-12 completo aunque el usuario pida otro rango: consultar siempre 2000–2026 y recortar al final.
 - Los meses sin filas no aparecen en el resultado: generar la lista completa de meses en Python y rellenar. Un mes sin filas pero con cobertura vale **0**, no `null`. Es `null` solo si hay `no_coverage` o caída total.
-- País del área: el de la mayoría de sus celdas; si no hay celdas, probar contra los rectángulos México (lat 14.5–32.8, lon −118.5 a −86.5) y Argentina (lat −55.1 a −21.7, lon −73.6 a −53.6); si no cae en ninguno, 422.
+- **MVP solo México.** Filtrar siempre `cell.country = 'MX'`. Si el área no tiene celdas de México y no toca el rectángulo de México (lat 14.5–32.8, lon −118.5 a −86.5) → 422 `aoi_outside_coverage`. Argentina está en la base pero se rechaza hasta la fase 2.
 - Área en km²: `ST_Area(g::geography) / 1e6`. Rechazar más de 200,000.
 - Banderas de caída: contar por mes los días de `sensor_outage` del país.
 
