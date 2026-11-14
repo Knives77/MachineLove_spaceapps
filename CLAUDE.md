@@ -16,6 +16,7 @@ Frase brújula: *que no importe qué satélite tomó el dato, sino saber si el f
 | `docs/ANALISTA.md` | Investigaciones del analista con consultas SQL |
 | `docs/PITCH.md` | Guion, afirmaciones con evidencia, preguntas de jueces, pruebas de la demo |
 | `docs/contracts/` | Contratos congelados: ingesta, tablas, API, JSON de ejemplo |
+| `CHANGELOG.md` | Qué cambió y qué tiene que hacer cada rol. Todo PR agrega su línea |
 | `docs/BITACORA_BASE.md` | Estado de la base, corridas del ETL en `firms` y respaldos |
 | `docs/ACCESS.md` y `docs/GUIA_TUNELES_SSH.md` | Túneles SSH, puertos y base de datos |
 | `.claude/skills/` | Guía por rol: `etl`, `backend`, `frontend` |
