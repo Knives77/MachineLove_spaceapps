@@ -1,0 +1,16 @@
+# Plantilla para ~/.ssh/authorized_keys del anfitrión (equimanthorn)
+#
+# Una línea por persona. Reemplaza "ssh-ed25519 AAAA... nombre" por la llave .pub que te mandaron.
+# Las opciones del inicio limitan la llave a túneles hacia los puertos de su rol (sin terminal).
+# Después de editar:   chmod 600 ~/.ssh/authorized_keys
+# Para quitar el acceso a alguien, borra su línea.
+
+# Frontend / analista -> 8000
+restrict,port-forwarding,permitopen="localhost:8000",command="/usr/bin/false" ssh-ed25519 AAAA...LLAVE... nombre_frontend
+
+# Procesamiento -> 8000, 5432
+restrict,port-forwarding,permitopen="localhost:8000",permitopen="localhost:5432",command="/usr/bin/false" ssh-ed25519 AAAA...LLAVE... nombre_procesamiento
+
+# Backend -> 8001, 5432
+restrict,port-forwarding,permitopen="localhost:8001",permitopen="localhost:5432",command="/usr/bin/false" ssh-ed25519 AAAA...LLAVE... nombre_backend
+

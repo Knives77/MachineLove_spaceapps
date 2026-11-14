@@ -1,0 +1,41 @@
+# Datos de FIRMS: solo se suben los .zip de las solicitudes y el perfilado.
+# El histórico se regenera con scripts/download_history.sh
+data/*
+!data/*/
+data/*/*
+!data/*/*.zip
+!data/DATA_PROFILING_FIRMS.md
+!data/profiling/*
+
+# Respaldos de la base
+*.dump
+
+# Secretos y llaves
+.env
+.env.*
+!.env.example
+authorized_keys
+id_ed25519*
+*.pem
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node / frontend
+node_modules/
+web/dist/
+.vite/
+
+# Claude Code: ajustes personales (los skills sí se suben)
+.claude/settings.local.json
+
+# Editores y sistema
+.vscode/
+.idea/
+.DS_Store
+*.log
