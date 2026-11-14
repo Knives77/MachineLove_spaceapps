@@ -83,7 +83,7 @@
   }
   /* "Sin dato" ≠ 0: trama diagonal, nunca el color del cero. */
   .hatch {
-    background-color: #1a2029;
+    background-color: #1e2530;
     background-image: repeating-linear-gradient(
       135deg,
       #6b7685 0 1.5px,

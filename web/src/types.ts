@@ -115,6 +115,6 @@ export class ApiError extends Error {
 }
 
 export type Mode = 'harmonized' | 'raw';
-export type Palette = 'inferno' | 'cividis';
+export type Palette = 'inferno' | 'cividis' | 'contrast';
 export type Lang = 'es' | 'en';
 export type Tab = 'general' | 'learn' | 'edu' | 'expert';

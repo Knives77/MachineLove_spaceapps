@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
-import { inkOn, ramp, sqrtT, statusMark } from '../lib/color';
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import { INK_LIGHT, inkOn, ramp, sqrtT, statusMark } from '../lib/color';
+import { playStatus } from '../lib/sound';
 import { fmtNum, indexMonths, ymKey } from '../lib/format';
 import { useApp } from '../state';
 import type { CalendarResponse, MonthRow } from '../types';
@@ -33,12 +34,15 @@ export function Calendar({
   data,
   layers = ALL_LAYERS,
   cellH = 17,
+  stickyHeader = false,
 }: {
   data: CalendarResponse;
   layers?: Layers;
   cellH?: number;
+  /** Encabezado de meses fijo arriba cuando el calendario está en un contenedor con scroll. */
+  stickyHeader?: boolean;
 }) {
-  const { t, lang, mode, palette, selected, setSelected } = useApp();
+  const { t, lang, mode, palette, selected, setSelected, sound } = useApp();
   const byKey = useMemo(() => indexMonths(data.months), [data]);
   const max = useScaleMax(data, mode);
   const years = useMemo(() => {
@@ -51,17 +55,31 @@ export function Calendar({
   const [focusKey, setFocusKey] = useState<number>(() =>
     selected ? ymKey(selected.year, selected.month) : ymKey(data.latest.year, data.latest.month),
   );
-  const [hover, setHover] = useState<{ key: number; x: number; y: number } | null>(null);
+  const [hover, setHover] = useState<{ key: number; x: number; y: number; below: boolean } | null>(null);
   const wrap = useRef<HTMLDivElement>(null);
 
   const selKey = selected ? ymKey(selected.year, selected.month) : -1;
 
+  // Si el calendario vive dentro de un contenedor con scroll, la tarjeta se abre hacia abajo
+  // cuando la celda está cerca del borde superior visible (si no, quedaría recortada).
   function showTip(key: number, el: HTMLElement) {
     const box = wrap.current?.getBoundingClientRect();
     const r = el.getBoundingClientRect();
     if (!box) return;
-    setHover({ key, x: r.left - box.left + r.width / 2, y: r.top - box.top });
+    const top = wrap.current?.closest('[data-cal-scroll]')?.getBoundingClientRect().top ?? box.top;
+    setHover({ key, x: r.left - box.left + r.width / 2, y: r.top - box.top, below: r.top - top < 150 });
   }
+
+  // Dentro de un contenedor con scroll, al cargar se muestra el mes elegido (por defecto el último).
+  useEffect(() => {
+    const scroller = wrap.current?.closest<HTMLElement>('[data-cal-scroll]');
+    const k = selected ? ymKey(selected.year, selected.month) : ymKey(data.latest.year, data.latest.month);
+    const el = wrap.current?.querySelector<HTMLElement>(`[data-k="${k}"]`);
+    if (!scroller || !el) return;
+    const s = scroller.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    if (r.top < s.top || r.bottom > s.bottom) scroller.scrollTop += r.top - s.top - s.height / 2;
+  }, [data]);
 
   function onKey(e: KeyboardEvent<HTMLButtonElement>, y: number, m: number) {
     const moves: Record<string, [number, number]> = {
@@ -108,9 +126,13 @@ export function Calendar({
       </p>
       <div role="grid" aria-describedby="cal-help" className="grid grid-cols-[2.6rem_repeat(12,minmax(0,1fr))] gap-[3px]">
         <div role="row" className="contents">
-          <span />
+          <span className={stickyHeader ? 'sticky top-0 z-20 bg-panel' : ''} />
           {short.map((s, i) => (
-            <span key={i} role="columnheader" className="text-center font-mono text-[10px] text-mute">
+            <span
+              key={i}
+              role="columnheader"
+              className={`text-center font-mono text-[10px] text-mute ${stickyHeader ? 'sticky top-0 z-20 bg-panel py-1' : ''}`}
+            >
               {s}
             </span>
           ))}
@@ -133,6 +155,8 @@ export function Calendar({
               let cls = '';
               let style: CSSProperties = {};
               let label = '';
+              let ink = INK_LIGHT; // color de símbolo y aviso: blanco o negro según la celda
+              let extreme = false;
               if (!row) {
                 cls = 'missing';
               } else if (v === null) {
@@ -142,8 +166,12 @@ export function Calendar({
                 label = '0';
               } else {
                 const bg = ramp(palette, sqrtT(v, max));
-                style = { background: bg, color: inkOn(bg) };
-                if (mode === 'harmonized' && layers.marks) label = statusMark(row.status);
+                ink = inkOn(bg);
+                style = { background: bg, color: ink };
+                if (mode === 'harmonized' && layers.marks) {
+                  label = statusMark(row.status);
+                  extreme = row.status === 'critical';
+                }
               }
               const hasFlags = !!row && layers.flags && row.flags.length > 0;
               const isSel = k === selKey;
@@ -169,6 +197,7 @@ export function Calendar({
                   onFocus={(e) => {
                     setFocusKey(k);
                     showTip(k, e.currentTarget);
+                    if (sound) playStatus(row ? row.status : null);
                   }}
                   onBlur={() => setHover(null)}
                   onMouseEnter={(e) => showTip(k, e.currentTarget)}
@@ -177,12 +206,16 @@ export function Calendar({
                   }`}
                   style={style}
                 >
+                  {extreme && (
+                    // Extremo: borde interior grueso, para no depender solo del color.
+                    <span aria-hidden="true" className="absolute inset-0 rounded-[2px] border-2" style={{ borderColor: ink }} />
+                  )}
                   <span aria-hidden="true">{label}</span>
                   {hasFlags && (
                     <span
                       aria-hidden="true"
-                      className="absolute right-0 top-0 h-[7px] w-[7px] bg-cyan"
-                      style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%)' }}
+                      className="absolute right-0 top-0 h-[7px] w-[7px]"
+                      style={{ background: ink, clipPath: 'polygon(0 0, 100% 0, 100% 100%)' }}
                     />
                   )}
                 </button>
@@ -196,6 +229,7 @@ export function Calendar({
         <Tooltip
           x={hover.x}
           y={hover.y}
+          below={hover.below}
           width={wrap.current?.clientWidth ?? 400}
           row={hovered}
           year={hoverYm.y}
@@ -209,6 +243,7 @@ export function Calendar({
 function Tooltip({
   x,
   y,
+  below,
   width,
   row,
   year,
@@ -216,13 +251,13 @@ function Tooltip({
 }: {
   x: number;
   y: number;
+  below: boolean;
   width: number;
   row?: MonthRow;
   year: number;
   month: number;
 }) {
   const { t, lang } = useApp();
-  const below = y < 140;
   return (
     <div
       role="tooltip"
