@@ -30,7 +30,7 @@ def test_get_presets_returns_3_regions() -> None:
     assert body["type"] == "FeatureCollection"
     assert len(body["features"]) == 3
     ids = [f["id"] for f in body["features"]]
-    assert ids == ["qro-sierra-gorda", "qro-bajio", "ar-chilecito"]
+    assert ids == ["qro-sierra-gorda", "qro-bajio", "qro-recuadro"]
 
 
 def test_post_calendar_preset_sierra_gorda() -> None:
@@ -66,6 +66,24 @@ def test_polygon_in_ocean_returns_422() -> None:
         ],
     }
     res = client.post("/api/v1/calendar", json={"aoi": {"geometry": ocean_poly}})
+    assert res.status_code == 422
+    assert res.json()["error"]["code"] == "aoi_outside_coverage"
+
+
+def test_polygon_in_argentina_returns_422() -> None:
+    ar_poly = {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [-68.3, -29.9],
+                [-66.8, -29.9],
+                [-66.8, -28.4],
+                [-68.3, -28.4],
+                [-68.3, -29.9],
+            ]
+        ],
+    }
+    res = client.post("/api/v1/calendar", json={"aoi": {"geometry": ar_poly}})
     assert res.status_code == 422
     assert res.json()["error"]["code"] == "aoi_outside_coverage"
 
@@ -127,9 +145,9 @@ def test_csv_endpoints() -> None:
     res_hs = client.post(
         "/api/v1/hotspots.csv",
         json={
-            "aoi": {"preset_id": "ar-chilecito"},
-            "start_date": "2026-07-01",
-            "end_date": "2026-08-15",
+            "aoi": {"preset_id": "qro-sierra-gorda"},
+            "start_date": "2025-03-01",
+            "end_date": "2025-05-31",
         },
     )
     assert res_hs.status_code == 200

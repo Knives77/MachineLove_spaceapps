@@ -57,10 +57,11 @@ def fetch_presets(conn: psycopg.Connection) -> PresetCollection:
             """
             SELECT id, name_es, name_en, country, ST_AsGeoJSON(geom)
             FROM preset
+            WHERE country = 'MX'
             ORDER BY CASE id
                 WHEN 'qro-sierra-gorda' THEN 1
                 WHEN 'qro-bajio' THEN 2
-                WHEN 'ar-chilecito' THEN 3
+                WHEN 'qro-recuadro' THEN 3
                 ELSE 4
             END, id
             """
@@ -95,7 +96,7 @@ def resolve_aoi_db(conn: psycopg.Connection, aoi: AoiInput) -> ResolvedAoi:
                        ST_AsGeoJSON(geom),
                        ST_Area(geom::geography) / 1e6
                 FROM preset
-                WHERE id = %(preset_id)s
+                WHERE id = %(preset_id)s AND country = 'MX'
                 """,
                 {"preset_id": aoi.preset_id},
             )
@@ -104,7 +105,7 @@ def resolve_aoi_db(conn: psycopg.Connection, aoi: AoiInput) -> ResolvedAoi:
             # Si la tabla preset aún está vacía pero es uno de los 3 presets oficiales, usar offline
             return resolve_aoi_offline(aoi)
         country_raw, geojson_str, area_km2 = row
-        country: Country = "MX" if country_raw.strip() == "MX" else "AR"
+        country: Country = "MX"
         poly = parse_and_validate_polygon(json.loads(geojson_str))
         return ResolvedAoi(
             preset_id=aoi.preset_id,
@@ -137,26 +138,23 @@ def resolve_aoi_db(conn: psycopg.Connection, aoi: AoiInput) -> ResolvedAoi:
                 f"AOI area ({area_km2:,.1f} km²) exceeds maximum of {MAX_AREA_KM2:,.0f} km²",
             )
 
-        # País de la mayoría de sus celdas
+        # MVP solo México: verificar si tiene celdas de México
         cur.execute(
             """
             WITH aoi AS (
                 SELECT ST_GeomFromGeoJSON(%(geojson)s)::geometry(Polygon, 4326) AS g
             )
-            SELECT cell.country, count(*) AS n
+            SELECT count(*) AS n
             FROM cell, aoi
-            WHERE ST_Intersects(cell.geom, aoi.g)
-            GROUP BY cell.country
-            ORDER BY n DESC
-            LIMIT 1
+            WHERE cell.country = 'MX'
+              AND ST_Intersects(cell.geom, aoi.g)
             """,
             {"geojson": geojson_str},
         )
         c_row = cur.fetchone()
 
-    if c_row and c_row[0]:
-        c_str = c_row[0].strip()
-        country = "MX" if c_str == "MX" else "AR"
+    if c_row and c_row[0] and int(c_row[0]) > 0:
+        country = "MX"
     else:
         country = detect_country_from_bbox(poly)
 
@@ -205,7 +203,8 @@ def fetch_calendar_inputs(
             c AS (
                 SELECT cy, cx
                 FROM cell, aoi
-                WHERE ST_Intersects(cell.geom, aoi.g)
+                WHERE cell.country = 'MX'
+                  AND ST_Intersects(cell.geom, aoi.g)
             )
             SELECT date_trunc('month', d.acq_date)::date AS month,
                    count(*) FILTER (WHERE d.modis_veg) AS modis_cell_days,

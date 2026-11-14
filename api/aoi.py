@@ -12,10 +12,9 @@ from api.models import AoiInput, AoiSummary, ApiException, Country
 
 MAX_AREA_KM2 = 200_000.0
 
-# Rectángulos de cobertura de respaldo (docs/.claude/skills/api/SKILL.md)
+# Rectángulo de cobertura del MVP: solo México (Argentina es fase 2)
 COUNTRY_BBOXES: dict[Country, Polygon] = {
     "MX": box(-118.5, 14.5, -86.5, 32.8),
-    "AR": box(-73.6, -55.1, -53.6, -21.7),
 }
 
 BUILTIN_PRESETS: dict[str, dict[str, Any]] = {
@@ -33,12 +32,12 @@ BUILTIN_PRESETS: dict[str, dict[str, Any]] = {
         "country": "MX",
         "bbox": (-100.6, 20.0, -99.0, 20.9),
     },
-    "ar-chilecito": {
-        "id": "ar-chilecito",
-        "name_es": "Chilecito, La Rioja",
-        "name_en": "Chilecito, La Rioja",
-        "country": "AR",
-        "bbox": (-68.3, -29.9, -66.8, -28.4),
+    "qro-recuadro": {
+        "id": "qro-recuadro",
+        "name_es": "Querétaro completo (recuadro)",
+        "name_en": "Querétaro (full box)",
+        "country": "MX",
+        "bbox": (-100.6, 20.0, -99.0, 21.7),
     },
 }
 
