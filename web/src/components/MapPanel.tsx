@@ -36,6 +36,15 @@ function Controller({
   const map = useMap();
   const handler = useRef<L.Draw.Feature | null>(null);
 
+  // Leaflet no se entera solo cuando su contenedor cambia de tamaño (p. ej. al esconder
+  // el panel del calendario): sin esto quedan teselas grises.
+  useEffect(() => {
+    const el = map.getContainer();
+    const ro = new ResizeObserver(() => map.invalidateSize({ pan: false }));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [map]);
+
   // Encuadra la región completa con margen: 80 px arriba (píldoras flotantes) y 40 px en los demás lados.
   useEffect(() => {
     if (!target) return;

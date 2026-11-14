@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Calendar } from '../components/Calendar';
+import { CalendarRail, HideCalendarButton, gridCols, useCalOpen } from '../components/CalendarToggle';
 import { LevelLegend } from '../components/Legend';
 import { MapPanel } from '../components/MapPanel';
 import { MonthCard } from '../components/MonthCard';
@@ -13,8 +14,10 @@ import { WithCalendar } from './WithCalendar';
 
 export function General() {
   const { t } = useApp();
+  // El panel del calendario se puede esconder para dar más espacio al mapa.
+  const [calOpen, setCalOpen] = useCalOpen();
   return (
-    <div className="grid gap-3 p-3 xl:grid-cols-[minmax(300px,340px)_minmax(0,1fr)_minmax(400px,460px)]">
+    <div className={`grid gap-3 p-3 ${gridCols(calOpen)}`}>
       {/* En pantallas anchas los paneles laterales caben en la ventana; si no alcanza,
           el contenido hace scroll por dentro y lo de abajo (la leyenda) queda siempre visible. */}
       <section className="panel flex flex-col xl:sticky xl:top-3 xl:max-h-[calc(100dvh-5.5rem)] xl:self-start">
@@ -34,7 +37,13 @@ export function General() {
         </section>
       </div>
 
-      <WithCalendar skeleton={<Skeleton className="h-[600px]" />}>{(d) => <CalendarPanel data={d} />}</WithCalendar>
+      {calOpen ? (
+        <WithCalendar skeleton={<Skeleton className="h-[600px]" />}>
+          {(d) => <CalendarPanel data={d} onHide={() => setCalOpen(false)} />}
+        </WithCalendar>
+      ) : (
+        <CalendarRail onShow={() => setCalOpen(true)} />
+      )}
 
       <div className="xl:col-span-3">
         <WithCalendar skeleton={<Skeleton className="h-20" />}>{(d) => <Timeline data={d} />}</WithCalendar>
@@ -47,14 +56,17 @@ export function General() {
  * Panel derecho: por defecto los 12 meses de un año (el último con datos). La matriz completa
  * de todos los años se abre bajo demanda.
  */
-function CalendarPanel({ data: d }: { data: CalendarResponse }) {
+function CalendarPanel({ data: d, onHide }: { data: CalendarResponse; onHide: () => void }) {
   const { t, mode } = useApp();
   const [history, setHistory] = useState(false);
   const span = { a: d.range.start_year, b: d.range.end_year };
   return (
-    <section className="panel flex flex-col xl:sticky xl:top-3 xl:max-h-[calc(100dvh-5.5rem)] xl:self-start">
+    <section id="cal-panel" className="panel flex flex-col xl:sticky xl:top-3 xl:max-h-[calc(100dvh-5.5rem)] xl:self-start">
       <header className="shrink-0 px-4 pb-2 pt-3">
-        <h2 className="heading">{t('cal.title')}</h2>
+        <div className="flex items-start justify-between gap-2">
+          <h2 className="heading">{t('cal.title')}</h2>
+          <HideCalendarButton onHide={onHide} />
+        </div>
         <p className="mt-1.5 flex items-center gap-1.5 text-[13px] text-ink">
           <span aria-hidden="true" className="text-cyan">→</span>
           {t('cal.hint')}

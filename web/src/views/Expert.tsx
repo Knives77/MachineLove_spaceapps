@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ALL_LAYERS, Calendar, type Layers } from '../components/Calendar';
+import { CalendarRail, HideCalendarButton, gridCols, useCalOpen } from '../components/CalendarToggle';
 import { Downloads } from '../components/Downloads';
 import { KInspector } from '../components/KInspector';
 import { MapPanel } from '../components/MapPanel';
@@ -13,9 +14,10 @@ export function Expert() {
   const [layers, setLayers] = useState<Layers>(ALL_LAYERS);
   const set = (k: keyof Layers) => (v: boolean) => setLayers({ ...layers, [k]: v });
   const selectedId = 'preset_id' in aoi ? aoi.preset_id : null;
+  const [calOpen, setCalOpen] = useCalOpen();
 
   return (
-    <div className="grid gap-3 p-3 xl:grid-cols-[minmax(300px,340px)_minmax(0,1fr)_minmax(400px,460px)]">
+    <div className={`grid gap-3 p-3 ${gridCols(calOpen)}`}>
       <div className="space-y-3">
         <Panel title={t('exp.layers')}>
           <div className="px-4 py-2">
@@ -54,10 +56,16 @@ export function Expert() {
 
       <MapPanel className="min-h-[420px]" />
 
+      {!calOpen && <CalendarRail onShow={() => setCalOpen(true)} />}
+      {calOpen && (
       <WithCalendar skeleton={<Skeleton className="h-[600px]" />}>
         {(d) => (
-          <Panel title={t('cal.title')} sub={t('cal.sub', { n: d.range.end_year - d.range.start_year + 1, unit: mode === 'harmonized' ? t('unit.cellDays') : t('unit.points') })}>
-            <div className="p-3">
+          <Panel
+            title={t('cal.title')}
+            sub={t('cal.sub', { n: d.range.end_year - d.range.start_year + 1, unit: mode === 'harmonized' ? t('unit.cellDays') : t('unit.points') })}
+            right={<HideCalendarButton onHide={() => setCalOpen(false)} />}
+          >
+            <div id="cal-panel" className="p-3">
               <Calendar data={d} layers={layers} />
               <dl className="mt-3 grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1.5 text-[12.5px]">
                 <dt className="hatch h-4 w-7 rounded-sm" />
@@ -69,6 +77,7 @@ export function Expert() {
           </Panel>
         )}
       </WithCalendar>
+      )}
 
       <div className="grid gap-3 xl:col-span-3 xl:grid-cols-[minmax(0,1fr)_minmax(380px,460px)]">
         <WithCalendar skeleton={<Skeleton className="h-48" />}>
