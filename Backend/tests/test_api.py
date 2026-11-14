@@ -1,10 +1,14 @@
 """Pruebas de aceptación de los endpoints FastAPI (docs/contracts/acceptance.md)."""
 from __future__ import annotations
 
+from datetime import date
+
 import pytest
 from fastapi.testclient import TestClient
 
-from api.main import app
+from Backend.main import app
+from Backend.models import AoiInput, ApiException
+from Backend.queries import fetch_data_through, resolve_aoi_db
 
 
 @pytest.fixture(autouse=True)
@@ -20,7 +24,7 @@ def test_health() -> None:
     assert res.status_code == 200
     body = res.json()
     assert body["status"] == "ok"
-    assert "data_through" in body
+    assert body["data_through"] == "2026-11-01"
 
 
 def test_get_presets_returns_3_regions() -> None:
@@ -33,16 +37,19 @@ def test_get_presets_returns_3_regions() -> None:
     assert ids == ["qro-sierra-gorda", "qro-bajio", "qro-recuadro"]
 
 
-def test_post_calendar_preset_sierra_gorda() -> None:
-    res = client.post(
-        "/api/v1/calendar",
-        json={"aoi": {"preset_id": "qro-sierra-gorda"}},
-    )
-    assert res.status_code == 200
-    body = res.json()
-    assert len(body["months"]) == 324
-    assert 0.25 <= body["calibration"]["k"] <= 0.28
-    assert body["unit"] == "modis_equivalent_cell_days"
+def test_post_calendar_presets_all_324_months() -> None:
+    for pid in ("qro-sierra-gorda", "qro-bajio", "qro-recuadro"):
+        res = client.post(
+            "/api/v1/calendar",
+            json={"aoi": {"preset_id": pid}},
+        )
+        assert res.status_code == 200
+        body = res.json()
+        assert len(body["months"]) == 324
+        assert body["aoi"]["country"] == "MX"
+        assert body["unit"] == "modis_equivalent_cell_days"
+        if pid == "qro-sierra-gorda":
+            assert 0.25 <= body["calibration"]["k"] <= 0.28
 
     # Mes con no_coverage tiene harmonized = null
     no_cov = [m for m in body["months"] if "no_coverage" in m["flags"]]
@@ -128,7 +135,7 @@ def test_invalid_range_returns_400() -> None:
     assert res.json()["error"]["code"] == "invalid_range"
 
 
-def test_csv_endpoints() -> None:
+def test_csv_and_geojson_hotspots_endpoints() -> None:
     res_cal = client.post(
         "/api/v1/calendar.csv",
         json={"aoi": {"preset_id": "qro-sierra-gorda"}},
@@ -156,13 +163,33 @@ def test_csv_endpoints() -> None:
         "latitude,longitude,acq_date,acq_time,satellite,family,confidence,frp,daynight,type,source,is_vegetation_fire,cell_id"
     )
 
+    # POST /hotspots GeoJSON (<= 62 días -> 200 OK)
+    res_gj = client.post(
+        "/api/v1/hotspots",
+        json={
+            "aoi": {"preset_id": "qro-sierra-gorda"},
+            "start_date": "2025-04-01",
+            "end_date": "2025-04-30",
+        },
+    )
+    assert res_gj.status_code == 200
+    assert res_gj.json()["type"] == "FeatureCollection"
+
+    # POST /hotspots GeoJSON (> 62 días -> 400 invalid_range)
+    res_gj_long = client.post(
+        "/api/v1/hotspots",
+        json={
+            "aoi": {"preset_id": "qro-sierra-gorda"},
+            "start_date": "2025-01-01",
+            "end_date": "2025-05-31",
+        },
+    )
+    assert res_gj_long.status_code == 400
+    assert res_gj_long.json()["error"]["code"] == "invalid_range"
+
 
 def test_db_queries_mx_only_and_health_date() -> None:
     """Verifica que fetch_data_through y resolve_aoi_db filtren exclusivamente México (MX)."""
-    from datetime import date
-    from api.models import AoiInput, ApiException
-    from api.queries import fetch_data_through, resolve_aoi_db
-
     executed_sql: list[str] = []
 
     class DummyCursor:
@@ -177,7 +204,7 @@ def test_db_queries_mx_only_and_health_date() -> None:
 
         def fetchone(self) -> tuple[object, ...]:
             last = executed_sql[-1]
-            if "max(d.acq_date)" in last:
+            if "ORDER BY d.acq_date DESC" in last:
                 assert "c.country = 'MX'" in last
                 return (date(2026, 11, 1),)
             if "ST_Area" in last:
@@ -210,4 +237,3 @@ def test_db_queries_mx_only_and_health_date() -> None:
         resolve_aoi_db(conn, AoiInput(geometry=ar_poly))  # type: ignore[arg-type]
     assert exc_info.value.status_code == 422
     assert exc_info.value.code == "aoi_outside_coverage"
-

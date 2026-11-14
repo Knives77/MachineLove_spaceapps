@@ -1,4 +1,4 @@
-"""Punto de entrada de la aplicación FastAPI (api.main:app)."""
+"""Punto de entrada de la aplicación FastAPI (Backend.main:app / api.main:app)."""
 from __future__ import annotations
 
 from fastapi import FastAPI, Request
@@ -61,4 +61,3 @@ async def validation_exception_handler(
 
 app.include_router(router, prefix="/api/v1")
 app.include_router(router, include_in_schema=False)
-

@@ -22,7 +22,11 @@ from api.models import (
     AoiInput,
     ApiException,
     Country,
+    GeoJSONPoint,
     GeoJSONPolygon,
+    HotspotCollection,
+    HotspotFeature,
+    HotspotProperties,
     PresetCollection,
     PresetFeature,
     PresetProperties,
@@ -34,10 +38,12 @@ DATABASE_URL = os.environ.get(
 )
 
 MAX_HOTSPOTS_ROWS = 2_000_000
+MAX_HOTSPOTS_GEOJSON_ROWS = 20_000
+MAX_HOTSPOTS_GEOJSON_DAYS = 62
 
 
 def get_connection(dsn: str | None = None) -> psycopg.Connection:
-    return psycopg.connect(dsn or DATABASE_URL)
+    return psycopg.connect(dsn or os.environ.get("DATABASE_URL", DATABASE_URL))
 
 
 def fetch_data_through(conn: psycopg.Connection) -> str:
@@ -45,22 +51,30 @@ def fetch_data_through(conn: psycopg.Connection) -> str:
     with conn.cursor() as cur:
         cur.execute(
             """
-            SELECT max(d.acq_date)
+            SELECT d.acq_date
             FROM cell_day d
             JOIN cell c USING (cy, cx)
             WHERE c.country = 'MX'
+            ORDER BY d.acq_date DESC
+            LIMIT 1
             """
         )
         row = cur.fetchone()
         if row and row[0] is not None:
             return row[0].isoformat()
         cur.execute(
-            "SELECT max(acq_date) FROM detection WHERE country = 'MX'"
+            """
+            SELECT acq_date
+            FROM detection
+            WHERE country = 'MX'
+            ORDER BY acq_date DESC
+            LIMIT 1
+            """
         )
         row = cur.fetchone()
         if row and row[0] is not None:
             return row[0].isoformat()
-    return "2026-11-01"
+    raise ApiException(503, "no_data", "No Mexico data found in database")
 
 
 def fetch_presets(conn: psycopg.Connection) -> PresetCollection:
@@ -87,10 +101,10 @@ def fetch_presets(conn: psycopg.Connection) -> PresetCollection:
             name_es = info["name_es"]
             name_en = info["name_en"]
             minx, miny, maxx, maxy = info["bbox"]
-            geom_dict = mapping(box(minx, miny, maxx, maxy))
+            geom_raw = mapping(box(minx, miny, maxx, maxy))
             geom_dict = {
                 "type": "Polygon",
-                "coordinates": [list( list(pt) for pt in geom_dict["coordinates"][0] )],
+                "coordinates": [[list(pt) for pt in geom_raw["coordinates"][0]]],
             }
         features.append(
             PresetFeature(
@@ -196,7 +210,6 @@ def resolve_aoi_db(conn: psycopg.Connection, aoi: AoiInput) -> ResolvedAoi:
     if c_row and c_row[0] and int(c_row[0]) > 0:
         country: Country = "MX"
     else:
-        # Si no toca celdas de México, verificar contra el rectángulo de México (si tampoco, lanza 422)
         country = detect_country_from_bbox(poly)
 
     return ResolvedAoi(
@@ -308,10 +321,12 @@ def fetch_calendar_inputs(
         # 5. Fecha tope de datos para México (MVP)
         cur.execute(
             """
-            SELECT max(d.acq_date)
+            SELECT d.acq_date
             FROM cell_day d
             JOIN cell c USING (cy, cx)
             WHERE c.country = 'MX'
+            ORDER BY d.acq_date DESC
+            LIMIT 1
             """,
         )
         max_row = cur.fetchone()
@@ -335,8 +350,9 @@ def check_hotspots_limit(
     resolved_aoi: ResolvedAoi,
     start_date: date,
     end_date: date,
+    max_rows: int = MAX_HOTSPOTS_ROWS,
 ) -> None:
-    """Verifica que el total de puntos en el rango no supere MAX_HOTSPOTS_ROWS (2,000,000)."""
+    """Verifica que el total de puntos en el rango no supere max_rows."""
     with conn.cursor() as cur:
         cur.execute(
             """
@@ -363,11 +379,11 @@ def check_hotspots_limit(
         )
         row = cur.fetchone()
         est_rows = int(row[0] or 0) if row else 0
-        if est_rows > MAX_HOTSPOTS_ROWS:
+        if est_rows > max_rows:
             raise ApiException(
                 400,
                 "aoi_too_large",
-                f"Requested hotspots ({est_rows:,}) exceed maximum of {MAX_HOTSPOTS_ROWS:,} rows",
+                f"Requested hotspots ({est_rows:,}) exceed maximum of {max_rows:,} rows",
             )
 
 
@@ -450,3 +466,87 @@ def stream_hotspots_csv(
                     f"{sat},{fam},{conf},{frp},{dn.strip()},{type_str},"
                     f"{src},{veg_str},{cell_id}\n"
                 )
+
+
+def fetch_hotspots_geojson(
+    conn: psycopg.Connection,
+    resolved_aoi: ResolvedAoi,
+    start_date: date,
+    end_date: date,
+) -> HotspotCollection:
+    """Devuelve FeatureCollection de puntos dentro del AOI (máx. 62 días, 20,000 puntos)."""
+    if (end_date - start_date).days > MAX_HOTSPOTS_GEOJSON_DAYS:
+        raise ApiException(
+            400,
+            "invalid_range",
+            f"Date range for /hotspots cannot exceed {MAX_HOTSPOTS_GEOJSON_DAYS} days",
+        )
+    check_hotspots_limit(
+        conn,
+        resolved_aoi,
+        start_date,
+        end_date,
+        max_rows=MAX_HOTSPOTS_GEOJSON_ROWS,
+    )
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            WITH aoi AS (
+                SELECT ST_GeomFromGeoJSON(%(geojson)s)::geometry(Polygon, 4326) AS g
+            ),
+            c AS (
+                SELECT cy, cx
+                FROM cell, aoi
+                WHERE cell.country = 'MX'
+                  AND ST_Intersects(cell.geom, aoi.g)
+            )
+            SELECT d.longitude,
+                   d.latitude,
+                   d.acq_date,
+                   d.satellite,
+                   d.family,
+                   d.frp,
+                   d.is_veg
+            FROM detection d
+            JOIN c USING (cy, cx)
+            CROSS JOIN aoi
+            WHERE d.country = 'MX'
+              AND d.acq_date >= %(start_date)s
+              AND d.acq_date <= %(end_date)s
+              AND ST_Intersects(
+                  ST_SetSRID(ST_MakePoint(d.longitude, d.latitude), 4326),
+                  aoi.g
+              )
+            ORDER BY d.acq_date, d.acq_time, d.id
+            LIMIT %(limit)s
+            """,
+            {
+                "geojson": resolved_aoi.geojson_str,
+                "start_date": start_date,
+                "end_date": end_date,
+                "limit": MAX_HOTSPOTS_GEOJSON_ROWS + 1,
+            },
+        )
+        rows = cur.fetchall()
+
+    if len(rows) > MAX_HOTSPOTS_GEOJSON_ROWS:
+        raise ApiException(
+            400,
+            "aoi_too_large",
+            f"Hotspots GeoJSON exceeds maximum of {MAX_HOTSPOTS_GEOJSON_ROWS:,} points",
+        )
+
+    features = [
+        HotspotFeature(
+            geometry=GeoJSONPoint(coordinates=[float(lon), float(lat)]),
+            properties=HotspotProperties(
+                acq_date=acq_d.isoformat(),
+                satellite=sat,
+                family=fam,
+                frp=round(float(frp), 2),
+                is_vegetation_fire=bool(is_veg),
+            ),
+        )
+        for lon, lat, acq_d, sat, fam, frp, is_veg in rows
+    ]
+    return HotspotCollection(features=features)

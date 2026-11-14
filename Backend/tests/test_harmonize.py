@@ -5,7 +5,7 @@ from datetime import date
 
 import pytest
 
-from api.harmonize import (
+from Backend.harmonize import (
     MonthKey,
     MonthlyCounts,
     OutageInterval,
@@ -15,7 +15,7 @@ from api.harmonize import (
     compute_month_flags,
     expand_outages_by_day,
 )
-from api.models import AoiSummary, BaselineSummary
+from Backend.models import AoiSummary, BaselineSummary
 
 
 def test_calibration_aoi_scope() -> None:

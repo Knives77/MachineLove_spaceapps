@@ -61,6 +61,11 @@ class GeoJSONPolygon(BaseModel):
     coordinates: list[list[list[float]]]
 
 
+class GeoJSONPoint(BaseModel):
+    type: Literal["Point"] = "Point"
+    coordinates: list[float]
+
+
 class PresetProperties(BaseModel):
     name_es: str
     name_en: str
@@ -77,6 +82,25 @@ class PresetFeature(BaseModel):
 class PresetCollection(BaseModel):
     type: Literal["FeatureCollection"] = "FeatureCollection"
     features: list[PresetFeature]
+
+
+class HotspotProperties(BaseModel):
+    acq_date: str
+    satellite: str
+    family: str
+    frp: float
+    is_vegetation_fire: bool
+
+
+class HotspotFeature(BaseModel):
+    type: Literal["Feature"] = "Feature"
+    geometry: GeoJSONPoint
+    properties: HotspotProperties
+
+
+class HotspotCollection(BaseModel):
+    type: Literal["FeatureCollection"] = "FeatureCollection"
+    features: list[HotspotFeature]
 
 
 class AoiInput(BaseModel):
@@ -211,4 +235,3 @@ class CalendarResponse(BaseModel):
     years: list[YearRow]
     seasonality: list[float]
     latest: LatestMonth
-
