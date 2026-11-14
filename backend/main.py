@@ -1,4 +1,4 @@
-"""Punto de entrada de la aplicación FastAPI (Backend.main:app / api.main:app)."""
+"""Punto de entrada de la aplicación FastAPI (backend.main:app)."""
 from __future__ import annotations
 
 from fastapi import FastAPI, Request
@@ -6,8 +6,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from api.models import ApiException
-from api.routes import router
+from backend.models import ApiException
+from backend.routes import router
 
 app = FastAPI(
     title="MachineLove Burn Activity Calendar API",

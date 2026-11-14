@@ -46,15 +46,15 @@ Este módulo implementa el servidor REST del proyecto **MachineLove (NASA Space 
 ### Levantar el servidor
 ```bash
 # 1. Modo Mock (sin base de datos ni túnel SSH):
-API_MOCK=1 uv run uvicorn api.main:app --reload --port 8001
+API_MOCK=1 uv run uvicorn backend.main:app --reload --port 8001
 
 # 2. Modo Real (con túnel SSH en 5432 o en el anfitrión):
 export DATABASE_URL=postgresql://firms:firms_local@127.0.0.1:5432/firms
-uv run uvicorn api.main:app --reload --port 8001
+uv run uvicorn backend.main:app --reload --port 8001
 ```
 
 ### Correr todas las pruebas (unitarias + aceptación + simulación de sistema)
 ```bash
-uv run pytest Backend api -v
+uv run pytest backend -v
 ```
 

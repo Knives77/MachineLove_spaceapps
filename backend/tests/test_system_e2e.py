@@ -10,9 +10,9 @@ from typing import Any, Iterator
 import pytest
 from fastapi.testclient import TestClient
 
-import Backend.queries as queries_mod
-import Backend.routes as routes_mod
-from Backend.main import app
+import backend.queries as queries_mod
+import backend.routes as routes_mod
+from backend.main import app
 
 # Cifras anuales reales de docs/contracts/acceptance.md para Sierra Gorda y Recuadro Querétaro
 SIERRA_GORDA_ANNUAL: dict[int, tuple[int, int, int]] = {

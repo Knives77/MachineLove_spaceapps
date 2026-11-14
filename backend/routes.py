@@ -10,9 +10,9 @@ from typing import Any
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 
-from Backend.aoi import resolve_aoi_offline
-from Backend.harmonize import build_calendar_response
-from Backend.models import (
+from backend.aoi import resolve_aoi_offline
+from backend.harmonize import build_calendar_response
+from backend.models import (
     ApiException,
     CalendarRequest,
     CalendarResponse,
@@ -21,7 +21,7 @@ from Backend.models import (
     HotspotsRequest,
     PresetCollection,
 )
-from Backend.queries import (
+from backend.queries import (
     DATABASE_URL,
     HOTSPOTS_CSV_HEADER,
     MAX_HOTSPOTS_GEOJSON_DAYS,

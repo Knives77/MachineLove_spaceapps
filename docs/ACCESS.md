@@ -1,6 +1,6 @@
 # Acceso a la máquina anfitriona
 
-Todo corre en una sola máquina (Linux, 16 GB de RAM, 12 núcleos). **La configuración de SSH está en `GUIA_TUNELES_SSH.md`** (llaves restringidas a túneles, sin terminal). Este documento solo añade qué puertos usa el proyecto y cómo trabaja cada rol con ese esquema.
+Todo corre en una sola máquina (Linux, 16 GB de RAM, 12 núcleos). **La configuración de SSH está en `docs/GUIA_TUNELES_SSH.md`** (llaves restringidas a túneles, sin terminal). Este documento solo añade qué puertos usa el proyecto y cómo trabaja cada rol con ese esquema.
 
 ## Puertos del proyecto
 

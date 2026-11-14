@@ -8,7 +8,7 @@ from typing import Any
 
 from shapely.geometry import Polygon, box, mapping, shape
 
-from api.models import AoiInput, AoiSummary, ApiException, Country
+from backend.models import AoiInput, AoiSummary, ApiException, Country
 
 MAX_AREA_KM2 = 200_000.0
 

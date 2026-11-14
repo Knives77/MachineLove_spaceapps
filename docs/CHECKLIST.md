@@ -16,7 +16,7 @@ Hitos (detalle en `docs/PRD.md`):
 
 Reglas para todos:
 
-- Una rama por persona (`etl-a`, `etl-b`, `api`, `web-a`, `web-b`). Se integra a `main` con PR pequeños; nadie empuja directo a `main` salvo el líder.
+- Una rama por persona (`etl-a`, `etl-b`, `Backend`, `web-a`, `web-b`). Se integra a `main` con PR pequeños; nadie empuja directo a `main` salvo el líder.
 - Antes de pedir que algo se integre: sus pruebas pasan y lo probó contra `docs/contracts/acceptance.md`.
 - Si necesitan un campo o un cambio de forma que no está en el contrato, se le pide al analista. No se inventa.
 - En cada hito: `git pull`, se corre todo junto, el analista pasa la lista de aceptación.
@@ -85,16 +85,16 @@ Skill: `.claude/skills/etl/SKILL.md`. Puede empezar ya contra `firms_dev`, sin e
 
 ## Backend
 
-Skill: `.claude/skills/api/SKILL.md`. Contrato: `docs/contracts/api.md`.
+Skill: `.claude/skills/backend/SKILL.md`. Contrato: `docs/contracts/api.md`.
 
 **Hasta H0 (14:30)**
 - [ ] Esqueleto FastAPI con `API_MOCK=1` devolviendo los JSON de `docs/contracts/examples/` en `/presets` y `/calendar`. Corriendo en 8001.
 - [ ] Avisar al front que ya pueden apuntar a la API (aunque sea mock).
 
 **Hasta H2 (21:30)**
-- [ ] `api/harmonize.py` (funciones puras, sin base): `k` con respaldo al de país si `Σ M < 100`, serie `modis_primary` y `viirs_primary`, banderas, línea base (≥ 10 años, excluyendo meses con banderas), percentiles, `status`, `years`, `seasonality`, `latest`.
+- [ ] `backend/harmonize.py` (funciones puras, sin base): `k` con respaldo al de país si `Σ M < 100`, serie `modis_primary` y `viirs_primary`, banderas, línea base (≥ 10 años, excluyendo meses con banderas), percentiles, `status`, `years`, `seasonality`, `latest`.
 - [ ] Pruebas de cada fila de las tablas de `harmonization.md`.
-- [ ] `api/aoi.py`: preset o polígono, validación, área (> 200,000 km² → error), país.
+- [ ] `backend/aoi.py`: preset o polígono, validación, área (> 200,000 km² → error), país.
 - [ ] `POST /calendar` con la consulta del skill sobre `cell_day` (puede probar contra `firms_dev` en cuanto B cargue celdas).
 - [ ] `POST /calendar.csv` y `POST /hotspots.csv` (streaming).
 - [ ] Errores con la forma del contrato (`invalid_geometry`, `aoi_too_large`, `aoi_outside_coverage`, …).

@@ -6,9 +6,9 @@ from datetime import date
 import pytest
 from fastapi.testclient import TestClient
 
-from Backend.main import app
-from Backend.models import AoiInput, ApiException
-from Backend.queries import fetch_data_through, resolve_aoi_db
+from backend.main import app
+from backend.models import AoiInput, ApiException
+from backend.queries import fetch_data_through, resolve_aoi_db
 
 
 @pytest.fixture(autouse=True)

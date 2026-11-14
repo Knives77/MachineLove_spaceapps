@@ -10,7 +10,7 @@ from datetime import date, timedelta
 from statistics import median
 from typing import Iterable
 
-from Backend.models import (
+from backend.models import (
     AoiSummary,
     BaselineSummary,
     Basis,

@@ -87,7 +87,7 @@ Razón NOAA-20 / S-NPP en celdas-día, abr-2018 a 2025: Querétaro 1.016, Sierra
 | Tema | Decisión |
 |---|---|
 | Entrega | Demo local + video + repo público |
-| Dónde corre | Todo en la máquina de quien lidera; el equipo entra por túnel SSH con llaves restringidas (`GUIA_TUNELES_SSH.md`) |
+| Dónde corre | Todo en la máquina de quien lidera; el equipo entra por túnel SSH con llaves restringidas (`docs/GUIA_TUNELES_SSH.md`) |
 | Datos | Solo archivos descargados. Sin API de FIRMS en vivo |
 | Cobertura | **Solo México en el MVP** (decisión del 14-nov). Presets: Sierra Gorda, Bajío queretano, recuadro Querétaro. Polígono libre dentro de México. Argentina está cargada pero fuera del MVP: fase 2 = Chilecito, fase 3 = otros países |
 | Procesamiento | Python 3.12, `uv`, polars, psycopg `COPY` |

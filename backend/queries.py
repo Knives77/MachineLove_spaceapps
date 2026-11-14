@@ -9,7 +9,7 @@ from typing import Iterator
 import psycopg
 from shapely.geometry import box, mapping
 
-from api.aoi import (
+from backend.aoi import (
     BUILTIN_PRESETS,
     MAX_AREA_KM2,
     ResolvedAoi,
@@ -17,8 +17,8 @@ from api.aoi import (
     parse_and_validate_polygon,
     resolve_aoi_offline,
 )
-from api.harmonize import MonthKey, MonthlyCounts, OutageInterval
-from api.models import (
+from backend.harmonize import MonthKey, MonthlyCounts, OutageInterval
+from backend.models import (
     AoiInput,
     ApiException,
     Country,
