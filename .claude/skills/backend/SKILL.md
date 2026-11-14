@@ -1,6 +1,6 @@
 ---
-name: api
-description: Guía para construir o modificar el backend FastAPI (carpeta api/) - endpoints /presets, /calendar, /calendar.csv y /hotspots.csv sobre Postgres + PostGIS. Úsala antes de tocar cualquier archivo de api/.
+name: backend
+description: Guía para construir o modificar el backend FastAPI (carpeta backend/) - endpoints /presets, /calendar, /calendar.csv y /hotspots.csv sobre Postgres + PostGIS. Úsala antes de tocar cualquier archivo de backend/.
 ---
 
 # Backend FastAPI
@@ -12,25 +12,25 @@ La especificación es `docs/contracts/api.md` (forma de peticiones y respuestas)
 ```bash
 uv add fastapi "uvicorn[standard]" "psycopg[binary,pool]" pydantic shapely pytest httpx
 export DATABASE_URL=postgresql://firms:firms_local@localhost:5432/firms
-uv run uvicorn api.main:app --reload --port 8001     # desarrollo
-uv run uvicorn api.main:app --port 8000              # estable, la que usa frontend
+uv run uvicorn backend.main:app --reload --port 8001     # desarrollo
+uv run uvicorn backend.main:app --port 8000              # estable, la que usa frontend
 ```
 
 ## Archivos
 
 | Archivo | Contenido |
 |---|---|
-| `api/main.py` | App, CORS (`http://localhost:*`), manejador de errores con la forma `{"error": {code, detail}}` |
-| `api/models.py` | Modelos Pydantic idénticos al contrato |
-| `api/aoi.py` | Resolver `preset_id` o `geometry`, validar, área, país |
-| `api/queries.py` | SQL |
-| `api/harmonize.py` | `k`, serie, línea base, estados. Funciones puras, sin base de datos |
-| `api/routes.py` | Los endpoints |
-| `api/tests/` | Pruebas |
+| `backend/main.py` | App, CORS (`http://localhost:*`), manejador de errores con la forma `{"error": {code, detail}}` |
+| `backend/models.py` | Modelos Pydantic idénticos al contrato |
+| `backend/aoi.py` | Resolver `preset_id` o `geometry`, validar, área, país |
+| `backend/queries.py` | SQL |
+| `backend/harmonize.py` | `k`, serie, línea base, estados. Funciones puras, sin base de datos |
+| `backend/routes.py` | Los endpoints |
+| `backend/tests/` | Pruebas |
 
 ## Trabajar antes de que exista la base
 
-Hasta el hito H1 no hay datos. Empieza por `api/harmonize.py` y sus pruebas con listas escritas a mano, y haz que los endpoints devuelvan los JSON de `docs/contracts/examples/` detrás de la variable `API_MOCK=1`. Así frontend puede apuntar a la API desde el primer momento.
+Hasta el hito H1 no hay datos. Empieza por `backend/harmonize.py` y sus pruebas con listas escritas a mano, y haz que los endpoints devuelvan los JSON de `docs/contracts/examples/` detrás de la variable `API_MOCK=1`. Así frontend puede apuntar a la API desde el primer momento.
 
 ## Consulta central de `/calendar`
 
@@ -61,7 +61,7 @@ Mismo CTE de celdas, `JOIN detection USING (cy, cx)`, filtro por fechas, y adem�
 
 ## Pruebas
 
-- `api/harmonize.py`: una prueba por cada fila de las tablas de `harmonization.md` (estados, banderas, `basis`, respaldo a `k` de país con menos de 100 celdas-día).
+- `backend/harmonize.py`: una prueba por cada fila de las tablas de `harmonization.md` (estados, banderas, `basis`, respaldo a `k` de país con menos de 100 celdas-día).
 - Endpoints: las casillas de la sección API de `docs/contracts/acceptance.md`, con `httpx` y `TestClient`.
 - Antes de avisar que algo está listo: `uv run pytest api` y una llamada real con `curl` al preset `qro-sierra-gorda`.
 

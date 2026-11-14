@@ -62,7 +62,7 @@ Detalle exacto: `docs/contracts/harmonization.md`.
 |---|---|---|
 | Procesamiento A | `etl/ingest`, `etl/mask` | `detection` y `static_cell` cargadas |
 | Procesamiento B | `etl/cells`, `etl/calibrate`, `etl/outages` | `cell_day`, `sensor_outage`, cifras de control reproducidas |
-| Backend | `api/` | 4 endpoints según contrato, < 2 s en presets |
+| Backend | `backend/` | 4 endpoints según contrato, < 2 s en presets |
 | Analista / puente | `docs/contracts/`, mocks, pruebas de aceptación, guion y video | Contratos congelados, verificación de cada hito, entrega |
 | Frontend A | Mapa, presets, dibujo, selector de idioma | |
 | Frontend B | Calendario, interruptor, tarjeta, panel de validación, descargas | |

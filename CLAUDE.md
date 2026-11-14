@@ -17,8 +17,8 @@ Frase brújula: *que no importe qué satélite tomó el dato, sino saber si el f
 | `docs/PITCH.md` | Guion, afirmaciones con evidencia, preguntas de jueces, pruebas de la demo |
 | `docs/contracts/` | Contratos congelados: ingesta, tablas, API, JSON de ejemplo |
 | `docs/BITACORA_BASE.md` | Estado de la base, corridas del ETL en `firms` y respaldos |
-| `docs/ACCESS.md` y `GUIA_TUNELES_SSH.md` | Túneles SSH, puertos y base de datos |
-| `.claude/skills/` | Guía por rol: `etl`, `api`, `frontend` |
+| `docs/ACCESS.md` y `docs/GUIA_TUNELES_SSH.md` | Túneles SSH, puertos y base de datos |
+| `.claude/skills/` | Guía por rol: `etl`, `backend`, `frontend` |
 
 ## Reglas que no se negocian
 
@@ -37,7 +37,7 @@ Frase brújula: *que no importe qué satélite tomó el dato, sino saber si el f
 
 ```
 etl/        ingesta, máscara estática, celdas-día, calibración   (2 personas)
-api/        FastAPI: /presets, /calendar, /hotspots.csv          (1 persona)
+backend/    FastAPI: /presets, /calendar, /hotspots.csv          (1 persona)
 web/        React + Vite + Tailwind exportado de Figma Make      (2 personas)
 docs/       contexto, PRD, contratos                              (analista)
 scripts/    base de datos, descarga de histórico
@@ -50,5 +50,5 @@ data/       CSV de FIRMS, fuera de Git
 scripts/db_up.sh                 # Postgres + PostGIS en podman, puerto 127.0.0.1:5432
 scripts/download_history.sh      # CSV por país y año de FIRMS a data/historico_pais/
 uv run python -m etl.run --all   # ingesta completa (cuando exista)
-uv run uvicorn api.main:app --port 8000
+uv run uvicorn backend.main:app --port 8000
 ```
