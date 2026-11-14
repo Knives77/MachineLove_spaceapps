@@ -10,6 +10,7 @@ Frase brújula: *que no importe qué satélite tomó el dato, sino saber si el f
 |---|---|
 | `docs/CONTEXT.md` | El reto, lo que sabemos de los datos y las decisiones cerradas |
 | `docs/PRD.md` | Alcance del MVP, hitos con hora, roles, mejoras |
+| `docs/CHECKLIST.md` | Tareas por rol y por hito |
 | `docs/contracts/` | Contratos congelados: ingesta, tablas, API, JSON de ejemplo |
 | `docs/ACCESS.md` y `GUIA_TUNELES_SSH.md` | Túneles SSH, puertos y base de datos |
 | `.claude/skills/` | Guía por rol: `etl`, `api`, `frontend` |
