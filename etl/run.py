@@ -3,18 +3,18 @@
   uv run python -m etl.run --all
   uv run python -m etl.run --step 1 --country MX --limit-years 2011,2012,2019
 
-Pasos (ver .claude/skills/etl/SKILL.md). Implementados: 1, 2 y 3.
+Pasos (ver .claude/skills/etl/SKILL.md). Implementados: 1 a 5.
 """
 import argparse
 
-from etl import ingest, mask, outages
+from etl import calibrate, cells, ingest, mask, outages
 
 STEPS = {
     1: ("ingesta -> detection", ingest.run),
     2: ("máscara estática -> static_cell, is_veg NRT", mask.run),
     3: ("caídas de sensor -> sensor_outage", outages.run),
-    # 4: celdas-día            (etl/cells.py)
-    # 5: calibración por país  (etl/calibrate.py)
+    4: ("celdas-día -> cell, cell_day", cells.run),
+    5: ("calibración -> calibration_country", calibrate.run),
 }
 
 

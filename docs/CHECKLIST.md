@@ -68,13 +68,14 @@ Skill: `.claude/skills/etl/SKILL.md`. Base de pruebas: `firms_dev`.
 Skill: `.claude/skills/etl/SKILL.md`. Puede empezar ya contra `firms_dev`, sin esperar a A: con `sensor_outage` vacía, la regla del VIIRS de referencia simplemente no usa respaldo.
 
 **Hasta H1 (18:30)**
-- [ ] **Paso 4 · `etl/cells.py`**:
-  - [ ] `cell`: una fila por celda con al menos una detección, con `country` y `geom` = centro de la celda.
-  - [ ] `cell_day`: `modis_veg`, `viirs_veg` (regla del VIIRS de referencia: SNPP antes de 2018-04-01, N20 después, respaldo si hay caída), `raw_points`, `raw_modis`, `raw_viirs`, `frp_modis`, `frp_viirs`.
-- [ ] Prueba: la consulta de control del skill reproduce la tabla de `acceptance.md` (Querétaro MODIS 410 / 190 / 414 en 2011 / 2012 / 2019).
-- [ ] **Paso 5 · `etl/calibrate.py`**: `calibration_country` (k por país y error dejando un año fuera).
-- [ ] Prueba: con SNPP en todo el traslape, `k` Querétaro ≈ 0.293; con la regla oficial cambia menos de 0.01.
-- [ ] `uv run python -m etl.run --all` corre de principio a fin en `firms_dev`; avisar al líder para correrlo en `firms`.
+- [x] **Paso 4 · `etl/cells.py`**:
+  - [x] `cell`: una fila por celda con al menos una detección, con `country` y `geom` = centro de la celda.
+  - [x] `cell_day`: `modis_veg`, `viirs_veg` (regla del VIIRS de referencia: SNPP antes de 2018-04-01, N20 después, respaldo si hay caída), `raw_points`, `raw_modis`, `raw_viirs`, `frp_modis`, `frp_viirs`.
+- [x] Prueba: la consulta de control del skill reproduce la tabla de `acceptance.md` (Querétaro MODIS 410 / 190 / 414 en 2011 / 2012 / 2019). Ojo: el límite superior del recuadro es exclusivo (`2169` / `-9901`); con `2170` / `-9900` sobran 4–6 %. `uv run python -m etl.verify`: 42/42 cifras de celdas-día.
+- [x] **Paso 5 · `etl/calibrate.py`**: `calibration_country` (k por país y error dejando un año fuera).
+- [x] Prueba: con SNPP en todo el traslape, `k` Querétaro ≈ 0.293; con la regla oficial cambia menos de 0.01. (0.292 / 0.290; Sierra Gorda 0.262 / 0.260; Chilecito 0.395 / 0.394.)
+- [x] `uv run python -m etl.run --all` corre de principio a fin en `firms_dev` (pasos 2–5 en 69 s; el 1 necesita los CSV del anfitrión).
+- [ ] Avisar al líder para correr 4 y 5 en `firms` y luego `uv run python -m etl.verify`.
 
 **Después de H1**
 - [ ] Informe para el pitch: para los 3 presets, `k`, error anual y la serie anual cruda vs armonizada (tabla o CSV para el analista).
