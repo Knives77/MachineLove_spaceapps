@@ -39,7 +39,7 @@ Conteos exactos (`count(*)`), iguales en `firms` y `firms_dev`:
 | 14:16 | `firms_dev` | Pasos 4 y 5 (segunda corrida; cada paso borra y regenera, no duplica) | Mismos conteos que arriba |
 | 14:54 | `firms` | `etl.run --step 4`, `--step 5`, `etl.verify` | **53/54** OK |
 
-Única comprobación que falla en `etl.verify`: `viirs_primary` vs `modis_primary` en Sierra Gorda 2020 da 50.8 % contra un límite de 45 % que no salió de una medición. La mediana anual (16.2 %) sí pasa. **Lo decide el analista** (subir el límite o explicarlo en el pitch).
+Única comprobación que fallaba en `etl.verify`: `viirs_primary` vs `modis_primary` en Sierra Gorda 2020 daba 50.8 % contra un límite fijo de 45 % que no salió de una medición. **Resuelto (14-nov):** el criterio ahora es que el peor año no supere el error LOYO máximo de la misma región (55.2 % en Sierra Gorda); ver `acceptance.md`. Con eso, `etl.verify` da **54/54**.
 
 ## Respaldos
 

@@ -30,7 +30,7 @@ Tres ideas que el jurado debe repetir al salir:
 | 2:20–2:45 | Presets **Sierra Gorda** y **Bajío** | "Mismo estado, dos fuegos: forestal en la sierra, quemas agrícolas en el Bajío; temporadas y factores distintos" + el caso destacado de I2 / I7 | Dos calendarios con estacionalidad y `k` distintos | `seasonality`, `calibration.k` |
 | 2:45–3:00 | Botón **CSV** + cierre | "Cualquier región de México, descargable, y el método funciona cuando MODIS ya no esté" | Descarga funciona | `/hotspots.csv` |
 
-Si sobra tiempo en la app: botón **"Simular fin de MODIS"** (`basis = viirs_primary`) en el minuto 1:40, mostrando que el calendario casi no cambia.
+Si sobra tiempo en la app: botón **"Simular fin de MODIS"** (`basis = viirs_primary`) en el minuto 1:40, mostrando las **barras anuales**: casi no cambian. No decir que el calendario mensual queda igual: solo coincide el 55 % de los meses (A11).
 
 ---
 
@@ -48,7 +48,7 @@ Si sobra tiempo en la app: botón **"Simular fin de MODIS"** (`basis = viirs_pri
 | A8 | S-NPP dejó de operar el 2-nov-2026 | Blog de FIRMS / datos terminan ese día | ⏳ falta la cita (I5) |
 | A9 | Caso destacado de México (mes récord y si coincide con incendios reportados) | Consulta I2 | ⏳ I2 |
 | A10 | El ruido del sur de Querétaro es Tula | Celdas más fuertes en 20.04 N, 99.29 W | ⏳ I3 |
-| A11 | El calendario "no cambia" sin MODIS | `viirs_primary` vs `modis_primary` | ⏳ cuando exista la API |
+| A11 | Sin MODIS, la historia **anual** casi no cambia; el nivel **mensual** sí puede moverse un escalón | Serie anual: mediana de diferencia 16 % Sierra Gorda, 9 % Bajío, 6 % Querétaro. Estado mensual 2012–2025: igual en 55–56 % de los meses, a un nivel o menos en ~90 %; de los meses críticos, 60–80 % siguen saliendo alto o crítico | ✅ medido el 14-nov con la API |
 | A12 | Responde en menos de 2 s | Medición en la demo | ⏳ H2 |
 
 ## 4. Lo que **no** se dice
@@ -69,7 +69,7 @@ Si sobra tiempo en la app: botón **"Simular fin de MODIS"** (`basis = viirs_pri
 | ¿Por qué no multiplican VIIRS por un factor fijo global? | Porque medimos que cambia de 0.26 a 0.40 entre regiones; lo calculamos dentro del área que elige el usuario. |
 | ¿Por qué no regresión o *quantile mapping*? | Lo probamos: la regresión log-log no superó al factor regional (8.8 % vs 6.8 % de error anual en Querétaro). Elegimos lo más simple que mejor funcionó. |
 | ¿Qué error tiene? | ~7–24 % anual según la región, ~30 % mensual. Por eso clasificamos por percentiles y no prometemos precisión mensual. |
-| ¿Qué pasa cuando se apague MODIS? | Desde 2012 ya tenemos el factor; la serie sigue con VIIRS escalado. Lo demostramos con "Simular fin de MODIS". |
+| ¿Qué pasa cuando se apague MODIS? | Desde 2012 ya tenemos el factor; la serie sigue con VIIRS escalado. Lo probamos simulando el fin de MODIS: los totales anuales cambian entre 6 y 16 % en mediana, y el nivel de cada mes queda igual o a un escalón en 9 de cada 10 meses. |
 | ¿Y Terra en la mañana? | Al apagarse se pierde la ventana de media mañana; el factor absorbe el promedio, no el ciclo diario. Es un límite declarado. |
 | ¿Cómo distinguen "sin dato" de "cero"? | Detectamos días sin ninguna detección del satélite en todo el país y los marcamos; esos meses no entran a la mediana. |
 | ¿Por qué celdas de 1 km y no puntos? | Un mismo fuego genera ~4 puntos VIIRS por cada uno de MODIS; la celda-día cuenta "lugar con fuego ese día" igual para ambos. |
@@ -91,7 +91,7 @@ Si sobra tiempo en la app: botón **"Simular fin de MODIS"** (`basis = viirs_pri
 | D3 | Preset Bajío, modo Crudo | Salto visible en 2012 | |
 | D4 | Interruptor a Armonizado | Salto desaparece; matriz y barras cambian juntas | |
 | D5 | Pasar el cursor por un mes de 2001 | Muestra banderas (`terra_only`, `modis_outage` si aplica) | |
-| D6 | Meses de nov–dic 2026 | Gris con trama ("sin dato"), no color de cero | |
+| D6 | Meses de nov–dic 2026 | Gris con trama ("sin dato"), no color de cero. Noviembre es mes parcial: puede mostrar su valor en el tooltip, pero su nivel es "sin dato" | |
 | D7 | Presets Sierra Gorda y Bajío | Estacionalidad y `k` distintos (≈ 0.26 y ≈ 0.31) | |
 | D8 | Dibujar polígono pequeño en Jalisco | Responde en < 8 s | |
 | D9 | Dibujar polígono en el océano o en Argentina | Mensaje de error traducido, la app no se rompe | |

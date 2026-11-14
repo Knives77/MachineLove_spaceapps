@@ -169,7 +169,8 @@ def verify(conn: psycopg.Connection) -> Report:
         used, _ = calibrate.overlap_months("MX", outages)
         w, p = _box_sql(SG, "c")
         series = calibrate.monthly_series(cur, w, p)
-        k = calibrate.calibrate(series, used).k
+        cal_sg = calibrate.calibrate(series, used)
+        k = cal_sg.k
         diffs = {}
         for y in range(2012, 2026):
             my = sum(series.get((y, m), (0, 0))[0] for m in range(1, 13))
@@ -177,8 +178,10 @@ def verify(conn: psycopg.Connection) -> Report:
             pre = sum(series.get((y, m), (0, 0))[0] for m in range(1, 13) if (y, m) < (2012, 2))
             diffs[y] = abs(k * vy + pre - my) / my if my else 0
         worst = max(diffs, key=diffs.get)
-        rep.check(f"viirs_primary vs modis_primary, máx anual < 45 % ({worst})", f"{diffs[worst]:.1%}", "< 45%",
-                  diffs[worst] < 0.45)
+        # acceptance.md: el peor año no supera el error LOYO máximo ya declarado para la misma región.
+        lim = cal_sg.loyo_annual_max
+        rep.check(f"viirs_primary vs modis_primary, máx anual ≤ LOYO máx ({worst})", f"{diffs[worst]:.1%}",
+                  f"≤ {lim:.1%}", diffs[worst] <= lim)
         diffs = list(diffs.values())
         rep.check("viirs_primary vs modis_primary, mediana < 20 %", f"{median(diffs):.1%}", "< 20%", median(diffs) < 0.20)
 

@@ -54,11 +54,12 @@ Para el mes `m` del año `y`:
 - **Línea base** = valores `harmonized` del mismo mes calendario en todos los demás años del rango consultado, excluyendo los que tengan `modis_outage`, `viirs_outage`, `partial_month` o `no_coverage`.
 - Se necesitan al menos 10 años; con menos, `status = "insufficient_baseline"`.
 - Se reportan `median`, `p25`, `p75`, `p90`, `n_years`.
-- `anomaly_ratio = harmonized / median` (`null` si la mediana es 0).
+- `anomaly_ratio = harmonized / median` (`null` si la mediana es 0 o el mes tiene `partial_month`).
+- **Mes parcial** (decisión del 14-nov): un mes con `partial_month` conserva su `harmonized` (lo observado hasta ahora) y su `baseline`, pero `status = "no_data"` y `anomaly_ratio = null`. Comparar unos días contra meses completos lo haría parecer siempre `below` o `normal`. Hoy afecta a noviembre de 2026 (México solo tiene datos del día 1).
 
 | `status` | Condición |
 |---|---|
-| `no_data` | `harmonized` es `null` |
+| `no_data` | `harmonized` es `null`, **o el mes tiene `partial_month`** |
 | `insufficient_baseline` | menos de 10 años de base |
 | `below` | `harmonized < p25` |
 | `normal` | `p25 ≤ harmonized ≤ p75` |
@@ -72,6 +73,7 @@ Para cada satélite y país: días consecutivos con **cero** detecciones en todo
 ## Límites conocidos (decirlos en el pitch)
 
 - El error mensual de la conversión ronda 30%; el anual, 7–15% en Querétaro según la región.
+- Con `basis = viirs_primary` (sin MODIS), la serie **anual** cambia poco (mediana 5–16 % según el preset), pero el **estado mensual** coincide solo en ~55 % de los meses 2012–2025; en ~90 % queda a un nivel o menos de distancia. Medido el 14-nov en los 3 presets.
 - `k` depende de la región y del tipo de fuego; no hay un valor global.
 - Antes de julio de 2002 solo observaba Terra: esos meses subestiman.
 - La malla de 0.01° no es de área constante: una celda es ~13 % más chica en el norte de México que en el sur.

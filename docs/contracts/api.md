@@ -70,7 +70,7 @@ Respuesta: `examples/calendar.response.json`. Campos:
 | `months[].modis_cell_days`, `.viirs_cell_days` | entero \| `null` | `M(m)` y `V(m)` |
 | `months[].baseline` | `{median, p25, p75, p90, n_years}` \| `null` | |
 | `months[].anomaly_ratio` | número \| `null` | |
-| `months[].status` | `no_data` \| `insufficient_baseline` \| `below` \| `normal` \| `above` \| `critical` | |
+| `months[].status` | `no_data` \| `insufficient_baseline` \| `below` \| `normal` \| `above` \| `critical` | un mes con `partial_month` siempre es `no_data` |
 | `months[].flags` | lista de códigos | ver `harmonization.md` |
 | `years[]` | `{year, harmonized, raw_points, complete}` | totales anuales; `complete = false` si falta algún mes |
 | `seasonality[]` | 12 números que suman 1 | fracción histórica de `harmonized` por mes calendario |

@@ -167,3 +167,32 @@ def test_basis_modis_vs_viirs_primary_and_baseline_exclusions() -> None:
     # Estacionalidad suma 1.0
     assert sum(resp_modis.seasonality) == pytest.approx(1.0, abs=1e-3)
 
+
+
+def test_partial_month_is_no_data_but_keeps_value() -> None:
+    """harmonization.md: un mes con partial_month lleva status no_data y anomaly_ratio null."""
+    aoi = AoiSummary(preset_id="qro-sierra-gorda", area_km2=14790.2, country="MX")
+    counts: dict[MonthKey, MonthlyCounts] = {
+        (y, m): MonthlyCounts(modis_cell_days=10, viirs_cell_days=40 if (y, m) >= (2012, 2) else 0, raw_points=50)
+        for y in range(2001, 2027)
+        for m in range(1, 13)
+    }
+    # Un solo día de noviembre de 2026 con muy poca actividad: antes salía "below".
+    counts[(2026, 11)] = MonthlyCounts(modis_cell_days=1, viirs_cell_days=3, raw_points=4)
+    resp = build_calendar_response(
+        aoi_summary=aoi,
+        start_year=2000,
+        end_year=2026,
+        basis="modis_primary",
+        counts_by_month=counts,
+        data_through=date(2026, 11, 1),
+    )
+    nov = next(r for r in resp.months if (r.year, r.month) == (2026, 11))
+    assert "partial_month" in nov.flags
+    assert nov.status == "no_data"
+    assert nov.anomaly_ratio is None
+    assert nov.harmonized is not None
+    # Un mes completo sigue clasificándose normalmente.
+    oct_ = next(r for r in resp.months if (r.year, r.month) == (2026, 10))
+    assert oct_.status == "normal"
+    assert resp.latest.year == 2026 and resp.latest.month == 10
