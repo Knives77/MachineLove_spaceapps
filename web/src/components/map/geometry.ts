@@ -57,12 +57,5 @@ export function regionsData(features: PresetFeature[], selectedId: string | null
 export const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 export const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
-/** Cuadro alrededor de un punto: ± `km` en latitud y longitud (aprox. esférica). */
-export function boxAround(lat: number, lon: number, km: number): Polygon {
-  const dLat = km / 111.32;
-  const dLon = km / (111.32 * Math.cos((lat * Math.PI) / 180));
-  const r = (v: number) => Math.round(v * 1e5) / 1e5;
-  const [s, n] = [r(lat - dLat), r(lat + dLat)];
-  const [w, e] = [r(Math.max(-180, lon - dLon)), r(Math.min(180, lon + dLon))];
-  return { type: 'Polygon', coordinates: [[[w, s], [e, s], [e, n], [w, n], [w, s]]] };
-}
+// Utilidades puras de coordenadas: viven en lib/geo.ts (sin maplibre) para usarse fuera del mapa.
+export { boxAround, parseLatLon } from '../../lib/geo';
