@@ -25,6 +25,8 @@ Datos reales (14-nov): el Bajío quema en **enero–marzo** y la sierra en **abr
 
 **Ruta:** Bajío → Crudo → (votación) → Armonizado → febrero de 2026 → lugar del jurado → Simular fin de MODIS → validación → cierre.
 
+**Dónde está cada cosa en la app (14-nov 19:00):** el interruptor **Crudo / Armonizado** solo existe en las vistas **Experto** y **Aprendizaje**; la vista General siempre muestra armonizado. El botón **"Apagar MODIS"** está en General (bajo las barras anuales) y en Experto (panel Capas). Con MODIS apagado, cada barra anual muestra una **línea punteada blanca** con el valor con MODIS: es lo que el jurado tiene que mirar. Para el acto 1, usar **Experto**, o pedirle a front que lleve el interruptor a General.
+
 ### Acto 1 · "¿Cuánto creció el fuego?" (0:00–1:00)
 
 | Tiempo | En pantalla | Qué pasa | Dato |

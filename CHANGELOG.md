@@ -14,6 +14,7 @@ Resumen para quien llega: **hagan `git pull`**. Front instala desde la raíz; el
 
 | Cambio | Quién | Qué hacer |
 |---|---|---|
+| **"Simular fin de MODIS" listo (19:00).** Botón "Apagar MODIS" en General y Experto; la serie con MODIS queda como línea punteada en las barras anuales; el CSV respeta el `basis`; mocks `calendar.viirs.*.json` copiados de la API. Probado en Chromium con la API real y con mocks | Front, analista | Front: `git pull` antes de tocar `state.tsx`, `YearBars.tsx` o `Downloads.tsx`. Analista: el acto 4 ya se puede ensayar; el acto 1 (Crudo) va en la vista Experto |
 | **Front fusionado (18:35):** sin Argentina en los textos, sin `tsbuildinfo`, panel del calendario plegable y correcciones de UI. Sigue pendiente **"Simular fin de MODIS"**: `basis` fijo en `state.tsx:77` y `Downloads.tsx:37` | Front | Punto 3 de su checklist: es MVP |
 | **Backend fusionado (18:30):** error nuevo `503 db_unavailable`, polígonos en el Golfo y el Pacífico → 422, `viirs_cell_days` desde enero de 2012 y `k` sin redondeo intermedio | Front | Nada: `error.db_unavailable` ya está en `i18n.ts` (se agregó en el merge de front) |
 | **Sin video: presentación en vivo con dinámica.** `PITCH.md` §2 v3: el jurado adivina, vota, elige un lugar de México (0.2 s) y apaga MODIS. 6 lugares ya probados en `HALLAZGOS.md` | Analista, front, procesamiento B | Analista: D3 de `ANALISTA.md`. Front: punto 9 de su checklist. Procesamiento B: probar 6 lugares más |

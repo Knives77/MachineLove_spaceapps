@@ -89,7 +89,7 @@ Skill: `.claude/skills/frontend/SKILL.md` (sección **Datos reales**). Hecho: la
 **En este orden (hasta H3, 00:00)**
 1. [ ] `git pull` y `pnpm install --frozen-lockfile` **desde la raíz**. Abrir las 4 vistas con los mocks nuevos y anotar qué se ve mal con datos reales (celdas casi todas oscuras, barras planas, la fila 2000 gris, textos que ya no cuadran).
 2. [ ] Corregir lo que se vea mal del punto 1. La escala de color y las barras deben leerse con máximos de 64 (Sierra Gorda) a 166 (Querétaro).
-3. [ ] **Botón "Simular fin de MODIS"** (ahora es MVP, función 9 del PRD): pasar `basis` a `getCalendar` y a la descarga del CSV, en lugar del `'modis_primary'` fijo de `state.tsx:77` y `Downloads.tsx:37`. Mostrar sobre todo las barras anuales.
+3. [x] **Botón "Simular fin de MODIS"** (función 9 del PRD), hecho el 14-nov a las 19:00: `basis` en el estado global, botón grande "Apagar MODIS" bajo las barras anuales (General) y en Capas (Experto), línea punteada con la serie con MODIS y CSV con el mismo `basis`. Probado en Chromium con la API real y con mocks. Falta revisarlo en el proyector.
 4. [ ] **Ruta de la demo** (`PITCH.md` §2): preset Bajío → Crudo → Armonizado → clic en febrero de 2026 → Simular fin de MODIS → Sierra Gorda. Que cada paso se vea bien y sin esperas. Valorar que el preset inicial sea Bajío (`DEFAULT_PRESET` en `state.tsx`): con Sierra Gorda, la tarjeta abre en octubre de 2026 = 0.
 5. [ ] Conectar a la API real (`VITE_API_URL=http://localhost:8000/api/v1`, túnel al 8000) y probar: 3 presets, polígono en Jalisco, en Argentina, en el océano y uno gigante (los tres últimos dan error).
 6. [ ] Quitar Argentina de lo visible: `error.aoi_outside_coverage` y `map.coverage` en `i18n.ts` (ES y EN), y `AR` de `COVERAGE` en el mock de `api.ts`.

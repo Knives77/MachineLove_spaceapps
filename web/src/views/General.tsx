@@ -3,6 +3,7 @@ import { Calendar } from '../components/Calendar';
 import { CalendarRail, HideCalendarButton, gridCols, useCalOpen } from '../components/CalendarToggle';
 import { LevelLegend } from '../components/Legend';
 import { MapPanel } from '../components/MapPanel';
+import { ModisSwitch } from '../components/ModisSwitch';
 import { MonthCard } from '../components/MonthCard';
 import { Timeline } from '../components/Timeline';
 import { Skeleton } from '../components/ui';
@@ -33,7 +34,16 @@ export function General() {
       <div className="flex min-h-[520px] flex-col gap-3">
         <MapPanel className="min-h-[340px] flex-1" />
         <section className="panel px-4 pb-2 pt-3">
-          <WithCalendar skeleton={<Skeleton className="h-36" />}>{(d) => <YearBars data={d} height={96} />}</WithCalendar>
+          <WithCalendar skeleton={<Skeleton className="h-36" />}>
+            {(d) => (
+              <>
+                <YearBars data={d} height={96} />
+                <div className="mt-2 border-t border-line pt-2">
+                  <ModisSwitch k={d.calibration.k} />
+                </div>
+              </>
+            )}
+          </WithCalendar>
         </section>
       </div>
 

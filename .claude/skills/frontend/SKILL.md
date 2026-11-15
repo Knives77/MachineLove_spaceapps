@@ -33,7 +33,8 @@ pnpm build                       # debe pasar antes de abrir PR
 | `src/api.ts` | **Única puerta a la API.** `getPresets()`, `getCalendar(req)`, `downloadCalendarCsv(req)`, `downloadHotspotsCsv(req)`, `downloadAoiGeoJson(geom, name)` |
 | `src/types.ts` | Tipos del contrato. Si el contrato cambia, se cambia aquí primero |
 | `src/i18n.ts` | Diccionario ES/EN de todos los textos, incluidos `status.*`, `flag.*`, `source.*`, `error.*` |
-| `src/state.tsx` | Estado global: idioma, pestaña, modo, paleta, área (`aoi`), calendario cargado, mes elegido |
+| `src/state.tsx` | Estado global: idioma, pestaña, modo, `basis` ("Simular fin de MODIS"), paleta, área (`aoi`), calendario cargado, mes elegido. La caché de calendarios va por área **y** `basis`; cambiar solo `basis` conserva el mes elegido |
+| `src/components/ModisSwitch.tsx` | Botón "Apagar MODIS": cambia `basis` a `viirs_primary`. `YearBars` dibuja entonces la serie con MODIS como línea punteada |
 | `src/lib/color.ts` | Rampas Inferno / Cividis, escala raíz, marcas de nivel |
 | `src/components/` | Calendario, tarjeta del mes, leyenda, mapa, línea de tiempo, barras anuales, inspector de k, serie mensual, descargas |
 | `src/views/` | `General`, `Learn` (Aprendizaje), `Edu` (Educacional), `Expert` |
@@ -44,7 +45,7 @@ Ningún componente hace `fetch` directo. **CSV del calendario:** el endpoint es 
 ## Mocks
 
 - `presets.response.json` y `calendar.response.json`: copias de `docs/contracts/examples/`.
-- `calendar.demo.*.json` y `presets.response.json`: **copias de la API real** (base `firms`). Sin túnel, los presets se ven igual que con la API. Se actualizan con `python3 scripts/snapshot_mocks.py` (con la API en 8000).
+- `calendar.demo.*.json` (`modis_primary`), `calendar.viirs.*.json` (`viirs_primary`) y `presets.response.json`: **copias de la API real** (base `firms`). Sin túnel, los presets se ven igual que con la API. Se actualizan con `python3 scripts/snapshot_mocks.py` (con la API en 8000).
 - Con mocks, un polígono dibujado devuelve un calendario **inventado** (`demoCalendar.ts`) y el CSV de hotspots trae solo la cabecera. La interfaz muestra "DEMO" mientras se usen mocks.
 - Los valores reales son 4–7 veces más bajos que los del DEMO viejo y hay muchos meses en 0 (58 en Sierra Gorda): el diseño tiene que verse bien con eso.
 

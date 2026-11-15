@@ -1,10 +1,11 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { getCalendar, getPresets } from './api';
 import { initialLang, saveLang, translate } from './i18n';
 import { centroid, fmtLatLon } from './lib/geo';
 import {
   ApiError,
   type Aoi,
+  type Basis,
   type CalendarResponse,
   type Lang,
   type Mode,
@@ -27,6 +28,9 @@ interface AppState {
   setTab: (t: Tab) => void;
   mode: Mode;
   setMode: (m: Mode) => void;
+  /** `viirs_primary` = "Simular fin de MODIS" (api.md, harmonization.md). */
+  basis: Basis;
+  setBasis: (b: Basis) => void;
   palette: Palette;
   setPalette: (p: Palette) => void;
   sound: boolean;
@@ -70,32 +74,33 @@ function writePref(key: string, v: string) {
 // Caché en memoria de calendarios por área: volver a una región ya vista (o precargada) es instantáneo.
 const calendarCache = new Map<string, Promise<CalendarResponse>>();
 
-function fetchCalendar(aoi: Aoi, fresh = false): Promise<CalendarResponse> {
-  const key = JSON.stringify(aoi);
+function fetchCalendar(aoi: Aoi, basis: Basis, fresh = false): Promise<CalendarResponse> {
+  const key = JSON.stringify([aoi, basis]);
   let p = fresh ? undefined : calendarCache.get(key);
   if (!p) {
-    p = getCalendar({ aoi, start_year: 2000, end_year: 2026, basis: 'modis_primary' });
+    p = getCalendar({ aoi, start_year: 2000, end_year: 2026, basis });
     calendarCache.set(key, p);
     p.catch(() => calendarCache.delete(key)); // los errores no se guardan
   }
   return p;
 }
 
-/** Precarga las regiones de ejemplo para que el demo cambie entre ellas sin esperar. */
+/** Precarga las regiones de ejemplo (con y sin MODIS) para que el demo cambie entre ellas sin esperar. */
 export function prefetchPresets(ids: string[]) {
-  for (const id of ids) fetchCalendar({ preset_id: id }).catch(() => {});
+  for (const id of ids)
+    for (const b of ['modis_primary', 'viirs_primary'] as const) fetchCalendar({ preset_id: id }, b).catch(() => {});
 }
 
 /** Hook de carga con cancelación; lo usan el estado global y las vistas que piden otra región. */
-export function useCalendar(aoi: Aoi | null) {
+export function useCalendar(aoi: Aoi | null, basis: Basis = 'modis_primary') {
   const [res, setRes] = useState<Load<CalendarResponse>>({ state: 'loading' });
   const [nonce, setNonce] = useState(0);
-  const key = aoi ? JSON.stringify(aoi) : '';
+  const key = aoi ? JSON.stringify([aoi, basis]) : '';
   useEffect(() => {
     if (!aoi) return;
     let alive = true;
     setRes({ state: 'loading' });
-    fetchCalendar(aoi, nonce > 0)
+    fetchCalendar(aoi, basis, nonce > 0)
       .then((data) => alive && setRes({ state: 'ok', data }))
       .catch((e) => alive && setRes({ state: 'error', code: e instanceof ApiError ? e.code : 'network' }));
     return () => {
@@ -111,6 +116,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // La app siempre arranca en General; el modo se cambia desde el menú de la barra superior.
   const [tab, setTabState] = useState<Tab>('general');
   const [mode, setMode] = useState<Mode>('harmonized');
+  const [basis, setBasis] = useState<Basis>('modis_primary');
   const [palette, setPaletteState] = useState<Palette>(() =>
     readPref('ml.palette', ['inferno', 'cividis', 'contrast'] as const, 'inferno'),
   );
@@ -118,7 +124,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [presets, setPresets] = useState<Load<PresetCollection>>({ state: 'loading' });
   const [aoi, setAoiState] = useState<Aoi>({ preset_id: DEFAULT_PRESET });
   const [selected, setSelected] = useState<{ year: number; month: number } | null>(null);
-  const [calendar, reload] = useCalendar(aoi);
+  const [calendar, reload] = useCalendar(aoi, basis);
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -133,9 +139,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .catch((e) => setPresets({ state: 'error', code: e instanceof ApiError ? e.code : 'network' }));
   }, []);
 
-  // Al llegar un calendario nuevo, la tarjeta muestra `latest` (api.md).
+  // Al llegar el calendario de un área nueva, la tarjeta muestra `latest` (api.md).
+  // Cambiar solo `basis` ("Simular fin de MODIS") conserva el mes elegido, para comparar el mismo mes.
+  const basisShown = useRef(basis);
   useEffect(() => {
-    if (calendar.state === 'ok') setSelected(calendar.data.latest);
+    if (calendar.state !== 'ok') return;
+    if (basisShown.current !== basis) {
+      basisShown.current = basis;
+      return;
+    }
+    setSelected(calendar.data.latest);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [calendar]);
 
   const t = useCallback(
@@ -173,6 +187,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     },
     mode,
     setMode,
+    basis,
+    setBasis,
     palette,
     setPalette: (p) => {
       setPaletteState(p);

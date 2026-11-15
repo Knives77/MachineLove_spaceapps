@@ -143,6 +143,13 @@ const es: Dict = {
 
   'years.title': 'Total por año',
   'years.incomplete': 'año incompleto',
+  'years.withModis': 'con MODIS',
+  'basis.off': 'Apagar MODIS',
+  'basis.on': 'Volver a encender MODIS',
+  'basis.label': 'Simular el fin de MODIS',
+  'basis.idle': 'Pregunta: ¿qué pasa con la historia cuando MODIS deje de funcionar?',
+  'basis.active': 'MODIS apagado: desde feb-2012 solo VIIRS × k = {k}. La línea punteada es la serie con MODIS.',
+  'basis.rawOff': 'Disponible en modo armonizado.',
 
   'time.month': 'Mes',
   'time.play': 'Reproducir',
@@ -410,6 +417,13 @@ const en: Dict = {
 
   'years.title': 'Yearly total',
   'years.incomplete': 'incomplete year',
+  'years.withModis': 'with MODIS',
+  'basis.off': 'Switch MODIS off',
+  'basis.on': 'Switch MODIS back on',
+  'basis.label': 'Simulate the end of MODIS',
+  'basis.idle': 'Question: what happens to the record when MODIS stops working?',
+  'basis.active': 'MODIS off: since Feb 2012 only VIIRS × k = {k}. The dashed line is the series with MODIS.',
+  'basis.rawOff': 'Available in harmonized mode.',
 
   'time.month': 'Month',
   'time.play': 'Play',

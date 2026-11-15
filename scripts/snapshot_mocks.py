@@ -26,10 +26,11 @@ def fetch(path: str, body: dict | None = None) -> dict:
 def main() -> None:
     stamp = time.strftime("%d-%b-%Y %H:%M")
     for p in PRESETS:
-        out = {"_note": f"Copia de la API real ({stamp}). Para actualizar: python3 scripts/snapshot_mocks.py"}
-        out.update(fetch("/calendar", {"aoi": {"preset_id": p}}))
-        (MOCKS / f"calendar.demo.{p}.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
-        print(f"OK {p}")
+        for basis, name in (("modis_primary", "demo"), ("viirs_primary", "viirs")):
+            out = {"_note": f"Copia de la API real, basis={basis} ({stamp}). Para actualizar: python3 scripts/snapshot_mocks.py"}
+            out.update(fetch("/calendar", {"aoi": {"preset_id": p}, "basis": basis}))
+            (MOCKS / f"calendar.{name}.{p}.json").write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")))
+            print(f"OK {p} {basis}")
     (MOCKS / "presets.response.json").write_text(json.dumps(fetch("/presets"), ensure_ascii=False, indent=2))
     print("OK presets")
 

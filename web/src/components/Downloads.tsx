@@ -5,7 +5,7 @@ import { errorText, useApp } from '../state';
 import { ApiError } from '../types';
 
 export function Downloads({ compact = false }: { compact?: boolean }) {
-  const { t, aoi, aoiName, selected, presets } = useApp();
+  const { t, aoi, aoiName, selected, presets, basis } = useApp();
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const sel = selected;
@@ -34,7 +34,7 @@ export function Downloads({ compact = false }: { compact?: boolean }) {
     <div>
       <div className={`flex flex-wrap gap-2 ${compact ? '' : 'mb-2'}`}>
         <button type="button" className="btn btn-on font-mono" disabled={busy !== null}
-          onClick={() => run('cal', () => downloadCalendarCsv({ aoi, start_year: 2000, end_year: 2026, basis: 'modis_primary' }))}
+          onClick={() => run('cal', () => downloadCalendarCsv({ aoi, start_year: 2000, end_year: 2026, basis }))}
         >
           {busy === 'cal' ? t('loading') : t('dl.calendar')}
         </button>
