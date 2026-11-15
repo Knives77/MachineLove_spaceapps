@@ -53,6 +53,7 @@ Resumen para quien llega: **hagan `git pull`**. Front: además `pnpm install --f
 - `etl.verify` usa el criterio nuevo de `viirs_primary`: **54/54**.
 
 ### Docs
+- Skill de backend: el comando de pruebas es `uv run pytest backend` (decía `pytest api`, una carpeta que ya no existe).
 - `docs/TOPOLOGIA.md` reemplaza a `docs/ACCESS.md`, que describía cuentas y una carpeta `/srv/machinelove` que no existen. La guía y las plantillas de SSH se movieron a `docs/acceso/`.
 - `docs/ANALISTA.md` reescrito con 7 tareas con hora; `docs/HALLAZGOS.md` con su plantilla.
 - `CHECKLIST.md` y `PRD.md` al día: H0–H2 cumplidos y lo pendiente por rol.

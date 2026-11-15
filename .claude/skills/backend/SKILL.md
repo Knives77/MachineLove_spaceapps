@@ -63,7 +63,7 @@ Mismo CTE de celdas, `JOIN detection USING (cy, cx)`, filtro por fechas, y adem�
 
 - `backend/harmonize.py`: una prueba por cada fila de las tablas de `harmonization.md` (estados, banderas, `basis`, respaldo a `k` de país con menos de 100 celdas-día).
 - Endpoints: las casillas de la sección API de `docs/contracts/acceptance.md`, con `httpx` y `TestClient`.
-- Antes de avisar que algo está listo: `uv run pytest api` y una llamada real con `curl` al preset `qro-sierra-gorda`.
+- Antes de avisar que algo está listo: `uv run pytest backend` y una llamada real con `curl` al preset `qro-sierra-gorda`.
 
 ## No hacer
 
