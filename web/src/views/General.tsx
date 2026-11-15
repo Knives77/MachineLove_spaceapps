@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Calendar } from '../components/Calendar';
 import { HideCalendarButton } from '../components/CalendarToggle';
 import { LevelLegend } from '../components/Legend';
-import { MapPanel } from '../components/MapPanel';
+import { MapPanel } from '../components/LazyMapPanel';
 import { MonthCard } from '../components/MonthCard';
 import { Timeline } from '../components/Timeline';
 import { Skeleton } from '../components/ui';

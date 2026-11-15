@@ -3,7 +3,7 @@ import { ALL_LAYERS, Calendar, type Layers } from '../components/Calendar';
 import { CalendarRail, HideCalendarButton, gridCols, useCalOpen } from '../components/CalendarToggle';
 import { Downloads } from '../components/Downloads';
 import { KInspector } from '../components/KInspector';
-import { MapPanel } from '../components/MapPanel';
+import { MapPanel } from '../components/LazyMapPanel';
 import { MonthSeries } from '../components/MonthSeries';
 import { Panel, Skeleton, Switch } from '../components/ui';
 import { useApp } from '../state';

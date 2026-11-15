@@ -87,26 +87,6 @@
     border-color: var(--color-select) !important;
     box-shadow: 0 0 0 1px var(--color-select), 0 0 12px 0 color-mix(in srgb, var(--color-cyan) 50%, transparent);
   }
-  /* Contorno del área elegida en el mapa (Leaflet SVG). */
-  .ml-aoi-glow {
-    filter: drop-shadow(0 0 4px #38bdf8);
-    /* Pulso sutil al elegir o cambiar de región: 2 veces y se detiene (no es un bucle). */
-    animation: aoi-pulse 1.1s ease-out 2;
-  }
-  @keyframes aoi-pulse {
-    0%,
-    100% {
-      filter: drop-shadow(0 0 4px #38bdf8);
-    }
-    45% {
-      filter: drop-shadow(0 0 11px #38bdf8) drop-shadow(0 0 3px #38bdf8);
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .ml-aoi-glow {
-      animation: none;
-    }
-  }
   .btn:disabled {
     color: var(--color-dim);
     border-color: var(--color-line);
@@ -147,29 +127,18 @@
   }
 }
 
-/* Mapa: teselas de OpenStreetMap oscurecidas para el tema del diseño. */
-.leaflet-container {
-  background: #0a0d12;
+/* Mapa (MapLibre): atribución y controles con el tema oscuro. */
+.maplibregl-map {
   font-family: var(--font-sans);
 }
-.ml-dark-tiles {
-  filter: invert(1) hue-rotate(180deg) brightness(0.72) contrast(0.9) saturate(0.35);
-}
-.leaflet-control-attribution {
-  background: rgba(7, 9, 12, 0.75) !important;
-  color: var(--color-mute) !important;
+/* (Selectores con .maplibregl-map: el CSS de MapLibre llega después, con el mapa diferido.) */
+.maplibregl-map .maplibregl-ctrl.maplibregl-ctrl-attrib {
+  background: rgba(9, 13, 20, 0.78);
+  color: var(--color-mute);
   font-size: 10px;
 }
-.leaflet-control-attribution a {
-  color: var(--color-cyan) !important;
-}
-.leaflet-draw-tooltip {
-  background: var(--color-panel);
-  border-color: var(--color-cyan);
-  color: var(--color-ink);
-}
-.leaflet-draw-tooltip:before {
-  border-right-color: var(--color-cyan);
+.maplibregl-map .maplibregl-ctrl-attrib a {
+  color: var(--color-cyan);
 }
 
 /* Deslizador de la línea de tiempo: pista invisible, perilla cian como en el diseño. */
