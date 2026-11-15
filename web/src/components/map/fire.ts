@@ -1,4 +1,4 @@
-// Fuego sobre el mapa (solo consola de Experto): pide los hotspots del mes elegido y pinta la mancha.
+// Fuego sobre el mapa: pide los hotspots del mes elegido y pinta la mancha térmica y los puntos.
 import type { FilterSpecification, GeoJSONSource, MapLibreMap } from 'maplibre-gl';
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { getHotspots } from '../../api';
@@ -33,7 +33,6 @@ const FLARE_MS = 1500;
 export function useFireLayer({
   mapRef,
   ready,
-  tools,
   fire,
   aoi,
   selected,
@@ -42,8 +41,6 @@ export function useFireLayer({
 }: {
   mapRef: RefObject<MapLibreMap | null>;
   ready: boolean;
-  /** Solo la consola de Experto lleva fuego. */
-  tools: boolean;
   /** Capa encendida (botón "Fuego"). */
   fire: boolean;
   aoi: Aoi;
@@ -84,8 +81,8 @@ export function useFireLayer({
     // detecciones apiladas la mancha se atenúa para no quemarse a blanco (crudo no es comparable de todos modos).
     fireScale.current = raw ? Math.min(1.4, Math.max(0.22, 1 / Math.sqrt(Math.max(shown.veg, 1) / 150))) : fam === 'VIIRS' ? 0.45 : 1;
     map.setPaintProperty('hot-fire', 'heatmap-intensity', fireIntensity(fireScale.current));
-    map.setPaintProperty('hot-core', 'circle-opacity', Math.min(1, Math.max(0.3, 500 / Math.max(shown.veg, 1))));
-    map.setPaintProperty('hot-core', 'circle-stroke-opacity', Math.min(1, Math.max(0, 500 / Math.max(shown.veg, 1) - 0.4)));
+    map.setPaintProperty('hot-core', 'circle-opacity', Math.min(0.95, Math.max(0.65, 1200 / Math.max(shown.veg, 1))));
+    map.setPaintProperty('hot-core', 'circle-stroke-opacity', Math.min(0.9, Math.max(0.5, 1200 / Math.max(shown.veg, 1))));
     setHud({ hotspots: { state: 'ok', total: shown.veg + shown.fixed, fixed: shown.fixed } });
     if (shown.veg > 0) setFlare((n) => n + 1);
   };
@@ -100,7 +97,7 @@ export function useFireLayer({
   const selMonth = selected?.month;
   useEffect(() => {
     const map = mapRef.current;
-    if (!tools || !ready || !map) return;
+    if (!ready || !map) return;
     const src = map.getSource('hotspots') as GeoJSONSource | undefined;
     if (!src) return;
     if (!fire || !selYear || !selMonth) {
@@ -146,7 +143,7 @@ export function useFireLayer({
 
   // Cambiar Armonizado/Crudo o la fuente del mes solo cambia el filtro: no se vuelve a pedir nada.
   useEffect(() => {
-    if (tools && ready) paint();
+    if (ready) paint();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, mode, source]);
 
@@ -155,7 +152,7 @@ export function useFireLayer({
   // no gasta nada. Con "reducir movimiento" no hay parpadeo.
   useEffect(() => {
     const map = mapRef.current;
-    if (!tools || !ready || !map || !fire || !flare || reducedMotion()) return;
+    if (!ready || !map || !fire || !flare || reducedMotion()) return;
     const t0 = performance.now();
     const settle = () => {
       window.clearInterval(id);

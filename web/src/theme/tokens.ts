@@ -58,11 +58,17 @@ export const RAMPS = {
   contrast: ['#5a189a', '#c2185b', '#ff9800', '#ffff00', '#ffffff'],
 } as const;
 
-/** Fuego sobre el mapa: mancha de calor donde hubo hotspots, de brasa oscura a núcleo incandescente. */
+/** Fuego sobre el mapa: mancha térmica rojiza de fondo y puntos rojos/amarillos por intensidad (FRP). */
 export const FIRE = {
-  /** Rampa de la mancha, de menor a mayor densidad de detecciones. */
-  ramp: ['#4a0c04', '#b3280a', '#ff5a1f', '#ffa02e', '#ffe27a', '#fff7d6'],
-  spark: '#ffe27a', // chispa en el punto exacto de cada detección
+  /** Rampa de la mancha térmica, de brasa rojiza a rojo escarlata y ámbar (sin lavar a blanco). */
+  ramp: ['#3b0704', '#7f1d1d', '#b91c1c', '#dc2626', '#ea580c', '#f59e0b'],
+  /** Puntos de focos de calor (estilo CONAE: rojo/naranja a amarillo intenso según FRP). */
+  dotLow: '#ef4444',
+  dotMid: '#f97316',
+  dotHigh: '#facc15',
+  dotPeak: '#fef08a',
+  dotStroke: '#2a0604',
+  spark: '#facc15', // chispa en el punto exacto de cada detección
 } as const;
 
 /** Mapa (MapLibre). */

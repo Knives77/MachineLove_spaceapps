@@ -153,7 +153,7 @@ export function MapPanel({
     const ro = new ResizeObserver(() => map.resize());
     ro.observe(box.current);
     return () => {
-      if (tools) setHud({ cursor: null, hotspots: null });
+      setHud({ cursor: null, hotspots: null });
       ro.disconnect();
       map.remove();
       mapRef.current = null;
@@ -190,7 +190,7 @@ export function MapPanel({
     calendar.state === 'ok' && selected
       ? (calendar.data.months.find((m) => m.year === selected.year && m.month === selected.month)?.source ?? null)
       : undefined;
-  useFireLayer({ mapRef, ready, tools, fire, aoi, selected, mode, source });
+  useFireLayer({ mapRef, ready, fire, aoi, selected, mode, source });
 
   // Vista 3D: el terreno se levanta con la elevación real (exagerada 1.6× para que se lea a esta escala).
   useEffect(() => {

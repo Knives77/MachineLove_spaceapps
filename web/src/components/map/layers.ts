@@ -33,8 +33,8 @@ function rgba(hex: string, a: number): string {
 export const fireIntensity = (m: number): ExpressionSpecification => ['interpolate', ['linear'], ['zoom'], 5, 0.38 * m, 8, 0.5 * m, 12, 0.95 * m];
 
 /**
- * Añade al mapa ya cargado el tono de la app, las regiones, la herramienta de dibujo y, con `tools`
- * (consola de Experto), el relieve y las capas de fuego. Orden = orden de pintado.
+ * Añade al mapa ya cargado el tono de la app, las regiones, las capas de fuego, la herramienta de
+ * dibujo y, con `tools` (consola de Experto), el relieve. Orden = orden de pintado.
  */
 export function addMapLayers(map: MapLibreMap, tools: boolean) {
   // Tono de la app sobre el estilo base.
@@ -107,66 +107,82 @@ export function addMapLayers(map: MapLibreMap, tools: boolean) {
     filter: ['get', 'active'],
     paint: { 'line-color': ACTIVE, 'line-width': 2.2 },
   });
-  if (tools) {
-    // Hotspots del mes elegido (POST /hotspots). Aro gris = detección en fuente fija (no es fuego de vegetación).
-    const frp: ExpressionSpecification = ['sqrt', ['max', 0, ['coalesce', ['get', 'frp'], 0]]];
-    map.addSource('hotspots', { type: 'geojson', data: EMPTY });
-    map.addLayer({
-      id: 'hot-static',
-      type: 'circle',
-      source: 'hotspots',
-      filter: ['!', ['get', 'veg']],
-      paint: {
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 1.4, 11, 4],
-        'circle-color': MAP.background,
-        'circle-opacity': 0.6,
-        'circle-stroke-color': MAP.staticSource,
-        'circle-stroke-width': 1,
-      },
-    });
-    // Fuego extendido: mancha de calor (capa `heatmap` nativa). Donde hay más detecciones, y más potentes,
-    // la mancha pasa de brasa oscura a amarillo incandescente y las manchas vecinas se funden.
-    map.addLayer({
-      id: 'hot-fire',
-      type: 'heatmap',
-      source: 'hotspots',
-      filter: ['get', 'veg'],
-      paint: {
-        'heatmap-weight': ['interpolate', ['linear'], frp, 0, 0.5, 4, 0.75, 10, 1],
-        'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 5, 7, 8, 19, 11, 40, 13, 58],
-        'heatmap-intensity': fireIntensity(1),
-        // El parpadeo cambia la intensidad ~9 veces por segundo: sin transición. Con la de 300 ms por
-        // defecto siempre queda una a medias y el mapa (con relieve) se repinta a 60 cuadros por segundo.
-        'heatmap-intensity-transition': NO_TRANSITION,
-        'heatmap-opacity': 1,
-        'heatmap-color': [
-          'interpolate',
-          ['linear'],
-          ['heatmap-density'],
-          0, rgba(FIRE.ramp[0], 0),
-          0.03, rgba(FIRE.ramp[1], 0.55),
-          0.1, rgba(FIRE.ramp[2], 0.95),
-          0.3, FIRE.ramp[3],
-          0.72, FIRE.ramp[4],
-          1, FIRE.ramp[5],
-        ],
-      },
-    });
-    // Chispa en el punto exacto de cada detección: clara con borde oscuro, para que una sola
-    // detección aislada se vea sin depender de la mancha.
-    map.addLayer({
-      id: 'hot-core',
-      type: 'circle',
-      source: 'hotspots',
-      filter: ['get', 'veg'],
-      paint: {
-        'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 0.9, 9, 1.6, 12, 3],
-        'circle-color': FIRE.ramp[5],
-        'circle-stroke-color': FIRE.ramp[1],
-        'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 6, 0.3, 12, 0.9],
-      },
-    });
-  }
+  // Hotspots del mes elegido (POST /hotspots). Aro gris = detección en fuente fija (no es fuego de vegetación).
+  const frp: ExpressionSpecification = ['sqrt', ['max', 0, ['coalesce', ['get', 'frp'], 0]]];
+  map.addSource('hotspots', { type: 'geojson', data: EMPTY });
+  map.addLayer({
+    id: 'hot-static',
+    type: 'circle',
+    source: 'hotspots',
+    filter: ['!', ['get', 'veg']],
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 6, 1.4, 11, 4],
+      'circle-color': MAP.background,
+      'circle-opacity': 0.6,
+      'circle-stroke-color': MAP.staticSource,
+      'circle-stroke-width': 1,
+    },
+  });
+  // Fuego extendido: mancha térmica rojiza (capa `heatmap` nativa) que enmarca las zonas con actividad
+  // sin lavar los puntos individuales hacia blanco.
+  map.addLayer({
+    id: 'hot-fire',
+    type: 'heatmap',
+    source: 'hotspots',
+    filter: ['get', 'veg'],
+    paint: {
+      'heatmap-weight': ['interpolate', ['linear'], frp, 0, 0.5, 4, 0.75, 10, 1],
+      'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 5, 7, 8, 19, 11, 40, 13, 58],
+      'heatmap-intensity': fireIntensity(1),
+      // El parpadeo cambia la intensidad ~9 veces por segundo: sin transición. Con la de 300 ms por
+      // defecto siempre queda una a medias y el mapa (con relieve) se repinta a 60 cuadros por segundo.
+      'heatmap-intensity-transition': NO_TRANSITION,
+      'heatmap-opacity': 0.78,
+      'heatmap-color': [
+        'interpolate',
+        ['linear'],
+        ['heatmap-density'],
+        0, rgba(FIRE.ramp[0], 0),
+        0.03, rgba(FIRE.ramp[1], 0.55),
+        0.1, rgba(FIRE.ramp[2], 0.95),
+        0.3, FIRE.ramp[3],
+        0.72, FIRE.ramp[4],
+        1, FIRE.ramp[5],
+      ],
+    },
+  });
+  // Puntos de focos de calor (estilo CONAE): rojos/naranjas en detecciones bajas y amarillo brillante
+  // en los focos de mayor potencia (FRP), ordenados para que los más intensos queden arriba.
+  map.addLayer({
+    id: 'hot-core',
+    type: 'circle',
+    source: 'hotspots',
+    filter: ['get', 'veg'],
+    layout: {
+      'circle-sort-key': frp,
+    },
+    paint: {
+      'circle-radius': [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+        6, ['interpolate', ['linear'], frp, 1, 1.8, 8, 3.4],
+        9, ['interpolate', ['linear'], frp, 1, 2.8, 8, 5.2],
+        12, ['interpolate', ['linear'], frp, 1, 4.2, 8, 8.0],
+      ],
+      'circle-color': [
+        'interpolate',
+        ['linear'],
+        frp,
+        1, FIRE.dotLow,
+        2.8, FIRE.dotMid,
+        5, FIRE.dotHigh,
+        8, FIRE.dotPeak,
+      ],
+      'circle-stroke-color': FIRE.dotStroke,
+      'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 6, 0.7, 9, 1.1, 12, 1.5],
+    },
+  });
 
   map.addLayer({
     id: 'draw-fill',
