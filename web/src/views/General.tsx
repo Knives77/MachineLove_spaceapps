@@ -4,6 +4,7 @@ import { Calendar } from '../components/Calendar';
 import { HideCalendarButton } from '../components/CalendarToggle';
 import { LevelLegend } from '../components/Legend';
 import { MapPanel } from '../components/LazyMapPanel';
+import { ModisSwitch } from '../components/ModisSwitch';
 import { MonthCard } from '../components/MonthCard';
 import { Timeline } from '../components/Timeline';
 import { Skeleton } from '../components/ui';
@@ -45,6 +46,10 @@ export function General() {
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
           <WithCalendar skeleton={<Skeleton className="h-64" />}>{(d) => <MonthCard data={d} />}</WithCalendar>
+        </div>
+        {/* "Simular fin de MODIS" (main): fijo al pie de la tarjeta, siempre visible para el jurado. */}
+        <div className="shrink-0 border-t border-line px-4 py-3">
+          <WithCalendar skeleton={<Skeleton className="h-10" />}>{(d) => <ModisSwitch k={d.calibration.k} />}</WithCalendar>
         </div>
       </section>
 

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { statusColor } from '../lib/color';
 import { fmtNum, indexMonths, ymKey } from '../lib/format';
 import { UI } from '../theme/tokens';
-import { useApp } from '../state';
+import { useApp, useCalendar } from '../state';
 import type { CalendarResponse } from '../types';
 import { PauseIcon } from './icons/pause';
 import { PlayIcon } from './icons/play';
@@ -18,8 +18,20 @@ const VIIRS_START = 2012; // S-NPP desde 2012
  * (las marcas salen de `status` y `flags`).
  */
 export function Timeline({ data, detailed = false }: { data: CalendarResponse; detailed?: boolean }) {
-  const { t, lang, palette, selected, setSelected } = useApp();
-  const yearMax = Math.max(1, ...data.years.map((y) => y.harmonized ?? 0));
+  const { t, lang, palette, selected, setSelected, basis, aoi } = useApp();
+  // "Simular fin de MODIS" (basis = viirs_primary): la serie con MODIS se marca punteada en cada año,
+  // igual que en las barras anuales de Experto, para ver cuánto cambia.
+  const compare = basis === 'viirs_primary';
+  const [ref] = useCalendar(compare ? aoi : null, 'modis_primary');
+  const refByYear = useMemo(
+    () => (compare && ref.state === 'ok' ? new Map(ref.data.years.map((y) => [y.year, y.harmonized])) : null),
+    [compare, ref],
+  );
+  const yearMax = Math.max(
+    1,
+    ...data.years.map((y) => y.harmonized ?? 0),
+    ...(refByYear ? [...refByYear.values()].map((v) => v ?? 0) : []),
+  );
   const barColor = statusColor(palette, 'normal');
   const { start_year, end_year } = data.range;
   const total = (end_year - start_year + 1) * 12;
@@ -116,12 +128,15 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
               const left = (toIdx(y.year, 1) / total) * 100;
               const h = Math.max(2, ((y.harmonized ?? 0) / yearMax) * 100);
               const on = y.year === sel.year;
+              const refV = refByYear?.get(y.year);
               return (
                 <button
                   key={y.year}
                   type="button"
                   tabIndex={-1}
-                  title={`${y.year}: ${fmtNum(lang, y.harmonized ?? 0)} ${t('unit.cellDays')}${y.complete ? '' : ` · ${t('years.incomplete')}`}`}
+                  title={`${y.year}: ${fmtNum(lang, y.harmonized ?? 0)} ${t('unit.cellDays')}${
+                    refV === null || refV === undefined ? '' : ` · ${t('years.withModis')}: ${fmtNum(lang, refV, 1)}`
+                  }${y.complete ? '' : ` · ${t('years.incomplete')}`}`}
                   onClick={() => {
                     setPlaying(false);
                     setSelected(y.year === data.latest.year ? data.latest : { year: y.year, month: sel.month });
@@ -140,6 +155,12 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
                       boxShadow: on ? `0 0 0 1px ${UI.select}` : undefined,
                     }}
                   />
+                  {refV !== null && refV !== undefined && (
+                    <span
+                      className="pointer-events-none absolute inset-x-0 border-t-2 border-dashed"
+                      style={{ bottom: `${(refV / yearMax) * 100}%`, borderColor: UI.select }}
+                    />
+                  )}
                 </button>
               );
             })}
@@ -165,6 +186,12 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
             <span>{start_year}</span>
             <span className="truncate px-2 font-sans text-dim">
               {t('years.title')} · {t('unit.cellDays')}
+              {refByYear && (
+                <>
+                  {' · '}
+                  <span className="inline-block h-0 w-3 border-t-2 border-dashed border-ink align-middle" /> {t('years.withModis')}
+                </>
+              )}
             </span>
             <span>{end_year}</span>
           </div>

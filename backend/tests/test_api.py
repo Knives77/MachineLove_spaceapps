@@ -237,3 +237,28 @@ def test_db_queries_mx_only_and_health_date() -> None:
         resolve_aoi_db(conn, AoiInput(geometry=ar_poly))  # type: ignore[arg-type]
     assert exc_info.value.status_code == 422
     assert exc_info.value.code == "aoi_outside_coverage"
+
+
+def test_psycopg_error_returns_503_json(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Si la BD o el túnel SSH cae, todos los endpoints devuelven 503 con error.code."""
+    import psycopg
+    import backend.routes as routes_mod
+
+    monkeypatch.setenv("API_MOCK", "0")
+    routes_mod._PRESET_CALENDAR_CACHE.clear()
+
+    def broken_conn(*_args: object, **_kwargs: object) -> object:
+        raise psycopg.OperationalError("connection refused")
+
+    monkeypatch.setattr(routes_mod, "get_connection", broken_conn)
+    c = TestClient(app, raise_server_exceptions=False)
+
+    for method, path, body in (
+        ("get", "/api/v1/health", None),
+        ("get", "/api/v1/presets", None),
+        ("post", "/api/v1/calendar", {"aoi": {"preset_id": "qro-sierra-gorda"}}),
+    ):
+        resp = c.get(path) if method == "get" else c.post(path, json=body)
+        assert resp.status_code == 503
+        assert resp.json()["error"]["code"] == "db_unavailable"
+

@@ -360,7 +360,18 @@ def build_calendar_response(
         country=aoi_summary.country,
         country_k=country_k,
     )
-    k = calibration.k
+    if (
+        calibration.scope == "aoi"
+        and calibration.viirs_cell_days > 0
+        and calibration.modis_cell_days >= MIN_OVERLAP_MODIS_CELL_DAYS
+    ):
+        k = calibration.modis_cell_days / calibration.viirs_cell_days
+    else:
+        k = (
+            float(country_k)
+            if country_k is not None
+            else calibration.k
+        )
 
     # Paso 1: calcular serie armonizada para el rango consultado (start_year..end_year)
     req_keys = months_in_range(start_year, end_year)
@@ -384,9 +395,10 @@ def build_calendar_response(
 
         has_modis_cov = ym >= MODIS_START
         has_viirs_cov = ym >= VIIRS_FULL_MONTH_START
+        has_viirs_data = ym >= (2012, 1)
 
         m_val = mc.modis_cell_days if has_modis_cov else None
-        v_val = mc.viirs_cell_days if has_viirs_cov else None
+        v_val = mc.viirs_cell_days if has_viirs_data else None
         modis_cd_by_ym[ym] = m_val
         viirs_cd_by_ym[ym] = v_val
 
@@ -468,8 +480,13 @@ def build_calendar_response(
             baseline = None
 
         status = classify_status(h_val, baseline)
+        partial = "partial_month" in fl
+        if partial:
+            # harmonization.md: un mes parcial no se compara contra meses completos.
+            status = "no_data"
         if (
-            baseline is not None
+            not partial
+            and baseline is not None
             and baseline.n_years >= MIN_BASELINE_YEARS
             and baseline.median > 0
         ):

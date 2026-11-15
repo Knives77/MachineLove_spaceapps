@@ -1,0 +1,10 @@
+# Plantilla para ~/.ssh/authorized_keys de la anfitriona (equimanthorn).
+#
+# Una línea por persona, TODO en una sola línea: las opciones del inicio + la llave .pub que te mandaron.
+# Limitan la llave a túneles hacia 8000 (API estable), 8001 (API de desarrollo) y 5432 (Postgres). Sin terminal.
+# Después de editar:   chmod 600 ~/.ssh/authorized_keys
+# Para quitar el acceso a alguien, borra su línea.
+#
+# NUNCA pegues una llave sin estas opciones: tendría terminal completa como equimanthorn.
+
+restrict,port-forwarding,permitopen="localhost:8000",permitopen="localhost:8001",permitopen="localhost:5432",command="/usr/bin/false" ssh-ed25519 AAAA...LLAVE... nombre

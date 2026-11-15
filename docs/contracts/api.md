@@ -16,7 +16,8 @@ Los ejemplos completos están en `docs/contracts/examples/`; el frontend los usa
 | 400 | `aoi_too_large` | más de 200,000 km² |
 | 400 | `invalid_range` | `start_year > end_year` o fuera de 2000–2026 |
 | 404 | `unknown_preset` | `preset_id` inexistente |
-| 422 | `aoi_outside_coverage` | el área no toca México (en el MVP; Argentina es fase 2) |
+| 422 | `aoi_outside_coverage` | el área no toca México (en el MVP; Argentina es fase 2). Un polígono sin celdas cuenta como México solo si queda a menos de 0.15° (~15 km) de celdas de México: el Golfo y el Pacífico dan 422 |
+| 503 | `db_unavailable` | la base no responde (túnel caído o Postgres apagado) |
 
 ## El objeto `aoi`
 
@@ -70,7 +71,7 @@ Respuesta: `examples/calendar.response.json`. Campos:
 | `months[].modis_cell_days`, `.viirs_cell_days` | entero \| `null` | `M(m)` y `V(m)` |
 | `months[].baseline` | `{median, p25, p75, p90, n_years}` \| `null` | |
 | `months[].anomaly_ratio` | número \| `null` | |
-| `months[].status` | `no_data` \| `insufficient_baseline` \| `below` \| `normal` \| `above` \| `critical` | |
+| `months[].status` | `no_data` \| `insufficient_baseline` \| `below` \| `normal` \| `above` \| `critical` | un mes con `partial_month` siempre es `no_data` |
 | `months[].flags` | lista de códigos | ver `harmonization.md` |
 | `years[]` | `{year, harmonized, raw_points, complete}` | totales anuales; `complete = false` si falta algún mes |
 | `seasonality[]` | 12 números que suman 1 | fracción histórica de `harmonized` por mes calendario |

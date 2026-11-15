@@ -42,7 +42,8 @@ Calculadas con S-NPP como VIIRS en todo 2012-02 → 2025-12. Con la regla oficia
 - [ ] `GET /presets` devuelve 3 regiones.
 - [ ] `POST /calendar` con `qro-sierra-gorda` devuelve 324 meses (2000–2026) y `calibration.k` entre 0.25 y 0.28.
 - [ ] La suma de `raw_points` de 2019 es más de 5 veces la de 2011; la de `harmonized`, menos de 1.5 veces.
-- [ ] Con `basis = viirs_primary`, el total anual `harmonized` de cada año 2012–2025 difiere menos de 45% del de `modis_primary`, y la mediana de esas diferencias es menor a 20%.
+- [ ] Con `basis = viirs_primary`, la mediana de las diferencias anuales de `harmonized` contra `modis_primary` (2012–2025) es menor a 20 %, y la diferencia máxima de un año no supera el `calibration.loyo_annual_max` del mismo preset. (Antes era un 45 % fijo, que no venía de ninguna medición; Sierra Gorda 2020 da 50.7 % con un LOYO máximo de 55.2 %.)
+- [ ] Un mes con `partial_month` (hoy noviembre de 2026) tiene `status = "no_data"` y `anomaly_ratio = null`, aunque `harmonized` traiga valor.
 - [ ] Un mes con `no_coverage` tiene `harmonized = null` y no cuenta en `baseline.n_years`.
 - [ ] Polígono en el océano → 422 `aoi_outside_coverage`.
 - [ ] `/hotspots.csv` de Sierra Gorda, 2025-03-01 → 2025-05-31, descarga y abre en una hoja de cálculo.

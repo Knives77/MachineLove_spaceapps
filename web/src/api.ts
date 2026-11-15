@@ -7,6 +7,9 @@ import presetsMock from './mocks/presets.response.json';
 import demoSierra from './mocks/calendar.demo.qro-sierra-gorda.json';
 import demoBajio from './mocks/calendar.demo.qro-bajio.json';
 import demoRecuadro from './mocks/calendar.demo.qro-recuadro.json';
+import viirsSierra from './mocks/calendar.viirs.qro-sierra-gorda.json';
+import viirsBajio from './mocks/calendar.viirs.qro-bajio.json';
+import viirsRecuadro from './mocks/calendar.viirs.qro-recuadro.json';
 import {
   ApiError,
   type CalendarRequest,
@@ -24,6 +27,13 @@ const DEMO: Record<string, unknown> = {
   'qro-sierra-gorda': demoSierra,
   'qro-bajio': demoBajio,
   'qro-recuadro': demoRecuadro,
+};
+
+// Mismos presets con `basis = viirs_primary` ("Simular fin de MODIS"), también copiados de la API real.
+const DEMO_VIIRS: Record<string, unknown> = {
+  'qro-sierra-gorda': viirsSierra,
+  'qro-bajio': viirsBajio,
+  'qro-recuadro': viirsRecuadro,
 };
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -112,7 +122,7 @@ export async function getCalendar(req: CalendarRequest): Promise<CalendarRespons
   if (usingMocks) {
     await wait(350);
     if ('geometry' in req.aoi) return demoForGeometry(req.aoi.geometry);
-    const demo = DEMO[req.aoi.preset_id];
+    const demo = (req.basis === 'viirs_primary' ? DEMO_VIIRS : DEMO)[req.aoi.preset_id];
     if (!demo) throw new ApiError('unknown_preset');
     return demo as CalendarResponse;
   }

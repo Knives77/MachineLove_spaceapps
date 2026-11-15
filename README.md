@@ -8,8 +8,8 @@
 etl/        ingesta de FIRMS, máscara estática, caídas de sensor, celdas-día, calibración
 backend/    API FastAPI: /presets, /calendar, /calendar.csv, /hotspots.csv
 web/        frontend React + Vite + Tailwind
-docs/       contexto, PRD, contratos (docs/contracts/), accesos y túneles SSH
-scripts/    base de datos (Postgres + PostGIS) y descarga del histórico
+docs/       contexto, PRD, checklist, topología, contratos (docs/contracts/), pitch
+scripts/    base de datos (Postgres + PostGIS), descarga del histórico, cifras del pitch
 data/       CSV de FIRMS (fuera de Git; se regenera con scripts/download_history.sh)
 ```
 
@@ -19,12 +19,24 @@ data/       CSV de FIRMS (fuera de Git; se regenera con scripts/download_history
 
 ```bash
 scripts/db_up.sh                                   # Postgres + PostGIS en 127.0.0.1:5432
-scripts/download_history.sh                        # histórico de FIRMS a data/
+scripts/download_history.sh                        # histórico 2000–2025 de FIRMS a data/
+scripts/download_requests.sh                       # solicitudes 2024–2026 (release de GitHub)
 uv run python -m etl.run --all                     # ETL completo
 uv run uvicorn backend.main:app --port 8000        # API
-cd web && pnpm install && pnpm dev                 # frontend
+pnpm install --frozen-lockfile && pnpm dev         # frontend (workspace pnpm en la raíz)
 ```
 
 Pruebas: `uv run pytest etl backend`.
 
-Más detalle en [`docs/CONTEXT.md`](docs/CONTEXT.md), [`docs/PRD.md`](docs/PRD.md) y [`backend/README.md`](backend/README.md).
+## Documentación
+
+| Para | Leer |
+|---|---|
+| Entender el reto y los datos | [`docs/CONTEXT.md`](docs/CONTEXT.md) |
+| Qué construimos y cuándo | [`docs/PRD.md`](docs/PRD.md), [`docs/CHECKLIST.md`](docs/CHECKLIST.md) |
+| Dónde corre cada cosa y cómo conectarse | [`docs/TOPOLOGIA.md`](docs/TOPOLOGIA.md) |
+| Poblar la base de datos | [`docs/POBLAR_BASE.md`](docs/POBLAR_BASE.md) |
+| Qué entrega cada parte a la otra | [`docs/contracts/README.md`](docs/contracts/README.md) |
+| La API | [`backend/README.md`](backend/README.md), [`docs/contracts/api.md`](docs/contracts/api.md) |
+| El pitch | [`docs/PITCH.md`](docs/PITCH.md), [`docs/ANALISTA.md`](docs/ANALISTA.md) |
+| Qué cambió | [`CHANGELOG.md`](CHANGELOG.md) |

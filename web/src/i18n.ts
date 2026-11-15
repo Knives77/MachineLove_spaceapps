@@ -72,6 +72,7 @@ const es: Dict = {
   'error.unknown_preset': 'Esa región no existe.',
   'error.aoi_outside_coverage': 'El área está fuera de la zona con datos (México).',
   'error.network': 'No hay conexión con la API. ¿Está abierto el túnel?',
+  'error.db_unavailable': 'La base de datos no responde. Avisa al líder.',
   'error.generic': 'La API respondió con un error ({code}).',
   'error.retry': 'Reintentar',
 
@@ -143,6 +144,13 @@ const es: Dict = {
 
   'years.title': 'Total por año',
   'years.incomplete': 'año incompleto',
+  'years.withModis': 'con MODIS',
+  'basis.off': 'Apagar MODIS',
+  'basis.on': 'Volver a encender MODIS',
+  'basis.label': 'Simular el fin de MODIS',
+  'basis.idle': 'Pregunta: ¿qué pasa con la historia cuando MODIS deje de funcionar?',
+  'basis.active': 'MODIS apagado: desde feb-2012 solo VIIRS × k = {k}. La línea punteada es la serie con MODIS.',
+  'basis.rawOff': 'Disponible en modo armonizado.',
 
   'time.month': 'Mes',
   'time.play': 'Reproducir',
@@ -339,6 +347,7 @@ const en: Dict = {
   'error.unknown_preset': 'That region does not exist.',
   'error.aoi_outside_coverage': 'The area is outside the covered zone (Mexico).',
   'error.network': 'Cannot reach the API. Is the tunnel open?',
+  'error.db_unavailable': 'The database is not responding. Tell the team lead.',
   'error.generic': 'The API returned an error ({code}).',
   'error.retry': 'Retry',
 
@@ -410,6 +419,13 @@ const en: Dict = {
 
   'years.title': 'Yearly total',
   'years.incomplete': 'incomplete year',
+  'years.withModis': 'with MODIS',
+  'basis.off': 'Switch MODIS off',
+  'basis.on': 'Switch MODIS back on',
+  'basis.label': 'Simulate the end of MODIS',
+  'basis.idle': 'Question: what happens to the record when MODIS stops working?',
+  'basis.active': 'MODIS off: since Feb 2012 only VIIRS × k = {k}. The dashed line is the series with MODIS.',
+  'basis.rawOff': 'Available in harmonized mode.',
 
   'time.month': 'Month',
   'time.play': 'Play',

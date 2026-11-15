@@ -7,7 +7,7 @@ import { DownloadIcon } from './icons/download';
 import { useIconAnim } from './icons/useIconAnim';
 
 export function Downloads({ compact = false }: { compact?: boolean }) {
-  const { t, aoi, aoiName, selected, presets } = useApp();
+  const { t, aoi, aoiName, selected, presets, basis } = useApp();
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const sel = selected;
@@ -41,7 +41,7 @@ export function Downloads({ compact = false }: { compact?: boolean }) {
         <DlButton
           primary
           disabled={busy !== null}
-          onRun={() => run('cal', () => downloadCalendarCsv({ aoi, start_year: 2000, end_year: 2026, basis: 'modis_primary' }))}
+          onRun={() => run('cal', () => downloadCalendarCsv({ aoi, start_year: 2000, end_year: 2026, basis }))}
         >
           {busy === 'cal' ? t('loading') : t('dl.calendar')}
         </DlButton>
