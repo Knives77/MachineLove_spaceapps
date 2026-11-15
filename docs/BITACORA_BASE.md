@@ -41,6 +41,13 @@ Conteos exactos (`count(*)`), iguales en `firms` y `firms_dev`:
 
 Única comprobación que fallaba en `etl.verify`: `viirs_primary` vs `modis_primary` en Sierra Gorda 2020 daba 50.8 % contra un límite fijo de 45 % que no salió de una medición. **Resuelto (14-nov):** el criterio ahora es que el peor año no supere el error LOYO máximo de la misma región (55.2 % en Sierra Gorda); ver `acceptance.md`. Con eso, `etl.verify` da **54/54**.
 
+## Pruebas de reconstrucción
+
+| Hora | Qué | Resultado |
+|---|---|---|
+| 14-nov 18:20 | ETL completo desde cero en `firms_test` (esquema + pasos 1–5) | 125 s; conteos idénticos a `firms`; `etl.verify` 54/54. Base borrada después |
+| 14-nov 18:25 | Restaurar el respaldo H1 en `firms_restore_test` | 96 s; conteos, presets y `k` idénticos. Base borrada después |
+
 ## Respaldos
 
 | Hora | Hito | Archivo | Tamaño |
@@ -63,9 +70,14 @@ for db in firms firms_dev; do
 done
 ```
 
-Restaurar en una base nueva (no pisa `firms`):
+Restaurar en una base nueva (no pisa `firms`; probado el 14-nov: 96 s, conteos idénticos):
 
 ```bash
+DUMP=~/backups/machinelove/firms_20261114_1634.dump
 podman exec firms_postgis createdb -U firms firms_restore
-podman exec -i firms_postgis pg_restore -U firms -d firms_restore -j 4 < ~/backups/machinelove/firms_20261114_1634.dump
+podman cp "$DUMP" firms_postgis:/tmp/restore.dump
+podman exec firms_postgis pg_restore -U firms -d firms_restore -j 4 /tmp/restore.dump
+podman exec firms_postgis rm /tmp/restore.dump
 ```
+
+Paso a paso completo para poblar desde cero o desde un respaldo: `POBLAR_BASE.md`.

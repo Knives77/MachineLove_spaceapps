@@ -35,6 +35,7 @@ Pruebas: `uv run pytest etl backend`.
 | Entender el reto y los datos | [`docs/CONTEXT.md`](docs/CONTEXT.md) |
 | Qué construimos y cuándo | [`docs/PRD.md`](docs/PRD.md), [`docs/CHECKLIST.md`](docs/CHECKLIST.md) |
 | Dónde corre cada cosa y cómo conectarse | [`docs/TOPOLOGIA.md`](docs/TOPOLOGIA.md) |
+| Poblar la base de datos | [`docs/POBLAR_BASE.md`](docs/POBLAR_BASE.md) |
 | Qué entrega cada parte a la otra | [`docs/contracts/README.md`](docs/contracts/README.md) |
 | La API | [`backend/README.md`](backend/README.md), [`docs/contracts/api.md`](docs/contracts/api.md) |
 | El pitch | [`docs/PITCH.md`](docs/PITCH.md), [`docs/ANALISTA.md`](docs/ANALISTA.md) |

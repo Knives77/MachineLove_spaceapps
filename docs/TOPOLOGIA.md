@@ -67,7 +67,7 @@ Plantillas: [`acceso/ssh_config.example`](acceso/ssh_config.example) (laptop) y 
 | `firms` | `postgresql://firms:firms_local@localhost:15432/firms` | **Oficial.** La usa la API en 8000. Solo el líder corre el ETL aquí |
 | `firms_dev` | `postgresql://firms:firms_local@localhost:15432/firms_dev` | Pruebas de procesamiento y backend |
 
-En la anfitriona misma el puerto es 5432. Estado, corridas y respaldos: [`BITACORA_BASE.md`](BITACORA_BASE.md).
+En la anfitriona misma el puerto es 5432. Cómo poblarla: [`POBLAR_BASE.md`](POBLAR_BASE.md). Estado, corridas y respaldos: [`BITACORA_BASE.md`](BITACORA_BASE.md).
 
 ## Cómo trabaja cada rol
 
