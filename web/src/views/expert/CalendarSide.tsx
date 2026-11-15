@@ -1,6 +1,7 @@
 // Panel derecho de la consola.
 import { useMemo, useState } from 'react';
 import { CalendarTiles, type ColorBy } from '../../components/CalendarTiles';
+import { DateJump } from '../../components/DateJump';
 import { MonthSeries } from '../../components/MonthSeries';
 import { Segmented } from '../../components/ui';
 import { YearBars } from '../../components/YearBars';
@@ -17,7 +18,7 @@ export function CalendarSide({ data: d }: { data: CalendarResponse }) {
   const row = useMemo(() => indexMonths(d.months).get(ymKey(sel.year, sel.month)), [d, sel]);
   return (
     <>
-      <section className="px-3 pt-2.5">
+      <section className="px-3 pb-2.5 pt-2.5">
         <div className="pl-[calc(1.1rem+3px)]">
           <YearBars data={d} height={50} axis={false} />
         </div>
@@ -42,7 +43,7 @@ export function CalendarSide({ data: d }: { data: CalendarResponse }) {
       </section>
 
       {row && row.flags.length > 0 && (
-        <ul className="space-y-0.5 px-3 pt-2 text-[11.5px] leading-snug text-mute">
+        <ul className="space-y-0.5 border-t border-line/70 px-3 py-2 text-[11.5px] leading-snug text-mute">
           {row.flags.map((f) => (
             <li key={f} className="flex gap-2">
               <span aria-hidden="true" className="mt-1 h-2 w-2 shrink-0 bg-cyan" style={{ clipPath: 'polygon(0 0,100% 0,100% 100%)' }} />
@@ -52,7 +53,11 @@ export function CalendarSide({ data: d }: { data: CalendarResponse }) {
         </ul>
       )}
 
-      <div className="mt-2.5 border-t border-line">
+      <div className="border-t border-line bg-bg/40 px-3 py-2">
+        <DateJump data={d} />
+      </div>
+
+      <div className="border-t border-line">
         <Section title={t('con.series')} open={false}>
           <MonthSeries data={d} month={sel.month} height={110} />
         </Section>

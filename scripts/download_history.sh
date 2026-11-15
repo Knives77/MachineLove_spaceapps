@@ -23,3 +23,4 @@ get() {
 }
 export -f get; export D B
 list | xargs -P 4 -L 1 bash -c 'get "$@"' _
+
