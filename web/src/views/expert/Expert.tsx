@@ -5,6 +5,7 @@
 import { AnimatePresence } from 'motion/react';
 import { useState, type CSSProperties } from 'react';
 import { MapPanel } from '../../components/LazyMapPanel';
+import { CoordSearch } from '../../components/CoordSearch';
 import { TopBar } from '../../components/TopBar';
 import { Skeleton } from '../../components/ui';
 import { useApp } from '../../state';
@@ -47,8 +48,9 @@ export function Expert() {
       {/* Lectura del mes (arriba a la izquierda). */}
       <Readout />
 
-      {/* Franja flotante: calendario, idioma, accesibilidad y vista (sin barra superior). */}
-      <div className="absolute right-2 top-2 z-[800]">
+      {/* Franja flotante: buscador por coordenadas, calendario, idioma, accesibilidad y vista (sin barra superior). */}
+      <div className="absolute right-2 top-2 z-[800] flex items-start gap-2">
+        <CoordSearch />
         <TopBar
           floating
           lead={

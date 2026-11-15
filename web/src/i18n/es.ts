@@ -253,6 +253,11 @@ export const es: Record<string, string> = {
   'map.badCoords': 'Latitud entre −85 y 85, longitud entre −180 y 180.',
   'map.coverage': 'Datos: México · máx. 200,000 km²',
   'map.back': 'Volver a Querétaro',
+  'search.label': 'Buscar por coordenadas',
+  'search.placeholder': 'lat, lon · 21.20, -99.60',
+  'search.hint': 'Pega coordenadas de Google Maps u otro visor (decimal o grados, minutos y segundos). Atajo: /',
+  'search.go': 'Ir',
+  'search.bad': 'No entendí las coordenadas. Escribe latitud y longitud, por ejemplo 21.20, -99.60.',
 
   'dl.title': 'Descargas',
   'dl.calendar': 'CSV del calendario',

@@ -41,6 +41,7 @@ pnpm build                       # debe pasar antes de abrir PR
 | `src/components/CalendarTiles.tsx` | Calendario en mosaicos de Experto (años en columnas). Reusa `cellValue`, `useScaleMax` y `Tooltip` de `Calendar.tsx` |
 | `src/components/HudBar.tsx`, `src/lib/hud.ts` | Barra de telemetría y su almacén fuera de React (cursor, latencia) |
 | `src/mocks/index.ts` | Todos los mocks en un módulo que `api.ts` importa bajo demanda (`import('./mocks')`): con la API real no se descargan |
+| `src/components/CoordSearch.tsx` | Buscador por coordenadas de Experto (junto a la franja de arriba a la derecha): `parseLatLon` + `boxAround` de `lib/geo.ts`, atajo `/` |
 | `src/components/AnimatedNumber.tsx` | Cifra que rueda al valor nuevo en 600 ms (solo presentación) |
 | `src/components/icons/` | Iconos animados de lucide-animated (MIT) + `useIconAnim` (el botón completo dispara la animación) |
 | `src/components/map/` | El mapa, por piezas: `MapPanel.tsx` (orquesta: crea el mapa, cámara, datos, controles), `layers.ts` (fuentes y capas: tono, relieve, regiones, fuego, dibujo), `fire.ts` (hotspots del mes + parpadeo), `useDrawTool.ts` (rectángulo y polígono), `Toolbar.tsx` (barra flotante), `CustomAreaPanel.tsx` (coordenadas + radio), `geometry.ts` (utilidades puras). Se importa siempre por `components/LazyMapPanel.tsx` |
