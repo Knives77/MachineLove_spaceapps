@@ -207,10 +207,30 @@ def resolve_aoi_db(conn: psycopg.Connection, aoi: AoiInput) -> ResolvedAoi:
         )
         c_row = cur.fetchone()
 
-    if c_row and c_row[0] and int(c_row[0]) > 0:
-        country: Country = "MX"
-    else:
-        country = detect_country_from_bbox(poly)
+        if c_row and c_row[0] and int(c_row[0]) > 0:
+            country: Country = "MX"
+        else:
+            country = detect_country_from_bbox(poly)
+            cur.execute(
+                """
+                WITH aoi AS (
+                    SELECT ST_GeomFromGeoJSON(%(geojson)s)::geometry(Polygon, 4326) AS g
+                )
+                SELECT count(*) AS nearby
+                FROM cell, aoi
+                WHERE cell.country = 'MX'
+                  AND cell.geom && ST_Expand(aoi.g, 0.15)
+                  AND ST_DWithin(cell.geom, aoi.g, 0.15)
+                """,
+                {"geojson": geojson_str},
+            )
+            near_row = cur.fetchone()
+            if not (near_row and near_row[0] and int(near_row[0]) > 0):
+                raise ApiException(
+                    422,
+                    "aoi_outside_coverage",
+                    "The requested AOI does not intersect Mexico coverage",
+                )
 
     return ResolvedAoi(
         preset_id=None,

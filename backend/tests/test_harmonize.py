@@ -112,7 +112,7 @@ def test_basis_modis_vs_viirs_primary_and_baseline_exclusions() -> None:
     counts: dict[MonthKey, MonthlyCounts] = {}
     for y in range(2001, 2026):
         for m in range(1, 13):
-            v_days = 40 if (y, m) >= (2012, 2) else 0
+            v_days = 40 if (y, m) >= (2012, 1) else 0
             counts[(y, m)] = MonthlyCounts(
                 modis_cell_days=10,
                 viirs_cell_days=v_days,
@@ -167,6 +167,12 @@ def test_basis_modis_vs_viirs_primary_and_baseline_exclusions() -> None:
     # Estacionalidad suma 1.0
     assert sum(resp_modis.seasonality) == pytest.approx(1.0, abs=1e-3)
 
+    # Enero 2012 (inicio S-NPP el 2012-01-20) reporta viirs_cell_days pero usa MODIS en viirs_primary
+    m_2012_01 = next(
+        r for r in resp_viirs.months if (r.year, r.month) == (2012, 1)
+    )
+    assert m_2012_01.viirs_cell_days == 40
+    assert m_2012_01.source == "modis"
 
 
 def test_partial_month_is_no_data_but_keeps_value() -> None:
