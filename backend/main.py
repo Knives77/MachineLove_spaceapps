@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+import psycopg
 
 from backend.models import ApiException
 from backend.routes import router
@@ -31,6 +32,21 @@ async def api_exception_handler(
     return JSONResponse(
         status_code=exc.status_code,
         content={"error": {"code": exc.code, "detail": exc.detail}},
+    )
+
+
+@app.exception_handler(psycopg.Error)
+async def db_exception_handler(
+    _request: Request, exc: psycopg.Error
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=503,
+        content={
+            "error": {
+                "code": "db_unavailable",
+                "detail": f"Database unavailable: {type(exc).__name__}",
+            }
+        },
     )
 
 
