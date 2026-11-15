@@ -66,6 +66,8 @@ Pruebas: `uv run pytest etl backend`.
 
 | Para | Leer |
 |---|---|
+| Usar la aplicación | [`docs/GUIA_DE_USO.md`](docs/GUIA_DE_USO.md) |
+| Cómo está construida | [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) |
 | Entender el reto y los datos | [`docs/CONTEXT.md`](docs/CONTEXT.md) |
 | Qué construimos y cuándo | [`docs/PRD.md`](docs/PRD.md), [`docs/CHECKLIST.md`](docs/CHECKLIST.md) |
 | Dónde corre cada cosa y cómo conectarse | [`docs/TOPOLOGIA.md`](docs/TOPOLOGIA.md) |

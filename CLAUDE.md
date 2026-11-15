@@ -18,6 +18,8 @@ Frase brújula: *que no importe qué satélite tomó el dato, sino saber si el f
 | `docs/PITCH.md` | Guion, afirmaciones con evidencia, preguntas de jueces, pruebas de la demo |
 | `docs/ANALISTA.md` | Tareas del analista (dueño del pitch) y sus herramientas |
 | `docs/HALLAZGOS.md` | Cifras y hechos con fuente que se pueden decir en el pitch |
+| `docs/ARQUITECTURA.md` | Las tres capas, el modelo de datos, la armonización, la vida de una petición y las decisiones de diseño |
+| `docs/GUIA_DE_USO.md` | Manual de la aplicación: pantalla, cómo leer el calendario, tareas, accesibilidad y mensajes de error |
 | `docs/POBLAR_BASE.md` | Cómo poblar la base: desde cero con el ETL o restaurando un respaldo |
 | `docs/BITACORA_BASE.md` | Estado de la base, corridas del ETL en `firms` y respaldos |
 | `CHANGELOG.md` | Qué cambió y qué tiene que hacer cada rol. Todo PR agrega su línea |
