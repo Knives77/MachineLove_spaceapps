@@ -44,12 +44,12 @@ export function KInspector({ cal }: { cal: Calibration }) {
       <dl className="grid grid-cols-3 gap-2">
         {errs.map(([k, v]) => (
           <div key={k} className="rounded border border-line bg-panel-2/50 px-2 py-1.5">
-            <dt className="kicker text-[9.5px] normal-case tracking-normal">{k}</dt>
+            <dt className="kicker text-xs normal-case tracking-normal">{k}</dt>
             <dd className="font-mono text-base">{v === null ? '—' : `${fmtPct(v)} %`}</dd>
           </div>
         ))}
       </dl>
-      <p className="font-mono text-[11px] text-dim">{t('val.note')}</p>
+      <p className="font-mono text-xs text-dim">{t('val.note')}</p>
     </div>
   );
 }

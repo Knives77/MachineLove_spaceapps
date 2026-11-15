@@ -39,7 +39,7 @@ export function YearBars({ data, height = 120 }: { data: CalendarResponse; heigh
     <figure>
       <figcaption className="mb-1 flex items-baseline justify-between">
         <span className="heading text-[12px]">{t('years.title')}</span>
-        <span className="kicker text-[10px] normal-case tracking-normal">
+        <span className="kicker text-xs normal-case tracking-normal">
           {mode === 'harmonized' ? t('unit.cellDays') : t('unit.points')} ·{' '}
           <span className="inline-block h-2 w-3 border border-dashed border-mute align-middle" /> {t('years.incomplete')}
           {refByYear && (
@@ -97,7 +97,7 @@ export function YearBars({ data, height = 120 }: { data: CalendarResponse; heigh
           );
         })}
       </svg>
-      <div className="relative h-4 font-mono text-[10px] text-mute">
+      <div className="relative h-4 font-mono text-xs text-mute">
         {Array.from({ length: n }, (_, i) => start_year + i)
           .filter((y) => y % 4 === 0)
           .map((y) => (

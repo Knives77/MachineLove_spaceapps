@@ -26,7 +26,7 @@ function Shell() {
       </main>
       {/* Las descargas (CSV, GeoJSON) viven en Experto: General se mantiene limpia. */}
       <footer className="shrink-0 border-t border-line px-4 py-1">
-        <p className="truncate text-[10.5px] text-dim">{t('footer.source')}</p>
+        <p className="truncate text-xs text-dim">{t('footer.source')}</p>
       </footer>
     </div>
   );

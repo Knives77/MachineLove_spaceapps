@@ -92,13 +92,13 @@ function RegionCard({ data, name, max }: { data: CalendarResponse; name: string;
         </span>
       </header>
       <p className="mt-3 text-[20px] leading-snug">{t('edu.peak', { months: peaks.join(', ') })}</p>
-      <p className="kicker mt-5 text-[10px]">{t('edu.seasonality')}</p>
+      <p className="kicker mt-5 text-xs">{t('edu.seasonality')}</p>
       <div className="mt-2 flex h-[220px] items-end gap-1.5 border-b border-line-2" role="img"
         aria-label={data.seasonality.map((v, i) => `${short[i]} ${fmtPct(v)} %`).join(', ')}
       >
         {data.seasonality.map((v, i) => (
           <div key={i} className="flex h-full flex-1 flex-col items-center justify-end">
-            <span className="mb-1 font-mono text-[10px] text-mute">{fmtPct(v)}</span>
+            <span className="mb-1 font-mono text-xs text-mute">{fmtPct(v)}</span>
             <div
               className="w-full rounded-t-sm"
               style={{ height: `${(v / (max || 1)) * 85}%`, background: ramp(palette, 0.15 + 0.85 * Math.sqrt(v / (max || 1))) }}
@@ -113,7 +113,7 @@ function RegionCard({ data, name, max }: { data: CalendarResponse; name: string;
           </span>
         ))}
       </div>
-      <p className="mt-3 font-mono text-[11px] text-dim">
+      <p className="mt-3 font-mono text-xs text-dim">
         {fmtNum(lang, data.aoi.area_km2)} km² · {data.aoi.country}
       </p>
     </section>

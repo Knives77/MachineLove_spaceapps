@@ -43,7 +43,7 @@ export function Expert() {
                     type="button"
                     aria-pressed={f.id === selectedId}
                     onClick={() => setAoi({ preset_id: f.id })}
-                    className={`btn px-2 py-0.5 font-mono text-[10.5px] uppercase ${f.id === selectedId ? 'btn-on' : ''}`}
+                    className={`btn px-2 py-0.5 font-mono text-xs uppercase ${f.id === selectedId ? 'btn-on' : ''}`}
                   >
                     {presetName(f).split(',')[0]}
                   </button>
@@ -74,7 +74,7 @@ export function Expert() {
               <dl className="mt-3 grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-1.5 text-[12.5px]">
                 <dt className="hatch h-4 w-7 rounded-sm" />
                 <dd>NaN = {t('legend.nodata')}</dd>
-                <dt className="flex h-4 w-7 items-center justify-center rounded-sm bg-zero font-mono text-[10px] text-mute">0</dt>
+                <dt className="flex h-4 w-7 items-center justify-center rounded-sm bg-zero font-mono text-xs text-mute">0</dt>
                 <dd>0 = {t('legend.zero')}</dd>
               </dl>
             </div>

@@ -14,7 +14,7 @@ export function LevelLegend() {
   const levels: Status[] = ['below', 'normal', 'above', 'critical'];
   return (
     <div className="space-y-1.5">
-      <ul className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-[12px] text-ink/90">
+      <ul className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-xs text-ink/85">
         {levels.map((s) => (
           <li key={s} className="flex items-center gap-1.5">
             <span aria-hidden="true" className="h-2.5 w-2.5 rounded-[2px]" style={{ background: levelAccent(palette, s) }} />
@@ -26,7 +26,7 @@ export function LevelLegend() {
           {t('legend.nodataShort')}
         </li>
       </ul>
-      <p className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-[11px] text-mute">
+      <p className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-xs text-mute">
         <span className="flex items-center gap-1.5">
           <span aria-hidden="true" className="h-2.5 w-2.5 rounded-[2px] border" style={{ borderColor: ZERO_ACCENT }} />
           {t('level.zero')}
@@ -36,7 +36,7 @@ export function LevelLegend() {
           {t('status.insufficient_baseline')}
         </span>
         <span className="flex items-center gap-1.5">
-          <span aria-hidden="true" className="text-[10px] text-cyan/80">
+          <span aria-hidden="true" className="text-xs text-cyan/80">
             ◥
           </span>
           {t('legend.flagShort')}
@@ -54,10 +54,10 @@ export function Legend({ max }: { max: number }) {
     <div>
       <div className="flex items-baseline justify-between gap-2">
         <p className="kicker">{t('legend.title')}</p>
-        <p className="truncate text-[11px] text-mute">{t(`legend.value.${mode}`)}</p>
+        <p className="truncate text-xs text-mute">{t(`legend.value.${mode}`)}</p>
       </div>
       <div className="mt-1.5 h-2.5 rounded-sm" style={{ background: rampGradient(palette) }} />
-      <div className="relative mt-0.5 h-3.5 font-mono text-[10px] text-mute">
+      <div className="relative mt-0.5 h-3.5 font-mono text-xs text-mute">
         {ticks.map((v, i) => (
           <span
             key={i}
@@ -86,13 +86,13 @@ export function Legend({ max }: { max: number }) {
         >
           {t('legend.flag')}
         </Item>
-        <Item swatch={<span className="flex h-full w-full items-center justify-center bg-zero font-mono text-[10px] text-mute">0</span>}>
+        <Item swatch={<span className="flex h-full w-full items-center justify-center bg-zero font-mono text-xs text-mute">0</span>}>
           {t('legend.zero')}
         </Item>
         <Item swatch={<span className="hatch block h-full w-full" />}>{t('legend.nodata')}</Item>
         <Item swatch={<span className="missing block h-full w-full" />}>{t('legend.missing')}</Item>
       </ul>
-      {mode === 'raw' && <p className="mt-1.5 text-[11px] text-warn">{t('legend.rawWarn')}</p>}
+      {mode === 'raw' && <p className="mt-1.5 text-xs text-warn">{t('legend.rawWarn')}</p>}
     </div>
   );
 
@@ -102,7 +102,7 @@ export function Legend({ max }: { max: number }) {
     const ink = inkOn(bg);
     return (
       <span
-        className="relative flex h-full w-full items-center justify-center font-mono text-[11px] font-bold"
+        className="relative flex h-full w-full items-center justify-center font-mono text-xs font-bold"
         style={{ background: bg, color: ink }}
       >
         {status === 'critical' && <span className="absolute inset-0 rounded-[2px] border-2" style={{ borderColor: ink }} />}

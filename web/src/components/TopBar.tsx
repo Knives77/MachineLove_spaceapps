@@ -35,7 +35,7 @@ export function TopBar() {
     <header className="flex items-center gap-4 border-b border-line bg-bg/95 px-4 py-2">
       <div className="mr-2 min-w-[170px]">
         <p className="text-[15px] font-semibold tracking-[0.18em] uppercase">{t('app.name')}</p>
-        <p className="kicker text-[10px]">
+        <p className="kicker text-xs">
           {t('app.subtitle')}
           {usingMocks && (
             <span
@@ -95,7 +95,7 @@ export function TopBar() {
                 children: (
                   <span className="flex flex-col">
                     {t('a11y.sound')}
-                    <span className="text-[11px] normal-case tracking-normal text-dim">{t('a11y.soundHint')}</span>
+                    <span className="text-xs normal-case tracking-normal text-dim">{t('a11y.soundHint')}</span>
                   </span>
                 ),
               })}
@@ -301,7 +301,7 @@ const ViewIcon = forwardRef<IconAnimHandle, { tab: Tab; size: number }>(({ tab, 
 ViewIcon.displayName = 'ViewIcon';
 
 function MenuHeading({ children }: { children: ReactNode }) {
-  return <p className="kicker px-3 pb-1 pt-2 text-[10px]">{children}</p>;
+  return <p className="kicker px-3 pb-1 pt-2 text-xs">{children}</p>;
 }
 
 function EyeIcon() {

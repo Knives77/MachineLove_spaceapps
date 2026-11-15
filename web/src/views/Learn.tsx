@@ -3,6 +3,7 @@ import { ramp } from '../lib/color';
 import { fmtNum } from '../lib/format';
 import { useApp } from '../state';
 import type { CalendarResponse, MonthRow } from '../types';
+import { ModisSwitch } from '../components/ModisSwitch';
 import { WithCalendar } from './WithCalendar';
 import { TEXT } from '../theme/tokens';
 
@@ -59,12 +60,50 @@ export function Learn() {
         </div>
       </section>
 
-      <WithCalendar>{(d) => <StepChart data={d} step={step} />}</WithCalendar>
+      <div className="flex min-w-0 flex-col gap-3">
+        <ModisPill />
+        <WithCalendar>{(d) => <StepChart data={d} step={step} />}</WithCalendar>
+      </div>
 
       <div className="space-y-3">
         <WithCalendar>{(d) => <StepNote data={d} step={step} />}</WithCalendar>
         <Quiz />
       </div>
+    </div>
+  );
+}
+
+/**
+ * "Simular fin de MODIS" como píldora colapsable: cerrada no estorba; abierta muestra el botón.
+ * Si MODIS está apagado, la píldora lo dice aunque esté cerrada.
+ */
+function ModisPill() {
+  const { t, basis } = useApp();
+  const [open, setOpen] = useState(false);
+  const off = basis === 'viirs_primary';
+  return (
+    <div className={`panel ${off ? 'border-cyan/60' : ''}`}>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls="modis-pill"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center gap-2 px-4 py-2 text-left text-[13px]"
+      >
+        <span aria-hidden="true" className={off ? 'text-cyan' : 'text-warn'}>
+          ⏻
+        </span>
+        <span className="font-semibold">{t('basis.label')}</span>
+        {off && <span className="rounded-full bg-cyan-deep px-2 py-px text-xs text-cyan">{t('basis.pillOn')}</span>}
+        <span aria-hidden="true" className={`ml-auto text-mute transition-transform ${open ? 'rotate-90' : ''}`}>
+          ›
+        </span>
+      </button>
+      {open && (
+        <div id="modis-pill" className="border-t border-line px-4 py-3">
+          <ModisSwitch />
+        </div>
+      )}
     </div>
   );
 }

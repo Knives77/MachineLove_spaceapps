@@ -4,8 +4,7 @@ import { Calendar } from '../components/Calendar';
 import { HideCalendarButton } from '../components/CalendarToggle';
 import { LevelLegend } from '../components/Legend';
 import { MapPanel } from '../components/LazyMapPanel';
-import { ModisSwitch } from '../components/ModisSwitch';
-import { MonthCard } from '../components/MonthCard';
+import { MonthCard, MonthNotes } from '../components/MonthCard';
 import { Timeline } from '../components/Timeline';
 import { Skeleton } from '../components/ui';
 import { YearPicker, YearView } from '../components/YearView';
@@ -38,20 +37,16 @@ export function General() {
     // En pantallas anchas la vista llena exactamente el alto disponible: nada se desplaza.
     // Columna izquierda (tarjeta del mes) a todo lo alto; a la derecha el mapa y, debajo, la línea de tiempo.
     <div className="grid gap-3 p-3 xl:h-full xl:grid-cols-[minmax(300px,340px)_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)_auto]">
-      {/* En pantallas anchas el panel cabe en la ventana; si no alcanza, la tarjeta hace scroll por dentro. */}
-      <section className="panel flex min-h-0 flex-col xl:row-span-2">
-        <div className="shrink-0 border-b border-line px-4 py-3">
-          <h1 className="text-[22px] font-semibold leading-tight">{t('gen.title')}</h1>
-          <p className="mt-0.5 text-[14px] text-mute">{t('gen.sub')}</p>
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-          <WithCalendar skeleton={<Skeleton className="h-64" />}>{(d) => <MonthCard data={d} />}</WithCalendar>
-        </div>
-        {/* "Simular fin de MODIS" (main): fijo al pie de la tarjeta, siempre visible para el jurado. */}
-        <div className="shrink-0 border-t border-line px-4 py-3">
-          <WithCalendar skeleton={<Skeleton className="h-10" />}>{(d) => <ModisSwitch k={d.calibration.k} />}</WithCalendar>
-        </div>
-      </section>
+      {/* Columna izquierda: tarjetas de altura automática (h-fit), sin caja recortada ni scroll forzado.
+          1) estado del mes; 2) notas técnicas en acordeón (cerrado ocupa una línea). */}
+      <div className="flex min-h-0 flex-col gap-3 xl:row-span-2">
+        <section className="panel h-fit p-4">
+          <h1 className="text-lg font-semibold leading-snug">{t('gen.title')}</h1>
+          <p className="mb-4 text-sm text-mute">{t('gen.sub')}</p>
+          <WithCalendar skeleton={<Skeleton className="h-56" />}>{(d) => <MonthCard data={d} />}</WithCalendar>
+        </section>
+        <WithCalendar skeleton={<Skeleton className="h-10" />}>{(d) => <MonthNotes data={d} />}</WithCalendar>
+      </div>
 
       <div className="flex min-h-[420px] flex-col xl:min-h-0">
         <MapPanel className="min-h-[420px] flex-1 xl:min-h-0" padRight={calOpen ? DRAWER_W + 10 : 40}>
@@ -72,7 +67,7 @@ export function General() {
                 whileHover={{ y: -1, scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: 'spring', stiffness: 420, damping: 30 }}
-                className="btn absolute right-2 top-2 z-[600] flex items-center gap-2 bg-bg/90 px-3 py-1.5 text-xs backdrop-blur"
+                className="btn absolute right-2 top-2 z-[600] flex items-center gap-2 bg-bg/90 px-3 py-1.5 text-[13px] backdrop-blur"
               >
                 <CalendarGlyph />
                 <motion.span layout="position">
@@ -173,7 +168,7 @@ function CalendarPanel({ data: d, onHide }: { data: CalendarResponse; onHide: ()
           type="button"
           aria-expanded={history}
           onClick={() => setHistory((h) => !h)}
-          className="font-mono text-[11.5px] text-cyan underline decoration-cyan/40 underline-offset-4 hover:decoration-cyan"
+          className="font-mono text-xs text-cyan underline decoration-cyan/40 underline-offset-4 hover:decoration-cyan"
         >
           {history ? `‹ ${t('cal.backYear')}` : `${t('cal.history', span)} ›`}
         </button>

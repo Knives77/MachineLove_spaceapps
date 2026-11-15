@@ -440,7 +440,7 @@ export function MapPanel({
             type="button"
             aria-pressed={f.id === selectedId}
             onClick={() => setAoi({ preset_id: f.id })}
-            className={`btn whitespace-nowrap bg-bg/85 px-2 py-1 text-[11.5px] backdrop-blur ${f.id === selectedId ? 'btn-on' : ''}`}
+            className={`btn whitespace-nowrap bg-bg/85 px-2.5 py-1 text-[13px] backdrop-blur ${f.id === selectedId ? 'btn-on' : ''}`}
           >
             {presetName(f)}
           </button>
@@ -452,7 +452,7 @@ export function MapPanel({
           aria-pressed={!!drawn}
           onClick={() => setPanel((p) => !p)}
           {...pinIcon.trigger}
-          className={`btn flex items-center gap-1.5 whitespace-nowrap border-dashed bg-bg/85 px-2 py-1 text-[11.5px] backdrop-blur ${drawn || panel ? 'btn-on' : ''}`}
+          className={`btn flex items-center gap-1.5 whitespace-nowrap border-dashed bg-bg/85 px-2.5 py-1 text-[13px] backdrop-blur ${drawn || panel ? 'btn-on' : ''}`}
         >
           <MapPinPlusIcon ref={pinIcon.ref} size={14} aria-hidden="true" className="flex text-cyan" />
           {t('map.custom')}
@@ -491,7 +491,7 @@ export function MapPanel({
           <span className={drawMsg ? 'text-warn' : ''}>
             {drawMsg ?? t(drawMode === 'rect' ? 'map.hintRect' : 'map.hintPoly')}
           </span>
-          <button type="button" onClick={() => setDrawMode(null)} className="whitespace-nowrap font-mono text-[11px] text-mute hover:text-ink">
+          <button type="button" onClick={() => setDrawMode(null)} className="whitespace-nowrap font-mono text-xs text-mute hover:text-ink">
             {t('map.cancelDraw')}
           </button>
         </div>
@@ -501,7 +501,7 @@ export function MapPanel({
         <button
           type="button"
           onClick={() => setAoi({ preset_id: DEFAULT_PRESET })}
-          className="btn absolute bottom-4 left-4 z-[500] whitespace-nowrap bg-bg/90 px-3 py-1.5 text-xs backdrop-blur"
+          className="btn absolute bottom-4 left-4 z-[500] whitespace-nowrap bg-bg/90 px-3 py-1.5 text-[13px] backdrop-blur"
         >
           ← {t('map.back')}
         </button>
@@ -563,9 +563,9 @@ function CustomAreaPanel({
         </button>
       </div>
 
-      <p className="mt-1 text-[11px] leading-snug text-dim">{t('map.coverage')}</p>
+      <p className="mt-1 text-xs leading-snug text-dim">{t('map.coverage')}</p>
 
-      <p className="kicker mt-2 text-[10px]">A · {t('map.optDraw')}</p>
+      <p className="kicker mt-2 text-xs">A · {t('map.optDraw')}</p>
       <div className="mt-1.5 grid grid-cols-2 gap-1.5">
         <button ref={first} type="button" onClick={() => onDraw('rect')} className="btn px-2 py-1.5 text-xs">
           ▭ {t('map.rect')}
@@ -581,15 +581,15 @@ function CustomAreaPanel({
         </button>
       </div>
 
-      <p className="kicker mt-2 text-[10px]">B · {t('map.optCoords')}</p>
+      <p className="kicker mt-2 text-xs">B · {t('map.optCoords')}</p>
       <form onSubmit={submit} className="mt-1 space-y-2">
         <div className="grid grid-cols-2 gap-1.5">
           <label className="block">
-            <span className="text-[10.5px] text-mute">{t('map.lat')}</span>
+            <span className="text-xs text-mute">{t('map.lat')}</span>
             <input inputMode="decimal" placeholder="21.20" value={lat} onChange={(e) => setLat(e.target.value)} className={field} />
           </label>
           <label className="block">
-            <span className="text-[10.5px] text-mute">{t('map.lon')}</span>
+            <span className="text-xs text-mute">{t('map.lon')}</span>
             <input inputMode="decimal" placeholder="-99.60" value={lon} onChange={(e) => setLon(e.target.value)} className={field} />
           </label>
         </div>
@@ -602,7 +602,7 @@ function CustomAreaPanel({
                 role="radio"
                 aria-checked={km === r}
                 onClick={() => setKm(r)}
-                className={`btn flex-1 px-1 py-1.5 font-mono text-[11px] ${km === r ? 'btn-on' : ''}`}
+                className={`btn flex-1 px-1 py-1.5 font-mono text-xs ${km === r ? 'btn-on' : ''}`}
               >
                 {r} km
               </button>
@@ -612,7 +612,7 @@ function CustomAreaPanel({
             {t('map.query')}
           </button>
         </div>
-        {bad && <p className="text-[11px] text-warn">{t('map.badCoords')}</p>}
+        {bad && <p className="text-xs text-warn">{t('map.badCoords')}</p>}
       </form>
     </motion.div>
   );

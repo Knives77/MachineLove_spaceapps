@@ -2,18 +2,20 @@ import { useEffect, useMemo } from 'react';
 import { statusColor } from '../lib/color';
 import { fmtNum, fmtPct, indexMonths, ymKey } from '../lib/format';
 import { showsRawToggle, useApp } from '../state';
-import type { Baseline, CalendarResponse } from '../types';
+import type { Baseline, CalendarResponse, Status } from '../types';
 import { BadgeAlertIcon } from './icons/badge-alert';
 import { useIconAnim } from './icons/useIconAnim';
 import { StatusIcon } from './ui';
 import { isZero, NAV_BTN, shiftMonth, ZERO_ACCENT } from './YearView';
 
-/** Tarjeta del mes elegido (por defecto `latest`). Solo muestra campos de la API. */
+/**
+ * Tarjeta 1 · estado del mes elegido (por defecto `latest`): mes y región, nivel, una línea de dato
+ * y la barra de 4 tramos. Las notas técnicas van aparte, en `MonthNotes`. Solo campos de la API.
+ */
 export function MonthCard({ data }: { data: CalendarResponse }) {
   const { t, lang, palette, selected, setSelected, aoiName, tab } = useApp();
   const sel = selected ?? data.latest;
   const row = useMemo(() => indexMonths(data.months).get(ymKey(sel.year, sel.month)), [data, sel]);
-  const mape = data.calibration.monthly_mape;
 
   return (
     <div aria-live="polite">
@@ -29,7 +31,7 @@ export function MonthCard({ data }: { data: CalendarResponse }) {
         >
           ‹
         </button>
-        <p className="kicker min-w-0 flex-1 text-center text-cyan">
+        <p className="min-w-0 flex-1 text-center text-xs font-semibold uppercase tracking-wider text-cyan">
           {t(`month.${sel.month}`)} {sel.year}
           <span className="block text-mute">{aoiName}</span>
         </p>
@@ -49,156 +51,151 @@ export function MonthCard({ data }: { data: CalendarResponse }) {
 
       {row && (
         <>
-          <div className="mt-2 flex items-center gap-3">
+          <div className="mt-3 flex items-center gap-2">
             {/* 0 celdas-día = "sin incendios", con indicador neutro (no el color de "Normal"). */}
-            <StatusIcon status={isZero(row) ? 'zero' : row.status} color={isZero(row) ? ZERO_ACCENT : statusColor(palette, row.status)} size={20} />
-            <p className={`font-semibold uppercase leading-none tracking-tight ${isZero(row) ? 'text-[28px] text-mute' : 'text-[34px]'}`}>
+            <StatusIcon status={isZero(row) ? 'zero' : row.status} color={isZero(row) ? ZERO_ACCENT : statusColor(palette, row.status)} size={10} />
+            <p className={`text-xl font-semibold uppercase leading-none tracking-tight ${isZero(row) ? 'text-mute' : 'text-ink'}`}>
               {isZero(row) ? t('level.zero') : t(`status.${row.status}`)}
             </p>
           </div>
 
           {row.status === 'no_data' ? (
-            <>
-              <p className="mt-3 text-lg">{t('card.noDataTitle')}</p>
-              <p className="mt-1 text-sm text-mute">{t('card.noDataSub')}</p>
-            </>
+            <p className="mt-3 text-[14px] text-mute">
+              {t('card.noDataTitle')} {t('card.noDataSub')}
+            </p>
           ) : (
             <>
-              <p className="mt-3 text-lg">
-                {isZero(row) && row.baseline
-                  ? t('card.zeroRatio', { m: fmtNum(lang, row.baseline.median, 1), n: row.baseline.n_years })
-                  : row.anomaly_ratio !== null && row.baseline
-                  ? t('card.ratio', { r: fmtNum(lang, row.anomaly_ratio, 1), n: row.baseline.n_years })
-                  : row.status === 'insufficient_baseline'
-                    ? t('card.insufficient')
-                    : t('card.noRatio')}
-              </p>
-              <p className="mt-1 text-sm text-mute">
-                {t('card.thisMonth', {
+              {/* Una sola línea de métrica (el nivel ya está arriba; sin frases que lo repitan). */}
+              <p className="mt-2 text-sm text-ink">
+                {t('card.metric', {
                   v: fmtNum(lang, row.harmonized ?? 0, 1),
                   unit: t('unit.cellDays'),
                   m: row.baseline ? fmtNum(lang, row.baseline.median, 1) : '—',
                 })}
+                {row.anomaly_ratio !== null && !isZero(row) && (
+                  <span className="text-mute"> · {fmtNum(lang, row.anomaly_ratio, 1)}×</span>
+                )}
               </p>
-              <p className="text-xs text-dim">
-                {showsRawToggle(tab) && <>{t('card.raw', { v: fmtNum(lang, row.raw_points) })} · </>}
-                {t('card.source')}: {t(`source.${row.source ?? 'null'}`)}
-              </p>
+              {row.status === 'insufficient_baseline' && <p className="mt-1 text-[12.5px] text-mute">{t('card.insufficient')}</p>}
+              {/* Fuente y puntos crudos solo en las vistas técnicas. */}
+              {showsRawToggle(tab) && (
+                <p className="mt-0.5 text-xs text-dim">
+                  {t('card.raw', { v: fmtNum(lang, row.raw_points) })} · {t('card.source')}: {t(`source.${row.source ?? 'null'}`)}
+                </p>
+              )}
             </>
           )}
 
-          <LevelBar baseline={row.baseline} value={row.harmonized} />
+          <LevelBar baseline={row.baseline} value={row.harmonized} status={row.status} />
 
-          <div className="mt-4 flex gap-3 rounded border border-line bg-panel-2/60 px-3 py-2.5 text-[13px]">
-            {row.status === 'no_data' ? (
-              <>
-                <span className="font-mono text-cyan">ND</span>
-                <span>{t('card.ndNote')}</span>
-              </>
-            ) : (
-              <>
-                <span className="font-mono text-cyan">≈</span>
-                <span>{mape === null ? t('card.errorNone') : t('card.error', { p: fmtPct(mape) })}</span>
-              </>
-            )}
-          </div>
-
-          {data.calibration.scope === 'country' && (
-            // Poco traslape entre sensores en esta área: el backend usó el k del país (harmonization.md).
-            <p className="mt-3 flex gap-2 rounded border border-warn/40 bg-warn/5 px-3 py-2 text-[12.5px] text-warn">
-              <AlertOnce size={16} />
-              <span>{t('val.scopeWarn')}</span>
-            </p>
-          )}
-
-          {row.flags.length > 0 && (
-            <div className="mt-3">
-              <p className="kicker flex items-center gap-1.5">
-                <AlertOnce key={`${sel.year}-${sel.month}`} size={13} className="text-cyan" />
-                {t('card.flags')}
-              </p>
-              <ul className="mt-1 space-y-1 text-[12.5px] text-mute">
-                {row.flags.map((f) => (
-                  <li key={f} className="flex gap-2">
-                    <span aria-hidden="true" className="mt-1 h-2 w-2 shrink-0 bg-cyan" style={{ clipPath: 'polygon(0 0,100% 0,100% 100%)' }} />
-                    {t(`flag.${f}`)}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
         </>
       )}
     </div>
   );
 
-  function LevelBar({ baseline, value }: { baseline: Baseline | null; value: number | null }) {
-    // Dibuja los percentiles que manda la API; no decide el nivel (eso ya viene en `status`).
+  function LevelBar({ baseline, value, status }: { baseline: Baseline | null; value: number | null; status: Status }) {
+    // 4 tramos fijos y siempre completos (Bajo, Normal, Alto, Extremo). El nivel lo decide la API
+    // (`status`); el triángulo cae en el tramo de ese nivel y, dentro, según los percentiles.
     const segs = [
       { key: 'bar.low', s: 'below' as const },
       { key: 'bar.normal', s: 'normal' as const },
       { key: 'bar.high', s: 'above' as const },
       { key: 'bar.extreme', s: 'critical' as const },
     ];
-    if (!baseline) {
-      return (
-        <div className="mt-5">
-          <div className="hatch h-3 rounded-sm" />
-          <div className="mt-1 flex justify-between kicker text-[10px]">
-            {segs.map((s) => (
-              <span key={s.key}>{t(s.key)}</span>
-            ))}
-          </div>
-        </div>
-      );
+    const seg = segs.findIndex((x) => x.s === status);
+    let marker: number | null = null;
+    if (baseline && value !== null && seg >= 0) {
+      const { p25, p75, p90 } = baseline;
+      const part = (v: number, lo: number, hi: number) => (hi > lo ? (v - lo) / (hi - lo) : 0.5);
+      const frac = [part(value, 0, p25), part(value, p25, p75), part(value, p75, p90), part(value, p90, p90 * 1.6 || 1)][seg];
+      marker = (seg + Math.min(0.88, Math.max(0.12, frac))) * 25; // nunca en el borde
     }
-    // Todos los percentiles en 0 (casi nunca hubo fuego ese mes): la barra quedaría entera
-    // en "Extremo". Se muestra neutra con una explicación; el nivel sigue siendo el de `status`.
-    if (baseline.p90 === 0) {
-      return (
-        <div className="mt-5">
-          <div className="h-3 rounded-sm bg-panel-2 ring-1 ring-line" />
-          <p className="mt-1.5 text-[12px] text-mute">{t('card.noRange')}</p>
-        </div>
-      );
-    }
-    const top = Math.max(baseline.p90 * 1.6, (value ?? 0) * 1.08, 1);
-    const stops = [0, baseline.p25, baseline.p75, baseline.p90, top].map((v) => (v / top) * 100);
-    const marker = value === null ? null : Math.min(100, (value / top) * 100);
     return (
-      <div className="mt-5">
+      <div className="mt-6">
         <div className="relative h-3">
-          <div className="absolute inset-0 flex overflow-hidden rounded-sm">
-            {segs.map((s, i) => (
-              <div
-                key={s.key}
-                style={{ width: `${stops[i + 1] - stops[i]}%`, background: statusColor(palette, s.s) }}
-                title={t(s.key)}
-              />
+          <div className="absolute inset-0 flex gap-px overflow-hidden rounded-sm">
+            {segs.map((s) => (
+              <div key={s.key} className="flex-1" style={{ background: statusColor(palette, s.s) }} title={t(s.key)} />
             ))}
           </div>
           {marker !== null && (
             <span
               aria-hidden="true"
-              className="absolute -top-3 h-0 w-0 -translate-x-1/2 border-x-[7px] border-t-[9px] border-x-transparent border-t-cyan"
+              className="absolute -top-3 h-0 w-0 -translate-x-1/2 border-x-[7px] border-t-[9px] border-x-transparent border-t-select"
               style={{ left: `${marker}%` }}
             />
           )}
         </div>
-        <div className="relative mt-1 h-4 font-mono text-[10px] uppercase tracking-wider text-mute">
+        <div className="mt-1.5 grid grid-cols-4 text-center font-mono text-xs uppercase tracking-wide text-mute">
           {segs.map((s, i) => (
-            <span
-              key={s.key}
-              className="absolute -translate-x-1/2 whitespace-nowrap"
-              style={{ left: `${Math.min(92, Math.max(8, (stops[i] + stops[i + 1]) / 2))}%` }}
-            >
-              {stops[i + 1] - stops[i] > 9 ? t(s.key) : ''}
+            <span key={s.key} className={i === seg ? 'text-ink' : undefined}>
+              {t(s.key)}
             </span>
           ))}
         </div>
       </div>
     );
   }
+}
+
+/**
+ * Tarjeta 2 · notas técnicas en un acordeón de una línea (cerrado por defecto): error típico de la
+ * armonización, aviso de k del país y avisos (`flags`) del mes. Cerrado solo muestra los resúmenes.
+ */
+export function MonthNotes({ data }: { data: CalendarResponse }) {
+  const { t, selected } = useApp();
+  const sel = selected ?? data.latest;
+  const row = useMemo(() => indexMonths(data.months).get(ymKey(sel.year, sel.month)), [data, sel]);
+  const mape = data.calibration.monthly_mape;
+  const countryK = data.calibration.scope === 'country';
+  const flags = row?.flags ?? [];
+  const nWarn = flags.length + (countryK ? 1 : 0);
+
+  return (
+    <details className="group panel">
+      <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-2.5 text-[13px] [&::-webkit-details-marker]:hidden">
+        <span className="text-xs font-semibold uppercase tracking-wider">{t('notes.title')}</span>
+        {mape !== null && <span className="rounded-full bg-panel-2 px-2 py-px font-mono text-xs text-mute">±{fmtPct(mape)} %</span>}
+        {nWarn > 0 && (
+          <span className="flex items-center gap-1 rounded-full bg-cyan-deep px-2 py-px text-xs text-cyan">
+            <AlertOnce key={`${sel.year}-${sel.month}`} size={12} />
+            {t(nWarn === 1 ? 'notes.warnOne' : 'notes.warnMany', { n: nWarn })}
+          </span>
+        )}
+        <span aria-hidden="true" className="ml-auto text-mute transition-transform group-open:rotate-90">
+          ›
+        </span>
+      </summary>
+      <div className="space-y-3 border-t border-line px-4 py-3 text-[12.5px]">
+        <p className="flex gap-2.5">
+          <span className="font-mono text-cyan">{row?.status === 'no_data' ? 'ND' : '≈'}</span>
+          <span className="text-mute">
+            {row?.status === 'no_data' ? t('card.ndNote') : mape === null ? t('card.errorNone') : t('card.error', { p: fmtPct(mape) })}
+          </span>
+        </p>
+        {countryK && (
+          // Poco traslape entre sensores en esta área: el backend usó el k del país (harmonization.md).
+          <p className="flex gap-2 text-warn">
+            <span aria-hidden="true">!</span>
+            <span>{t('val.scopeWarn')}</span>
+          </p>
+        )}
+        {flags.length > 0 && (
+          <div>
+            <p className="kicker text-xs">{t('card.flags')}</p>
+            <ul className="mt-1 space-y-1 text-mute">
+              {flags.map((f) => (
+                <li key={f} className="flex gap-2">
+                  <span aria-hidden="true" className="mt-1 h-2 w-2 shrink-0 bg-cyan" style={{ clipPath: 'polygon(0 0,100% 0,100% 100%)' }} />
+                  {t(`flag.${f}`)}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </details>
+  );
 }
 
 /** Icono de aviso que se anima una sola vez al aparecer (sin bucle). */

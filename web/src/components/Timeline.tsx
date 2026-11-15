@@ -112,11 +112,11 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
         )}
       </button>
       <div className="w-32 shrink-0">
-        <p className="kicker text-[10px]">{t('time.month')}</p>
+        <p className="kicker text-xs">{t('time.month')}</p>
         <p className="font-mono text-sm uppercase">
           {t(`month.${sel.month}`)} {sel.year}
         </p>
-        {row && <p className="font-mono text-[10px] text-mute">{isZero(row) ? t('level.zeroShort') : t(`status.${row.status}`)}</p>}
+        {row && <p className="font-mono text-xs text-mute">{isZero(row) ? t('level.zeroShort') : t(`status.${row.status}`)}</p>}
       </div>
 
       {!detailed && (
@@ -182,7 +182,7 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
               className="ml-timeline ml-timeline-compact absolute inset-0 h-6 w-full"
             />
           </div>
-          <div className="mt-0.5 flex justify-between font-mono text-[10px] text-mute">
+          <div className="mt-0.5 flex justify-between font-mono text-xs text-mute">
             <span>{start_year}</span>
             <span className="truncate px-2 font-sans text-dim">
               {t('years.title')} · {t('unit.cellDays')}
@@ -212,7 +212,7 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
         </div>
         <div className="relative h-8">
           <div className="absolute inset-x-0 top-1 flex items-center gap-2">
-            <span className="absolute -top-0.5 left-0 font-mono text-[9px] text-mute" style={{ left: `${pct(toIdx(MODIS_START, 1))}%` }}>
+            <span className="absolute -top-0.5 left-0 font-mono text-xs text-mute" style={{ left: `${pct(toIdx(MODIS_START, 1))}%` }}>
               MODIS · {MODIS_START} →
             </span>
           </div>
@@ -220,7 +220,7 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
           {marks.out.map((i) => (
             <span key={`o${i}`} aria-hidden="true" className="absolute top-3 h-2.5 w-1.5 -translate-x-1/2 bg-bg ring-1 ring-mute" style={{ left: `${pct(i)}%` }} />
           ))}
-          <span className="absolute top-[22px] font-mono text-[9px] text-mute" style={{ left: `${pct(toIdx(VIIRS_START, 1))}%` }}>
+          <span className="absolute top-[22px] font-mono text-xs text-mute" style={{ left: `${pct(toIdx(VIIRS_START, 1))}%` }}>
             VIIRS · {VIIRS_START} →
           </span>
           <div
@@ -241,7 +241,7 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
           }}
           className="ml-timeline absolute inset-x-0 top-3 h-8 w-full"
         />
-        <div className="relative mt-3 h-4 font-mono text-[10px] text-mute">
+        <div className="relative mt-3 h-4 font-mono text-xs text-mute">
           {Array.from({ length: end_year - start_year + 1 }, (_, i) => start_year + i)
             .filter((y) => y % 4 === 0)
             .map((y) => (

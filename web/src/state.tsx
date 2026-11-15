@@ -184,6 +184,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setTabState(x);
       // Crudo solo existe en Aprendizaje y Experto; en las demás vistas el interruptor está oculto.
       if (!showsRawToggle(x)) setMode('harmonized');
+      // "Simular fin de MODIS" vive en Aprendizaje y Experto: General y Educacional siempre con MODIS.
+      if (x === 'general' || x === 'edu') setBasis('modis_primary');
     },
     mode,
     setMode,

@@ -122,7 +122,7 @@ export function YearView({ data }: { data: CalendarResponse }) {
         const name = t(`month.${m}`);
         const hasFlags = !!row && row.flags.length > 0;
         const accent = row ? rowAccent(palette, row) : null;
-        const statusText = !row ? '' : isZero(row) ? t('level.zeroShort') : t(`status.${row.status}`);
+        const statusText = !row ? '' : isZero(row) ? t('level.zeroTile') : t(`status.${row.status}`);
         const flagsText = hasFlags ? row!.flags.map((f) => t(`flag.${f}`)).join(' ') : '';
 
         return (
@@ -154,16 +154,16 @@ export function YearView({ data }: { data: CalendarResponse }) {
               />
             )}
             <span className="flex items-start justify-between gap-1">
-              <span className={`text-[13px] font-medium ${isSel ? 'text-ink' : 'text-ink/85'}`}>{name.slice(0, 3)}</span>
+              <span className={`text-sm font-semibold ${isSel ? 'text-ink' : 'text-ink/85'}`}>{name.slice(0, 3)}</span>
               {hasFlags && (
-                <span aria-hidden="true" className="text-[10px] leading-none text-cyan/80">
+                <span aria-hidden="true" className="text-xs leading-none text-cyan/80">
                   ◥
                 </span>
               )}
             </span>
             {row && (
               <span
-                className="self-start whitespace-nowrap rounded-full px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide"
+                className="self-start whitespace-nowrap rounded-full px-1.5 py-px text-[11px] font-semibold uppercase"
                 style={
                   row.status === 'no_data'
                     ? undefined
