@@ -12,6 +12,8 @@ import { SlidersHorizontalIcon } from './icons/sliders-horizontal';
 import { useIconAnim, type IconAnimHandle } from './icons/useIconAnim';
 
 const TABS: Tab[] = ['general', 'learn', 'edu', 'expert'];
+/** Menú de vistas (General, Aprendizaje, Educacional, Experto). Oculto para la demo: la app queda solo en Experto. */
+const SHOW_VIEW_MENU = false;
 const PALETTES: Palette[] = ['inferno', 'cividis', 'contrast'];
 
 /**
@@ -108,6 +110,8 @@ export function TopBar({ floating = false, lead }: { floating?: boolean; /** Bot
           )}
         </IconMenu>
 
+        {/* Demo y MVP: solo Experto. Las otras vistas siguen en el código; para volver a mostrarlas, SHOW_VIEW_MENU = true. */}
+        {SHOW_VIEW_MENU && (
         <IconMenu
           id="view-menu"
           compact={floating}
@@ -138,6 +142,7 @@ export function TopBar({ floating = false, lead }: { floating?: boolean; /** Bot
             </>
           )}
         </IconMenu>
+        )}
       </div>
     </header>
   );

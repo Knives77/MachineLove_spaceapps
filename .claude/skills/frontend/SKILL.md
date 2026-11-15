@@ -82,7 +82,7 @@ Qué implica:
 
 ## Vistas
 
-La barra superior es igual en todas: nombre a la izquierda; a la derecha 3 botones de 44 px: idioma (🌐), accesibilidad (paletas Estándar / Daltónicos / Alto contraste + sonificación) y **Vista: <modo>** (menú de las 4 vistas). La app arranca siempre en **Experto** (la consola de la demo). Abajo, una barra de telemetría de 28 px (`HudBar`): fuente, coordenadas del cursor, área, estado de sensores y latencia de la API.
+La barra superior es igual en todas: nombre a la izquierda; a la derecha 3 botones de 44 px: idioma (🌐), accesibilidad (paletas Estándar / Daltónicos / Alto contraste + sonificación) y **Vista: <modo>** (menú de las 4 vistas). La app arranca siempre en **Experto** (la consola de la demo). **Para la demo y el MVP el menú Vista está oculto** (`SHOW_VIEW_MENU = false` en `TopBar.tsx`): solo se ve Experto; las otras vistas siguen en el código. Abajo, una barra de telemetría de 28 px (`HudBar`): fuente, coordenadas del cursor, área, estado de sensores y latencia de la API.
 
 | Vista | Contenido |
 |---|---|
