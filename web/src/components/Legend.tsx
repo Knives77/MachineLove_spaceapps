@@ -3,7 +3,7 @@ import { INK_LIGHT, inkOn, rampGradient, statusColor } from '../lib/color';
 import { fmtNum } from '../lib/format';
 import { useApp } from '../state';
 import type { Status } from '../types';
-import { levelAccent } from './YearView';
+import { levelAccent, ZERO_ACCENT } from './YearView';
 
 /**
  * Leyenda de la vista por año: una fila con el color de cada nivel (los mismos acentos de las
@@ -27,6 +27,10 @@ export function LevelLegend() {
         </li>
       </ul>
       <p className="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-[11px] text-mute">
+        <span className="flex items-center gap-1.5">
+          <span aria-hidden="true" className="h-2.5 w-2.5 rounded-[2px] border" style={{ borderColor: ZERO_ACCENT }} />
+          {t('level.zero')}
+        </span>
         <span className="flex items-center gap-1.5">
           <span aria-hidden="true" className="h-2.5 w-2.5 rounded-[2px]" style={{ background: levelAccent(palette, 'insufficient_baseline') }} />
           {t('status.insufficient_baseline')}

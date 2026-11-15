@@ -39,7 +39,7 @@ Lo que **no** se cambia sin acuerdo de todo el equipo: la unidad (`modis_equival
 
 | Fecha | Contrato | Cambio | Afecta a |
 |---|---|---|---|
-| 14-nov 18:30 | `api.md` | Nuevo error `503 db_unavailable`; regla de cercanía (0.15°) para polígonos sin celdas; `viirs_cell_days` se reporta desde 2012-01 (el traslape sigue empezando en 2012-02) | Front: agregar `error.db_unavailable` a `i18n.ts` |
+| 14-nov 18:30 | `api.md` | Nuevo error `503 db_unavailable`; regla de cercanía (0.15°) para polígonos sin celdas; `viirs_cell_days` se reporta desde 2012-01 (el traslape sigue empezando en 2012-02) | Front: `error.db_unavailable` agregado a `i18n.ts` |
 | 14-nov 17:00 | `harmonization.md`, `api.md`, `acceptance.md` | Un mes con `partial_month` lleva `status = "no_data"` y `anomaly_ratio = null`, pero conserva `harmonized` | Backend (hecho), front (sin cambios) |
 | 14-nov 17:00 | `acceptance.md` | `viirs_primary`: el peor año se compara con `calibration.loyo_annual_max`, no con un 45 % fijo | `etl.verify` (hecho) |
 | 14-nov 14:30 | todos | MVP solo México: `aoi_outside_coverage` fuera de México; `AR` reservado para la fase 2; Bajío reemplaza a Chilecito en las cifras de control | Backend, front, ETL (hecho) |

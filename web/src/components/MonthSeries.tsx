@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { fmtNum } from '../lib/format';
 import { useApp } from '../state';
+import { isZero } from './YearView';
 import type { CalendarResponse } from '../types';
 
 /** Un mes calendario a lo largo de los años: valor armonizado y banda p25–p75 de la API. */
@@ -85,7 +86,7 @@ export function MonthSeries({ data, month, height = 150 }: { data: CalendarRespo
                 className="cursor-pointer"
                 onClick={() => setSelected({ year: r.year, month })}
               >
-                <title>{`${r.year}: ${fmtNum(lang, r.harmonized, 1)} · ${t(`status.${r.status}`)}`}</title>
+                <title>{`${r.year}: ${fmtNum(lang, r.harmonized, 1)} · ${isZero(r) ? t('level.zeroShort') : t(`status.${r.status}`)}`}</title>
               </circle>
             ),
         )}

@@ -2,12 +2,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { indexMonths, ymKey } from '../lib/format';
 import { useApp } from '../state';
 import type { CalendarResponse } from '../types';
+import { isZero } from './YearView';
 
 const MODIS_START = 2000; // Terra desde 2000
 const VIIRS_START = 2012; // S-NPP desde 2012
 
-/** Línea de tiempo de meses con reproducción. Las marcas salen de `status` y `flags`. */
-export function Timeline({ data }: { data: CalendarResponse }) {
+/**
+ * Línea de tiempo de meses con reproducción. Por defecto es una sola barra limpia (General);
+ * con `detailed` muestra las pistas MODIS/VIIRS, ▲ meses extremos y ▪ caídas de sensor
+ * (las marcas salen de `status` y `flags`).
+ */
+export function Timeline({ data, detailed = false }: { data: CalendarResponse; detailed?: boolean }) {
   const { t, selected, setSelected } = useApp();
   const { start_year, end_year } = data.range;
   const total = (end_year - start_year + 1) * 12;
@@ -19,10 +24,27 @@ export function Timeline({ data }: { data: CalendarResponse }) {
   const [playing, setPlaying] = useState(false);
   const byKey = useMemo(() => indexMonths(data.months), [data]);
 
+  // Primer mes que trae dato: al repetir desde el final no se arranca en meses "sin dato"
+  // (p. ej. ene–oct 2000, antes de Terra), que parecían un error.
+  const firstDataIdx = useMemo(() => {
+    let first = latestIdx;
+    for (const m of data.months) if (m.status !== 'no_data') first = Math.min(first, toIdx(m.year, m.month));
+    return first;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, latestIdx]);
+
+  const togglePlay = () => {
+    if (playing) return setPlaying(false);
+    // Si ya estás en el último mes, la reproducción vuelve a empezar desde el primero con dato.
+    if (idx >= latestIdx) setSelected(fromIdx(firstDataIdx));
+    setPlaying(true);
+  };
+
   useEffect(() => {
     if (!playing) return;
     const id = setInterval(() => {
-      const next = idx >= latestIdx ? 0 : idx + 1;
+      if (idx >= latestIdx) return setPlaying(false);
+      const next = idx + 1;
       setSelected(fromIdx(next));
       if (next === latestIdx) setPlaying(false);
     }, 450);
@@ -48,7 +70,7 @@ export function Timeline({ data }: { data: CalendarResponse }) {
     <div className="panel flex items-center gap-5 px-4 py-3">
       <button
         type="button"
-        onClick={() => setPlaying((p) => !p)}
+        onClick={togglePlay}
         aria-label={playing ? t('time.pause') : t('time.play')}
         className="flex h-12 w-12 shrink-0 items-center justify-center rounded border-2 border-cyan bg-cyan-deep"
       >
@@ -68,9 +90,36 @@ export function Timeline({ data }: { data: CalendarResponse }) {
         <p className="font-mono text-sm uppercase">
           {t(`month.${sel.month}`)} {sel.year}
         </p>
-        {row && <p className="font-mono text-[10px] text-mute">{t(`status.${row.status}`)}</p>}
+        {row && <p className="font-mono text-[10px] text-mute">{isZero(row) ? t('level.zeroShort') : t(`status.${row.status}`)}</p>}
       </div>
 
+      {!detailed && (
+        <div className="relative min-w-0 flex-1">
+          <div className="relative h-8">
+            <div className="absolute inset-x-0 top-[13px] h-1.5 rounded-full bg-line-2" />
+            <div className="absolute left-0 top-[13px] h-1.5 rounded-full bg-cyan/70" style={{ width: `${pct(idx)}%` }} />
+            <input
+              type="range"
+              min={0}
+              max={total - 1}
+              value={idx}
+              aria-label={t('time.label')}
+              aria-valuetext={`${t(`month.${sel.month}`)} ${sel.year}`}
+              onChange={(e) => {
+                setPlaying(false);
+                setSelected(fromIdx(Number(e.target.value)));
+              }}
+              className="ml-timeline absolute inset-0 h-8 w-full"
+            />
+          </div>
+          <div className="mt-1 flex justify-between font-mono text-[10px] text-mute">
+            <span>{start_year}</span>
+            <span>{end_year}</span>
+          </div>
+        </div>
+      )}
+
+      {detailed && (
       <div className="relative min-w-0 flex-1 pt-3">
         {/* marcas: ▲ meses extremos, ▪ caídas de sensor */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-3" aria-hidden="true">
@@ -126,6 +175,7 @@ export function Timeline({ data }: { data: CalendarResponse }) {
           ▲ {t('time.critical')} · ▪ {t('time.outage')}
         </p>
       </div>
+      )}
     </div>
   );
 }

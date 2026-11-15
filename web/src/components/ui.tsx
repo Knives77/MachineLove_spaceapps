@@ -81,6 +81,7 @@ export function Switch({
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-label={label}
         onClick={() => onChange(!checked)}
         className={`relative h-6 w-11 shrink-0 rounded border transition-colors ${
           checked ? 'border-cyan bg-cyan-deep' : 'border-line-2 bg-panel-2'

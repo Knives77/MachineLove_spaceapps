@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { INK_LIGHT, inkOn, ramp, sqrtT, statusMark } from '../lib/color';
 import { playStatus } from '../lib/sound';
+import { isZero, rowAccent } from './YearView';
 import { fmtNum, indexMonths, ymKey } from '../lib/format';
 import { useApp } from '../state';
 import type { CalendarResponse, MonthRow } from '../types';
@@ -35,21 +36,29 @@ export function Calendar({
   layers = ALL_LAYERS,
   cellH = 17,
   stickyHeader = false,
+  variant = 'values',
 }: {
   data: CalendarResponse;
   layers?: Layers;
   cellH?: number;
   /** Encabezado de meses fijo arriba cuando el calendario está en un contenedor con scroll. */
   stickyHeader?: boolean;
+  /**
+   * `values`: color por valor (escala raíz) con marcas ↓ • •• (Experto).
+   * `levels`: mismo estilo que la vista por año: celda oscura con acento del nivel, sin marcas,
+   * años de más reciente a más antiguo (General).
+   */
+  variant?: 'values' | 'levels';
 }) {
+  const levels = variant === 'levels';
   const { t, lang, mode, palette, selected, setSelected, sound } = useApp();
   const byKey = useMemo(() => indexMonths(data.months), [data]);
   const max = useScaleMax(data, mode);
   const years = useMemo(() => {
     const out: number[] = [];
     for (let y = data.range.start_year; y <= data.range.end_year; y++) out.push(y);
-    return out;
-  }, [data]);
+    return levels ? out.reverse() : out;
+  }, [data, levels]);
   const short = t('monthShort').split(',');
 
   const [focusKey, setFocusKey] = useState<number>(() =>
@@ -85,8 +94,9 @@ export function Calendar({
     const moves: Record<string, [number, number]> = {
       ArrowRight: [0, 1],
       ArrowLeft: [0, -1],
-      ArrowDown: [1, 0],
-      ArrowUp: [-1, 0],
+      // En `levels` los años van de reciente a antiguo: bajar = año anterior.
+      ArrowDown: [levels ? -1 : 1, 0],
+      ArrowUp: [levels ? 1 : -1, 0],
     };
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -173,6 +183,20 @@ export function Calendar({
                   extreme = row.status === 'critical';
                 }
               }
+              let accent: string | null = null; // solo `levels`
+              if (levels) {
+                // Estilo de la vista por año: sin color sólido ni marcas.
+                style = {};
+                label = '';
+                extreme = false;
+                if (!row) cls = 'border border-dashed border-line/70';
+                else if (row.status === 'no_data') cls = 'hatch';
+                else {
+                  accent = rowAccent(palette, row);
+                  cls = '';
+                  style = { background: `${accent}38` };
+                }
+              }
               const hasFlags = !!row && layers.flags && row.flags.length > 0;
               const isSel = k === selKey;
               const name = `${t(`month.${m}`)} ${y}`;
@@ -180,9 +204,10 @@ export function Calendar({
                 ? t('legend.missing')
                 : v === null
                   ? t('status.no_data')
-                  : `${fmtNum(lang, v, 1)} ${mode === 'harmonized' ? t('unit.cellDays') : t('unit.points')}, ${t(
-                      `status.${row.status}`,
-                    )}`;
+                  : `${fmtNum(lang, v, 1)} ${mode === 'harmonized' ? t('unit.cellDays') : t('unit.points')}, ${
+                      // Mismo nombre que en la tarjeta y la vista por año: 0 → "Sin incendios".
+                      isZero(row) ? t('level.zeroShort') : t(`status.${row.status}`)
+                    }`;
               return (
                 <button
                   key={k}
@@ -202,10 +227,11 @@ export function Calendar({
                   onBlur={() => setHover(null)}
                   onMouseEnter={(e) => showTip(k, e.currentTarget)}
                   className={`relative flex h-[var(--cell-h)] items-center justify-center rounded-[2px] font-mono text-[10px] font-semibold leading-none ${cls} ${
-                    isSel ? 'z-10 ring-2 ring-cyan ring-offset-1 ring-offset-bg' : ''
+                    isSel ? (levels ? 'sel-glow z-10 border' : 'z-10 ring-2 ring-cyan ring-offset-1 ring-offset-bg') : ''
                   }`}
                   style={style}
                 >
+                  {accent && <span aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px] rounded-l-[2px]" style={{ background: accent }} />}
                   {extreme && (
                     // Extremo: borde interior grueso, para no depender solo del color.
                     <span aria-hidden="true" className="absolute inset-0 rounded-[2px] border-2" style={{ borderColor: ink }} />
@@ -215,7 +241,7 @@ export function Calendar({
                     <span
                       aria-hidden="true"
                       className="absolute right-0 top-0 h-[7px] w-[7px]"
-                      style={{ background: ink, clipPath: 'polygon(0 0, 100% 0, 100% 100%)' }}
+                      style={{ background: levels ? 'var(--color-cyan)' : ink, clipPath: 'polygon(0 0, 100% 0, 100% 100%)' }}
                     />
                   )}
                 </button>
@@ -230,6 +256,7 @@ export function Calendar({
           x={hover.x}
           y={hover.y}
           below={hover.below}
+          simple={levels}
           width={wrap.current?.clientWidth ?? 400}
           row={hovered}
           year={hoverYm.y}
@@ -244,6 +271,7 @@ function Tooltip({
   x,
   y,
   below,
+  simple,
   width,
   row,
   year,
@@ -252,6 +280,8 @@ function Tooltip({
   x: number;
   y: number;
   below: boolean;
+  /** Sin puntos crudos (vista General). */
+  simple: boolean;
   width: number;
   row?: MonthRow;
   year: number;
@@ -270,17 +300,26 @@ function Tooltip({
     >
       <p className="font-sans text-[13px] font-semibold text-ink">
         {t(`month.${month}`)} {year}
-        {row && <span className="text-mute"> · {t(`status.${row.status}`).toUpperCase()}</span>}
+        {row && (
+          <span className="text-mute">
+            {' '}
+            · {(isZero(row) ? t('level.zeroShort') : t(`status.${row.status}`)).toUpperCase()}
+          </span>
+        )}
       </p>
-      {!row && <p className="text-mute">{t('legend.missing')}</p>}
+      {!row && <p className="text-mute">{simple ? '—' : t('legend.missing')}</p>}
       {row && (
         <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5">
           <dt className="text-mute">{t('tip.value')}</dt>
           <dd className="text-ink">
             {row.harmonized === null ? t('status.no_data') : `${fmtNum(lang, row.harmonized, 1)} ${t('unit.cellDays')}`}
           </dd>
-          <dt className="text-mute">{t('tip.raw')}</dt>
-          <dd>{fmtNum(lang, row.raw_points)}</dd>
+          {!simple && (
+            <>
+              <dt className="text-mute">{t('tip.raw')}</dt>
+              <dd>{fmtNum(lang, row.raw_points)}</dd>
+            </>
+          )}
           <dt className="text-mute">{t('tip.median')}</dt>
           <dd>
             {row.baseline ? `${fmtNum(lang, row.baseline.median, 1)} (n=${row.baseline.n_years})` : '—'}

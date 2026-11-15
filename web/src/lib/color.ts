@@ -72,8 +72,17 @@ export function inkOn(bg: string): string {
   return contrast(bg, INK_LIGHT) >= contrast(bg, INK_DARK) ? INK_LIGHT : INK_DARK;
 }
 
-/** Color de acento por nivel (puntos de la rampa); el nivel siempre va con texto e ícono. */
+// Estándar: colores de nivel calibrados para fondo oscuro (no salen de la rampa de valores).
+const STANDARD_LEVELS: Partial<Record<Status, string>> = {
+  below: '#a855f7', // violeta luminoso
+  normal: '#e06d53', // coral / terracota suave
+  above: '#f97316', // naranja intenso
+  critical: '#fde047', // amarillo brillante
+};
+
+/** Color de acento por nivel; el nivel siempre va con texto e ícono. */
 export function statusColor(palette: Palette, s: Status): string {
+  if (palette === 'inferno' && STANDARD_LEVELS[s]) return STANDARD_LEVELS[s]!;
   const [low, normal, high, extreme] = STATUS_T[palette];
   switch (s) {
     case 'below':
@@ -106,7 +115,7 @@ export function statusMark(s: Status): string {
 }
 
 /** Fondo de las tarjetas de mes (vista por año). */
-export const CARD_BG = '#121822';
+export const CARD_BG = '#111827';
 
 /**
  * Versión legible de un color de acento sobre fondo oscuro: lo mezcla hacia el blanco

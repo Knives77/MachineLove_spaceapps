@@ -31,9 +31,7 @@ export function areaKm2(g: Polygon): number {
   return Math.abs(s) / 2;
 }
 
-/** "21.20° N, 99.60° O" */
-export function fmtLatLon(lat: number, lon: number, lang: 'es' | 'en'): string {
-  const ns = lat >= 0 ? 'N' : 'S';
-  const ew = lon >= 0 ? 'E' : lang === 'es' ? 'O' : 'W';
-  return `${Math.abs(lat).toFixed(2)}° ${ns}, ${Math.abs(lon).toFixed(2)}° ${ew}`;
+/** "24.67° N, -101.05°": latitud con hemisferio y longitud decimal con signo (sin "O" que parezca 0). */
+export function fmtLatLon(lat: number, lon: number): string {
+  return `${Math.abs(lat).toFixed(2)}° ${lat >= 0 ? 'N' : 'S'}, ${lon.toFixed(2)}°`;
 }

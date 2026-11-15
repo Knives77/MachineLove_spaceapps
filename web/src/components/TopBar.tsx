@@ -18,7 +18,16 @@ export function TopBar() {
         <p className="text-[15px] font-semibold tracking-[0.18em] uppercase">{t('app.name')}</p>
         <p className="kicker text-[10px]">
           {t('app.subtitle')}
-          {usingMocks && <span className="ml-2 text-cyan">· {t('demo')}</span>}
+          {usingMocks && (
+            <span
+              tabIndex={0}
+              title={t('demo.tooltip')}
+              aria-label={`${t('demo')}: ${t('demo.tooltip')}`}
+              className="ml-2 cursor-help text-cyan underline decoration-dotted underline-offset-2 outline-none focus-visible:ring-1 focus-visible:ring-cyan"
+            >
+              · {t('demo')}
+            </span>
+          )}
         </p>
       </div>
 

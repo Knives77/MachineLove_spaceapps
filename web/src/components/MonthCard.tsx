@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
-import { ramp, statusColor } from '../lib/color';
+import { statusColor } from '../lib/color';
 import { fmtNum, fmtPct, indexMonths, ymKey } from '../lib/format';
 import { showsRawToggle, useApp } from '../state';
 import type { Baseline, CalendarResponse } from '../types';
 import { StatusIcon } from './ui';
-import { NAV_BTN, shiftMonth } from './YearView';
+import { isZero, NAV_BTN, shiftMonth, ZERO_ACCENT } from './YearView';
 
 /** Tarjeta del mes elegido (por defecto `latest`). Solo muestra campos de la API. */
 export function MonthCard({ data }: { data: CalendarResponse }) {
@@ -48,9 +48,10 @@ export function MonthCard({ data }: { data: CalendarResponse }) {
       {row && (
         <>
           <div className="mt-2 flex items-center gap-3">
-            <StatusIcon status={row.status} color={statusColor(palette, row.status)} size={20} />
-            <p className="text-[34px] font-semibold uppercase leading-none tracking-tight">
-              {t(`status.${row.status}`)}
+            {/* 0 celdas-día = "sin incendios", con indicador neutro (no el color de "Normal"). */}
+            <StatusIcon status={isZero(row) ? 'zero' : row.status} color={isZero(row) ? ZERO_ACCENT : statusColor(palette, row.status)} size={20} />
+            <p className={`font-semibold uppercase leading-none tracking-tight ${isZero(row) ? 'text-[28px] text-mute' : 'text-[34px]'}`}>
+              {isZero(row) ? t('level.zero') : t(`status.${row.status}`)}
             </p>
           </div>
 
@@ -62,7 +63,9 @@ export function MonthCard({ data }: { data: CalendarResponse }) {
           ) : (
             <>
               <p className="mt-3 text-lg">
-                {row.anomaly_ratio !== null && row.baseline
+                {isZero(row) && row.baseline
+                  ? t('card.zeroRatio', { m: fmtNum(lang, row.baseline.median, 1), n: row.baseline.n_years })
+                  : row.anomaly_ratio !== null && row.baseline
                   ? t('card.ratio', { r: fmtNum(lang, row.anomaly_ratio, 1), n: row.baseline.n_years })
                   : row.status === 'insufficient_baseline'
                     ? t('card.insufficient')
@@ -127,10 +130,10 @@ export function MonthCard({ data }: { data: CalendarResponse }) {
   function LevelBar({ baseline, value }: { baseline: Baseline | null; value: number | null }) {
     // Dibuja los percentiles que manda la API; no decide el nivel (eso ya viene en `status`).
     const segs = [
-      { key: 'bar.low', t: 0.08 },
-      { key: 'bar.normal', t: 0.3 },
-      { key: 'bar.high', t: 0.68 },
-      { key: 'bar.extreme', t: 1 },
+      { key: 'bar.low', s: 'below' as const },
+      { key: 'bar.normal', s: 'normal' as const },
+      { key: 'bar.high', s: 'above' as const },
+      { key: 'bar.extreme', s: 'critical' as const },
     ];
     if (!baseline) {
       return (
@@ -144,6 +147,16 @@ export function MonthCard({ data }: { data: CalendarResponse }) {
         </div>
       );
     }
+    // Todos los percentiles en 0 (casi nunca hubo fuego ese mes): la barra quedaría entera
+    // en "Extremo". Se muestra neutra con una explicación; el nivel sigue siendo el de `status`.
+    if (baseline.p90 === 0) {
+      return (
+        <div className="mt-5">
+          <div className="h-3 rounded-sm bg-panel-2 ring-1 ring-line" />
+          <p className="mt-1.5 text-[12px] text-mute">{t('card.noRange')}</p>
+        </div>
+      );
+    }
     const top = Math.max(baseline.p90 * 1.6, (value ?? 0) * 1.08, 1);
     const stops = [0, baseline.p25, baseline.p75, baseline.p90, top].map((v) => (v / top) * 100);
     const marker = value === null ? null : Math.min(100, (value / top) * 100);
@@ -154,7 +167,7 @@ export function MonthCard({ data }: { data: CalendarResponse }) {
             {segs.map((s, i) => (
               <div
                 key={s.key}
-                style={{ width: `${stops[i + 1] - stops[i]}%`, background: ramp(palette, s.t) }}
+                style={{ width: `${stops[i + 1] - stops[i]}%`, background: statusColor(palette, s.s) }}
                 title={t(s.key)}
               />
             ))}

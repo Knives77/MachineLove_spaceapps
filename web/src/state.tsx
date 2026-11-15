@@ -151,12 +151,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const aoiName = useMemo(() => {
     if ('geometry' in aoi) {
       const [lon, lat] = centroid(aoi.geometry);
-      return `${t('map.custom')} · ${fmtLatLon(lat, lon, lang)}`;
+      return `${t('map.custom')} · ${fmtLatLon(lat, lon)}`;
     }
     if (presets.state !== 'ok') return aoi.preset_id;
     const f = presets.data.features.find((x) => x.id === aoi.preset_id);
     return f ? presetName(f) : aoi.preset_id;
-  }, [aoi, presets, presetName, t, lang]);
+  }, [aoi, presets, presetName, t]);
 
   const value: AppState = {
     lang,
