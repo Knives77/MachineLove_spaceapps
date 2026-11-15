@@ -20,6 +20,8 @@ const DEM_TILES = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{
 /** Cámara de la vista 3D: inclinada y girada un poco, como una maqueta. */
 export const CAM_3D = { pitch: 55, bearing: -18 };
 export const CAM_2D = { pitch: 0, bearing: 0 };
+/** Propiedades que se animan desde código: el cambio se aplica en el mismo cuadro. */
+const NO_TRANSITION = { duration: 0, delay: 0 };
 
 /** `#rrggbb` + opacidad → `rgba(...)` (los colores salen de tokens; aquí solo se les pone transparencia). */
 function rgba(hex: string, a: number): string {
@@ -88,7 +90,15 @@ export function addMapLayers(map: MapLibreMap, tools: boolean) {
     type: 'line',
     source: 'regions',
     filter: ['get', 'active'],
-    paint: { 'line-color': MAP.regionGlow, 'line-width': 8, 'line-blur': 6, 'line-opacity': 0.4 },
+    // El pulso al elegir región ya anima cuadro a cuadro: sin transición encima.
+    paint: {
+      'line-color': MAP.regionGlow,
+      'line-width': 8,
+      'line-blur': 6,
+      'line-opacity': 0.4,
+      'line-width-transition': NO_TRANSITION,
+      'line-opacity-transition': NO_TRANSITION,
+    },
   });
   map.addLayer({
     id: 'region-line',
@@ -125,6 +135,9 @@ export function addMapLayers(map: MapLibreMap, tools: boolean) {
         'heatmap-weight': ['interpolate', ['linear'], frp, 0, 0.5, 4, 0.75, 10, 1],
         'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 5, 7, 8, 19, 11, 40, 13, 58],
         'heatmap-intensity': fireIntensity(1),
+        // El parpadeo cambia la intensidad ~9 veces por segundo: sin transición. Con la de 300 ms por
+        // defecto siempre queda una a medias y el mapa (con relieve) se repinta a 60 cuadros por segundo.
+        'heatmap-intensity-transition': NO_TRANSITION,
         'heatmap-opacity': 1,
         'heatmap-color': [
           'interpolate',
