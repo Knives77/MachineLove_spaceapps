@@ -7,7 +7,6 @@ import { MapPanel } from '../components/LazyMapPanel';
 import { MonthCard } from '../components/MonthCard';
 import { Timeline } from '../components/Timeline';
 import { Skeleton } from '../components/ui';
-import { YearBars } from '../components/YearBars';
 import { YearPicker, YearView } from '../components/YearView';
 import { useApp } from '../state';
 import type { CalendarResponse } from '../types';
@@ -35,9 +34,11 @@ export function General() {
   const monthTag = selected ? ` · ${t(`month.${selected.month}`).slice(0, 3)} ${selected.year}` : '';
 
   return (
-    <div className="grid gap-3 p-3 xl:grid-cols-[minmax(300px,340px)_minmax(0,1fr)]">
+    // En pantallas anchas la vista llena exactamente el alto disponible: nada se desplaza.
+    // Columna izquierda (tarjeta del mes) a todo lo alto; a la derecha el mapa y, debajo, la línea de tiempo.
+    <div className="grid gap-3 p-3 xl:h-full xl:grid-cols-[minmax(300px,340px)_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)_auto]">
       {/* En pantallas anchas el panel cabe en la ventana; si no alcanza, la tarjeta hace scroll por dentro. */}
-      <section className="panel flex flex-col xl:sticky xl:top-3 xl:max-h-[calc(100dvh-5.5rem)] xl:self-start">
+      <section className="panel flex min-h-0 flex-col xl:row-span-2">
         <div className="shrink-0 border-b border-line px-4 py-3">
           <h1 className="text-[22px] font-semibold leading-tight">{t('gen.title')}</h1>
           <p className="mt-0.5 text-[14px] text-mute">{t('gen.sub')}</p>
@@ -47,8 +48,8 @@ export function General() {
         </div>
       </section>
 
-      <div className="flex min-h-[520px] flex-col gap-3">
-        <MapPanel className="min-h-[540px] flex-1" padRight={calOpen ? DRAWER_W + 10 : 40}>
+      <div className="flex min-h-[420px] flex-col xl:min-h-0">
+        <MapPanel className="min-h-[420px] flex-1 xl:min-h-0" padRight={calOpen ? DRAWER_W + 10 : 40}>
           {/* Botón flotante para abrir el calendario; sale con un fundido mientras el panel está abierto. */}
           <AnimatePresence>
             {!calOpen && (
@@ -94,7 +95,7 @@ export function General() {
                 // Curva limpia sin rebote, sincronizada con el vuelo del mapa (0.7 s).
                 transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
                 style={{ width: DRAWER_W }}
-                className="absolute bottom-7 right-2 top-2 z-[700] max-w-[calc(100%-1rem)] outline-none"
+                className="absolute bottom-6 right-2 top-2 z-[700] max-w-[calc(100%-1rem)] outline-none"
               >
                 <WithCalendar skeleton={<Skeleton className="h-full" />}>
                   {(d) => <CalendarPanel data={d} onHide={() => setCalOpen(false)} />}
@@ -103,12 +104,9 @@ export function General() {
             )}
           </AnimatePresence>
         </MapPanel>
-        <section className="panel px-4 pb-2 pt-3">
-          <WithCalendar skeleton={<Skeleton className="h-36" />}>{(d) => <YearBars data={d} height={96} />}</WithCalendar>
-        </section>
       </div>
 
-      <div className="xl:col-span-2">
+      <div className="xl:col-start-2">
         <WithCalendar skeleton={<Skeleton className="h-20" />}>{(d) => <Timeline data={d} />}</WithCalendar>
       </div>
     </div>
@@ -161,7 +159,7 @@ function CalendarPanel({ data: d, onHide }: { data: CalendarResponse; onHide: ()
         )}
       </header>
 
-      <div data-cal-scroll className="min-h-0 flex-1 overflow-y-auto px-3 pb-2 pt-1">
+      <div data-cal-scroll className="min-h-0 flex-1 overflow-y-auto px-3 pb-1 pt-1">
         {history ? <Calendar data={d} stickyHeader variant="levels" /> : <YearView data={d} />}
       </div>
 

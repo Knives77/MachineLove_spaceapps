@@ -184,3 +184,17 @@
   outline: 2px solid #fff;
   outline-offset: 2px;
 }
+
+/* Variante baja del deslizador (línea de tiempo de General, con histograma encima). */
+.ml-timeline-compact::-webkit-slider-runnable-track {
+  height: 1.5rem;
+}
+.ml-timeline-compact::-moz-range-track {
+  height: 1.5rem;
+}
+.ml-timeline-compact::-webkit-slider-thumb {
+  height: 1.5rem;
+}
+.ml-timeline-compact::-moz-range-thumb {
+  height: 1.5rem;
+}

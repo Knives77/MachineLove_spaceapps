@@ -104,7 +104,7 @@ export function YearView({ data }: { data: CalendarResponse }) {
   const byKey = useMemo(() => indexMonths(data.months), [data]);
 
   function onKey(e: KeyboardEvent<HTMLButtonElement>, m: number) {
-    const step: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 3, ArrowUp: -3 };
+    const step: Record<string, number> = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: 4, ArrowUp: -4 };
     const d = step[e.key];
     if (!d) return;
     e.preventDefault();
@@ -114,7 +114,7 @@ export function YearView({ data }: { data: CalendarResponse }) {
   }
 
   return (
-    <div role="group" aria-label={`${t('cal.year')} ${sel.year}`} className="grid grid-cols-3 gap-2">
+    <div role="group" aria-label={`${t('cal.year')} ${sel.year}`} className="grid grid-cols-4 gap-1.5">
       {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
         const k = ymKey(sel.year, m);
         const row = byKey.get(k);
@@ -137,7 +137,7 @@ export function YearView({ data }: { data: CalendarResponse }) {
             onClick={() => row && setSelected({ year: sel.year, month: m })}
             onFocus={() => sound && row && playStatus(row.status)}
             onKeyDown={(e) => onKey(e, m)}
-            className={`relative flex h-[56px] flex-col justify-between overflow-hidden rounded-md border py-1.5 pl-3.5 pr-2.5 text-left transition-colors ${
+            className={`relative flex h-[52px] flex-col justify-between overflow-hidden rounded-md border py-1.5 pl-2.5 pr-1.5 text-left transition-colors ${
               !row
                 ? 'border-dashed border-line text-dim'
                 : isSel
@@ -163,7 +163,7 @@ export function YearView({ data }: { data: CalendarResponse }) {
             </span>
             {row && (
               <span
-                className="self-start rounded-full px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider"
+                className="self-start whitespace-nowrap rounded-full px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide"
                 style={
                   row.status === 'no_data'
                     ? undefined
@@ -172,8 +172,7 @@ export function YearView({ data }: { data: CalendarResponse }) {
               >
                 {row.status === 'no_data' ? (
                   <span className="flex items-center gap-1.5 text-mute">
-                    <span aria-hidden="true" className="hatch inline-block h-2.5 w-3 rounded-[1px]" />
-                    {statusText}
+                                        {statusText}
                   </span>
                 ) : (
                   statusText
