@@ -58,18 +58,48 @@ export const RAMPS = {
   contrast: ['#5a189a', '#c2185b', '#ff9800', '#ffff00', '#ffffff'],
 } as const;
 
-/** Fuego sobre el mapa: mancha térmica rojiza de fondo y puntos rojos/amarillos por intensidad (FRP). */
-export const FIRE = {
-  /** Rampa de la mancha térmica, de brasa rojiza a rojo escarlata y ámbar (sin lavar a blanco). */
-  ramp: ['#3b0704', '#7f1d1d', '#b91c1c', '#dc2626', '#ea580c', '#f59e0b'],
-  /** Puntos de focos de calor (estilo CONAE: rojo/naranja a amarillo intenso según FRP). */
-  dotLow: '#ef4444',
-  dotMid: '#f97316',
-  dotHigh: '#facc15',
-  dotPeak: '#fef08a',
-  dotStroke: '#2a0604',
-  spark: '#facc15', // chispa en el punto exacto de cada detección
-} as const;
+export interface FireTheme {
+  ramp: readonly [string, string, string, string, string, string];
+  dotLow: string;
+  dotMid: string;
+  dotHigh: string;
+  dotPeak: string;
+  dotStroke: string;
+}
+
+/** Fuego sobre el mapa por paleta: térmica estándar, daltónicos (Cividis azul–amarillo) y alto contraste. */
+export const FIRE_PALETTES = {
+  inferno: {
+    /** Rampa de la mancha térmica, de brasa rojiza a rojo escarlata y ámbar (sin lavar a blanco). */
+    ramp: ['#3b0704', '#7f1d1d', '#b91c1c', '#dc2626', '#ea580c', '#f59e0b'],
+    /** Puntos de focos de calor (estilo CONAE: rojo/naranja a amarillo intenso según FRP). */
+    dotLow: '#ef4444',
+    dotMid: '#f97316',
+    dotHigh: '#facc15',
+    dotPeak: '#fef08a',
+    dotStroke: '#2a0604',
+  },
+  cividis: {
+    /** Rampa segura para daltonismo (azul acero → turquesa → dorado → amarillo brillante). */
+    ramp: ['#0c223f', '#1d4b7a', '#357494', '#7e9987', '#d4af37', '#fde725'],
+    dotLow: '#5698a3',
+    dotMid: '#b8b04b',
+    dotHigh: '#fde725',
+    dotPeak: '#fef9c3',
+    dotStroke: '#061325',
+  },
+  contrast: {
+    /** Rampa de alto contraste extremo (violeta → magenta → naranja → amarillo → blanco). */
+    ramp: ['#2d084d', '#5a189a', '#c2185b', '#ff6d00', '#ffab00', '#ffff00'],
+    dotLow: '#e040fb',
+    dotMid: '#ff9100',
+    dotHigh: '#ffff00',
+    dotPeak: '#ffffff',
+    dotStroke: '#140424',
+  },
+} as const satisfies Record<'inferno' | 'cividis' | 'contrast', FireTheme>;
+
+export const FIRE = FIRE_PALETTES.inferno;
 
 /** Mapa (MapLibre). */
 export const MAP = {

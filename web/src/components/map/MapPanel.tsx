@@ -50,7 +50,9 @@ export function MapPanel({
   /** Capas extra sobre el mapa (p. ej. el panel deslizante del calendario). */
   children?: ReactNode;
 }) {
-  const { t, presets, aoi, setAoi, presetName, selected, mode, calendar } = useApp();
+  const { t, presets, aoi, setAoi, presetName, selected, mode, calendar, palette } = useApp();
+  const paletteRef = useRef(palette);
+  paletteRef.current = palette;
   const pinIcon = useIconAnim();
   const [panel, setPanel] = useState(false);
   const [view3d, setView3d] = useState(tools);
@@ -109,7 +111,7 @@ export function MapPanel({
     });
 
     map.on('load', () => {
-      addMapLayers(map, tools);
+      addMapLayers(map, tools, paletteRef.current);
 
       // Clic en una región de ejemplo = elegirla (salvo mientras se dibuja).
       map.on('click', 'regions-fill', (e: MapLayerMouseEvent) => {
@@ -190,7 +192,7 @@ export function MapPanel({
     calendar.state === 'ok' && selected
       ? (calendar.data.months.find((m) => m.year === selected.year && m.month === selected.month)?.source ?? null)
       : undefined;
-  useFireLayer({ mapRef, ready, fire, aoi, selected, mode, source });
+  useFireLayer({ mapRef, ready, fire, aoi, selected, mode, source, palette });
 
   // Vista 3D: el terreno se levanta con la elevación real (exagerada 1.6× para que se lea a esta escala).
   useEffect(() => {
