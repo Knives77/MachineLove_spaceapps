@@ -29,12 +29,15 @@ export function StripButton({ label, pressed, onClick, children }: { label: stri
 export function FloatPanel({
   side,
   width,
+  bottom = 8,
   title,
   onHide,
   children,
 }: {
   side: 'left' | 'right';
   width: number;
+  /** Espacio libre que deja abajo (px), p. ej. para la consola de tiempo. */
+  bottom?: number;
   title: string;
   onHide: () => void;
   children: ReactNode;
@@ -55,13 +58,13 @@ export function FloatPanel({
   return (
     <motion.aside
       aria-label={title}
-      style={{ width }}
+      style={{ width, maxHeight: `calc(100% - ${side === 'left' ? 8 : 60}px - ${bottom}px)` }}
       initial={{ x: dx, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: dx, opacity: 0 }}
       transition={{ duration: 0.3, ease: EASE }}
       className={`hud absolute z-[600] flex flex-col ${
-        side === 'left' ? 'left-2 top-2 max-h-[calc(100%-1rem)]' : 'right-2 top-[3.75rem] max-h-[calc(100%-4.25rem)]'
+        side === 'left' ? 'left-2 top-2' : 'right-2 top-[3.75rem]'
       }`}
     >
       <header className="flex shrink-0 items-center gap-2 border-b border-line px-3 py-2">

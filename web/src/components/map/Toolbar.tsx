@@ -5,6 +5,7 @@ import type { DrawMode } from './useDrawTool';
 
 export function MapToolbar({
   left,
+  inline = false,
   compact,
   drawMode,
   coords,
@@ -19,7 +20,9 @@ export function MapToolbar({
   onZoom,
 }: {
   /** Posición horizontal (CSS): el centro del espacio visible entre paneles. */
-  left: string;
+  left?: string;
+  /** Dentro de otra franja (la consola de tiempo): sin marco ni posición propios. */
+  inline?: boolean;
   /** Solo iconos (queda poco mapa visible). */
   compact: boolean;
   drawMode: DrawMode;
@@ -39,8 +42,8 @@ export function MapToolbar({
     <div
       role="toolbar"
       aria-label={t('tool.bar')}
-      style={{ left }}
-      className="hud absolute bottom-7 z-[500] flex -translate-x-1/2 items-stretch gap-0.5 p-1"
+      style={inline ? undefined : { left }}
+      className={inline ? 'flex shrink-0 items-stretch gap-0.5' : 'hud absolute bottom-7 z-[500] flex -translate-x-1/2 items-stretch gap-0.5 p-1'}
     >
       <Tool compact={compact} label={t('tool.rect')} pressed={drawMode === 'rect'} onClick={() => onDraw(drawMode === 'rect' ? null : 'rect')}>
         <rect x="4" y="6" width="16" height="12" rx="1" strokeDasharray="3 2" />

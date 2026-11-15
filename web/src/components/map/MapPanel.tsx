@@ -26,12 +26,20 @@ export function MapPanel({
   className = '',
   padRight = 40,
   padLeft = 40,
+  padTop = 80,
+  padBottom,
+  dock,
   tools = false,
   compactTools = false,
   children,
 }: {
   /** Margen izquierdo para encuadrar (px); más grande si un panel cubre el lado izquierdo. */
   padLeft?: number;
+  /** Margen superior e inferior para encuadrar (px); el inferior también sube los avisos de dibujo. */
+  padTop?: number;
+  padBottom?: number;
+  /** Con `tools`: franja que aloja las herramientas del mapa (p. ej. la consola de tiempo). Sin ella, flotan solas. */
+  dock?: (toolbar: ReactNode) => ReactNode;
   /** Barra de herramientas solo con iconos (cuando queda poco mapa visible entre paneles). */
   compactTools?: boolean;
   /** Consola de Experto: vista 3D con relieve, barra de herramientas flotante, atajos 1–3 y coordenadas del cursor. */
@@ -42,7 +50,7 @@ export function MapPanel({
   /** Capas extra sobre el mapa (p. ej. el panel deslizante del calendario). */
   children?: ReactNode;
 }) {
-  const { t, presets, aoi, setAoi, presetName, selected } = useApp();
+  const { t, presets, aoi, setAoi, presetName, selected, mode, calendar } = useApp();
   const pinIcon = useIconAnim();
   const [panel, setPanel] = useState(false);
   const [view3d, setView3d] = useState(tools);
@@ -118,6 +126,29 @@ export function MapPanel({
       setReady(true);
     });
 
+    // Calidad adaptable: si al mover la cámara los cuadros salen lentos, se baja la resolución de pintado
+    // (1.5× → 1× → 0.75×) en vez de quitar el 3D. Solo baja, y solo mide mientras el mapa se mueve.
+    const STEPS = [1, 0.75].filter((r) => r < map.getPixelRatio());
+    let last = 0;
+    let slow = 0;
+    let seen = 0;
+    map.on('render', () => {
+      if (!STEPS.length || !map.isMoving()) {
+        last = 0;
+        return;
+      }
+      const now = performance.now();
+      const dt = last ? now - last : 0;
+      last = now;
+      if (!dt || dt > 500) return; // primer cuadro o pausa: no cuenta
+      seen++;
+      if (dt > 34) slow++; // por debajo de ~30 cuadros por segundo
+      if (seen < 24) return;
+      if (slow > 12) map.setPixelRatio(STEPS.shift() as number);
+      seen = 0;
+      slow = 0;
+    });
+
     // El canvas sigue el tamaño de su caja (el layout es flex/grid).
     const ro = new ResizeObserver(() => map.resize());
     ro.observe(box.current);
@@ -146,15 +177,20 @@ export function MapPanel({
     const instant = firstFit.current || reducedMotion();
     firstFit.current = false;
     map.fitBounds(bboxOf(target), {
-      padding: { top: 80, bottom: tools ? 90 : 50, left: padLeft, right: padRight },
+      padding: { top: padTop, bottom: padBottom ?? (tools ? 90 : 50), left: padLeft, right: padRight },
       maxZoom: 9,
       duration: instant ? 0 : 650,
       easing: easeOutCubic,
       ...(tools ? (view3d ? CAM_3D : CAM_2D) : {}),
     });
-  }, [ready, target, padRight, padLeft, view3d, fitNonce]);
+  }, [ready, target, padRight, padLeft, padTop, padBottom, view3d, fitNonce]);
   // Fuego: hotspots del mes elegido + parpadeo (fire.ts).
-  useFireLayer({ mapRef, ready, tools, fire, aoi, selected });
+  // Fuente del mes elegido según el calendario: decide qué detecciones se pintan en Armonizado.
+  const source =
+    calendar.state === 'ok' && selected
+      ? (calendar.data.months.find((m) => m.year === selected.year && m.month === selected.month)?.source ?? null)
+      : undefined;
+  useFireLayer({ mapRef, ready, tools, fire, aoi, selected, mode, source });
 
   // Vista 3D: el terreno se levanta con la elevación real (exagerada 1.6× para que se lea a esta escala).
   useEffect(() => {
@@ -217,7 +253,7 @@ export function MapPanel({
       <div
         className="pointer-events-none absolute inset-2 z-[500] flex flex-col items-start gap-2"
         // Con un panel encima del lado derecho, las píldoras se acomodan solo en el espacio visible.
-        style={{ right: padRight > 40 ? padRight : undefined, left: padLeft > 40 ? padLeft : undefined }}
+        style={{ right: padRight > 40 ? padRight : undefined, left: padLeft > 40 ? padLeft : undefined, top: dock ? padTop - 24 : undefined, bottom: dock ? padBottom : undefined }}
       >
       <div className="pointer-events-auto flex max-w-full flex-wrap gap-1.5">
         <span className="sr-only">{t('map.presets')}</span>
@@ -273,7 +309,7 @@ export function MapPanel({
         <div
           role="status"
           // Centrado en el espacio visible (a la izquierda de un panel abierto).
-          style={{ left: `calc(${padLeft - 40}px + (100% - ${padLeft + padRight - 80}px) / 2)` }}
+          style={{ left: `calc(${padLeft - 40}px + (100% - ${padLeft + padRight - 80}px) / 2)`, bottom: dock ? padBottom : undefined }}
           className={`absolute ${tools ? 'bottom-[4.75rem]' : 'bottom-9'} z-[500] flex max-w-[90%] -translate-x-1/2 items-center gap-3 rounded border border-cyan/60 bg-bg/95 px-3 py-2 text-[12.5px]`}
         >
           <span className={drawMsg ? 'text-warn' : ''}>
@@ -289,30 +325,36 @@ export function MapPanel({
         <button
           type="button"
           onClick={() => setAoi({ preset_id: DEFAULT_PRESET })}
-          style={{ left: padLeft - 24 }}
+          style={{ left: padLeft - 24, bottom: dock ? padBottom : undefined }}
           className={`btn absolute ${tools ? 'bottom-[4.75rem]' : 'bottom-4'} z-[500] whitespace-nowrap bg-bg/95 px-3 py-1.5 text-xs`}
         >
           ← {t('map.back')}
         </button>
       )}
 
-      {/* Barra de herramientas flotante (consola de Experto): un clic por herramienta. */}      {tools && (
-        <MapToolbar
-          left={`calc(${padLeft - 40}px + (100% - ${padLeft + padRight - 80}px) / 2)`}
-          compact={compactTools}
-          drawMode={drawMode}
-          coords={panel}
-          view3d={view3d}
-          fire={fire}
-          onDraw={(m) => (m ? startDraw(m) : setDrawMode(null))}
-          onCoords={() => setPanel((v) => !v)}
-          on3d={() => setView3d((v) => !v)}
-          onFire={() => setFire((v) => !v)}
-          onNorth={() => mapRef.current?.easeTo({ bearing: 0, duration: 400 })}
-          onFit={() => setFitNonce((n) => n + 1)}
-          onZoom={(dir) => (dir > 0 ? mapRef.current?.zoomIn() : mapRef.current?.zoomOut())}
-        />
-      )}
+      {/* Herramientas del mapa (consola de Experto): flotan solas o van dentro de la franja `dock`. */}
+      {tools &&
+        (() => {
+          const toolbar = (
+            <MapToolbar
+              inline={!!dock}
+              left={`calc(${padLeft - 40}px + (100% - ${padLeft + padRight - 80}px) / 2)`}
+              compact={compactTools || !!dock}
+              drawMode={drawMode}
+              coords={panel}
+              view3d={view3d}
+              fire={fire}
+              onDraw={(m) => (m ? startDraw(m) : setDrawMode(null))}
+              onCoords={() => setPanel((v) => !v)}
+              on3d={() => setView3d((v) => !v)}
+              onFire={() => setFire((v) => !v)}
+              onNorth={() => mapRef.current?.easeTo({ bearing: 0, duration: 400 })}
+              onFit={() => setFitNonce((n) => n + 1)}
+              onZoom={(dir) => (dir > 0 ? mapRef.current?.zoomIn() : mapRef.current?.zoomOut())}
+            />
+          );
+          return dock ? dock(toolbar) : toolbar;
+        })()}
 
       {children}
     </div>
