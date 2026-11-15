@@ -1,18 +1,33 @@
 """Endpoints REST del backend FastAPI según docs/contracts/api.md."""
 from __future__ import annotations
 
+from collections import OrderedDict
+from datetime import date
+import hashlib
 import json
 import os
+import threading
 import time
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse, Response, StreamingResponse
+import shapely
 
-from backend.aoi import resolve_aoi_offline
-from backend.harmonize import build_calendar_response
+from backend.aoi import (
+    ResolvedAoi,
+    parse_and_validate_polygon,
+    resolve_aoi_offline,
+)
+from backend.harmonize import (
+    MonthKey,
+    MonthlyCounts,
+    OutageInterval,
+    build_calendar_response,
+)
 from backend.models import (
+    AoiInput,
     ApiException,
     CalendarRequest,
     CalendarResponse,
@@ -22,7 +37,7 @@ from backend.models import (
     PresetCollection,
 )
 from backend.queries import (
-    DATABASE_URL,
+    _COUNTRY_METADATA_CACHE,
     HOTSPOTS_CSV_HEADER,
     MAX_HOTSPOTS_GEOJSON_DAYS,
     check_hotspots_limit,
@@ -32,6 +47,7 @@ from backend.queries import (
     fetch_presets,
     get_connection,
     resolve_aoi_db,
+    resolve_database_url,
     stream_hotspots_csv,
 )
 
@@ -44,10 +60,64 @@ CALENDAR_CSV_HEADER = (
     "baseline_median,baseline_p25,baseline_p75,baseline_p90,anomaly_ratio,status,flags\n"
 )
 
-CACHE_TTL_SECONDS = 60.0
-_PRESET_CALENDAR_CACHE: dict[tuple[str, int, int, str, str], tuple[float, CalendarResponse]] = {}
+CACHE_TTL_SECONDS = 600.0
+HEALTH_CACHE_TTL_SECONDS = 30.0
+MAX_AOI_CACHE_ENTRIES = 64
+MAX_CALENDAR_CACHE_ENTRIES = 128
+
+_AOI_INPUTS_CACHE: OrderedDict[
+    tuple[str, str, int],
+    tuple[
+        float,
+        ResolvedAoi,
+        dict[MonthKey, MonthlyCounts],
+        list[OutageInterval],
+        float | None,
+        date,
+    ],
+] = OrderedDict()
+_PRESETS_RESPONSE_CACHE: dict[tuple[str, int], tuple[float, PresetCollection]] = {}
+_HEALTH_RESPONSE_CACHE: dict[tuple[str, int], tuple[float, str]] = {}
+_CACHE_LOCK = threading.RLock()
+_KEY_LOCKS: dict[tuple[str, str, int], threading.Lock] = {}
+
+
+class _UnifiedCacheStore(OrderedDict):  # type: ignore[type-arg]
+    """Almacén LRU de respuestas de calendario cuyo .clear() limpia todas las cachés en memoria."""
+
+    def clear(self) -> None:
+        with _CACHE_LOCK:
+            super().clear()
+            _AOI_INPUTS_CACHE.clear()
+            _PRESETS_RESPONSE_CACHE.clear()
+            _HEALTH_RESPONSE_CACHE.clear()
+            _COUNTRY_METADATA_CACHE.clear()
+            _KEY_LOCKS.clear()
+
+
+_PRESET_CALENDAR_CACHE: _UnifiedCacheStore = _UnifiedCacheStore()
 
 router = APIRouter()
+
+
+def _canonical_aoi_key(aoi: AoiInput) -> str:
+    """Genera llave canónica para preset_id o polígono normalizado en WKB."""
+    if aoi.preset_id is not None:
+        return f"preset:{aoi.preset_id}"
+    assert aoi.geometry is not None
+    poly = parse_and_validate_polygon(aoi.geometry)
+    norm_wkb = shapely.normalize(poly).wkb
+    digest = hashlib.sha256(norm_wkb).hexdigest()
+    return f"poly:{digest}"
+
+
+def _get_aoi_lock(key: tuple[str, str, int]) -> threading.Lock:
+    with _CACHE_LOCK:
+        lock = _KEY_LOCKS.get(key)
+        if lock is None:
+            lock = threading.Lock()
+            _KEY_LOCKS[key] = lock
+        return lock
 
 
 def is_mock_mode() -> bool:
@@ -103,25 +173,61 @@ def compute_or_get_calendar(req: CalendarRequest) -> CalendarResponse:
     if is_mock_mode():
         return load_mock_calendar(req)
 
-    dsn = os.environ.get("DATABASE_URL", DATABASE_URL)
-    cache_key: tuple[str, int, int, str, str] | None = None
-    if req.aoi.preset_id is not None:
-        cache_key = (
-            req.aoi.preset_id,
-            req.start_year,
-            req.end_year,
-            req.basis,
-            dsn,
-        )
-        cached = _PRESET_CALENDAR_CACHE.get(cache_key)
-        if cached is not None and (time.monotonic() - cached[0]) < CACHE_TTL_SECONDS:
-            return cached[1]
+    dsn = resolve_database_url()
+    conn_fn_id = id(get_connection)
+    aoi_key = _canonical_aoi_key(req.aoi)
+    cal_key = (
+        aoi_key,
+        req.start_year,
+        req.end_year,
+        req.basis,
+        dsn,
+        conn_fn_id,
+    )
 
-    with get_connection() as conn:
-        resolved = resolve_aoi_db(conn, req.aoi)
-        counts, outages, country_k, data_through = fetch_calendar_inputs(
-            conn, resolved
-        )
+    now = time.monotonic()
+    with _CACHE_LOCK:
+        cached_cal = _PRESET_CALENDAR_CACHE.get(cal_key)
+        if cached_cal is not None and (now - cached_cal[0]) < CACHE_TTL_SECONDS:
+            _PRESET_CALENDAR_CACHE.move_to_end(cal_key)
+            return cached_cal[1]
+
+    inputs_key = (aoi_key, dsn, conn_fn_id)
+    key_lock = _get_aoi_lock(inputs_key)
+    with key_lock:
+        now = time.monotonic()
+        with _CACHE_LOCK:
+            cached_inputs = _AOI_INPUTS_CACHE.get(inputs_key)
+            if (
+                cached_inputs is not None
+                and (now - cached_inputs[0]) < CACHE_TTL_SECONDS
+            ):
+                _AOI_INPUTS_CACHE.move_to_end(inputs_key)
+                _, resolved, counts, outages, country_k, data_through = (
+                    cached_inputs
+                )
+            else:
+                cached_inputs = None
+
+        if cached_inputs is None:
+            with get_connection() as conn:
+                resolved = resolve_aoi_db(conn, req.aoi)
+                counts, outages, country_k, data_through = (
+                    fetch_calendar_inputs(conn, resolved)
+                )
+            with _CACHE_LOCK:
+                _AOI_INPUTS_CACHE[inputs_key] = (
+                    time.monotonic(),
+                    resolved,
+                    counts,
+                    outages,
+                    country_k,
+                    data_through,
+                )
+                _AOI_INPUTS_CACHE.move_to_end(inputs_key)
+                while len(_AOI_INPUTS_CACHE) > MAX_AOI_CACHE_ENTRIES:
+                    _AOI_INPUTS_CACHE.popitem(last=False)
+
     cal = build_calendar_response(
         aoi_summary=resolved.to_summary(),
         start_year=req.start_year,
@@ -132,8 +238,11 @@ def compute_or_get_calendar(req: CalendarRequest) -> CalendarResponse:
         country_k=country_k,
         data_through=data_through,
     )
-    if cache_key is not None:
-        _PRESET_CALENDAR_CACHE[cache_key] = (time.monotonic(), cal)
+    with _CACHE_LOCK:
+        _PRESET_CALENDAR_CACHE[cal_key] = (time.monotonic(), cal)
+        _PRESET_CALENDAR_CACHE.move_to_end(cal_key)
+        while len(_PRESET_CALENDAR_CACHE) > MAX_CALENDAR_CACHE_ENTRIES:
+            _PRESET_CALENDAR_CACHE.popitem(last=False)
     return cal
 
 
@@ -141,9 +250,21 @@ def compute_or_get_calendar(req: CalendarRequest) -> CalendarResponse:
 def get_health() -> HealthResponse:
     if is_mock_mode():
         return HealthResponse(status="ok", data_through="2026-11-01")
+    dsn = resolve_database_url()
+    h_key = (dsn, id(get_connection))
+    now = time.monotonic()
+    with _CACHE_LOCK:
+        cached = _HEALTH_RESPONSE_CACHE.get(h_key)
+        if cached is not None and (now - cached[0]) < HEALTH_CACHE_TTL_SECONDS:
+            return HealthResponse(status="ok", data_through=cached[1])
     try:
         with get_connection() as conn:
             dt = fetch_data_through(conn)
+        with _CACHE_LOCK:
+            prev = _HEALTH_RESPONSE_CACHE.get(h_key)
+            if prev is not None and prev[1] != dt:
+                _PRESET_CALENDAR_CACHE.clear()
+            _HEALTH_RESPONSE_CACHE[h_key] = (time.monotonic(), dt)
         return HealthResponse(status="ok", data_through=dt)
     except ApiException:
         raise
@@ -152,13 +273,23 @@ def get_health() -> HealthResponse:
 
 
 @router.get("/presets", response_model=PresetCollection)
-def get_presets() -> PresetCollection:
+def get_presets(response: Response) -> PresetCollection:
+    response.headers["Cache-Control"] = "public, max-age=300"
     if is_mock_mode():
         return load_mock_presets()
+    dsn = resolve_database_url()
+    p_key = (dsn, id(get_connection))
+    now = time.monotonic()
+    with _CACHE_LOCK:
+        cached = _PRESETS_RESPONSE_CACHE.get(p_key)
+        if cached is not None and (now - cached[0]) < CACHE_TTL_SECONDS:
+            return cached[1]
     with get_connection() as conn:
         presets = fetch_presets(conn)
     if not presets.features:
         return load_mock_presets()
+    with _CACHE_LOCK:
+        _PRESETS_RESPONSE_CACHE[p_key] = (time.monotonic(), presets)
     return presets
 
 
@@ -231,7 +362,7 @@ def post_hotspots_csv(req: HotspotsRequest) -> StreamingResponse:
             headers=headers,
         )
 
-    dsn = os.environ.get("DATABASE_URL", DATABASE_URL)
+    dsn = os.environ.get("DATABASE_URL")
     with get_connection(dsn) as conn:
         resolved = resolve_aoi_db(conn, req.aoi)
         check_hotspots_limit(conn, resolved, req.start_date, req.end_date)

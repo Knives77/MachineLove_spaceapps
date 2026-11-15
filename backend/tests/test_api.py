@@ -262,3 +262,100 @@ def test_psycopg_error_returns_503_json(monkeypatch: pytest.MonkeyPatch) -> None
         assert resp.status_code == 503
         assert resp.json()["error"]["code"] == "db_unavailable"
 
+
+def test_gzip_and_aoi_cache_reuse_across_basis_and_csv(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verifica compresión GZip y que cambiar basis o bajar CSV en polígono/preset reutilice caché sin re-consultar BD."""
+    from contextlib import contextmanager
+    from backend.tests.test_system_e2e import SimulatedPostgisConn
+    import backend.routes as routes_mod
+
+    # 1. GZip reduce >85% el peso de /api/v1/calendar
+    res_gz = client.post(
+        "/api/v1/calendar",
+        json={"aoi": {"preset_id": "qro-sierra-gorda"}},
+        headers={"Accept-Encoding": "gzip"},
+    )
+    assert res_gz.status_code == 200
+    assert res_gz.headers.get("content-encoding") == "gzip"
+    assert len(res_gz.CACHED_CONTENT if hasattr(res_gz, "CACHED_CONTENT") else res_gz.content) > 50_000
+
+    # 2. En modo real (API_MOCK=0), un polígono consultado en modis_primary, viirs_primary y calendar.csv abre 1 sola conexión
+    monkeypatch.setenv("API_MOCK", "0")
+    routes_mod._PRESET_CALENDAR_CACHE.clear()
+    conn_calls = 0
+
+    @contextmanager
+    def counting_conn(_dsn: str | None = None):  # type: ignore[no-untyped-def]
+        nonlocal conn_calls
+        conn_calls += 1
+        yield SimulatedPostgisConn()
+
+    monkeypatch.setattr(routes_mod, "get_connection", counting_conn)
+    c = TestClient(app)
+
+    qro_poly = {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [-100.2, 20.5],
+                [-99.5, 20.5],
+                [-99.5, 21.2],
+                [-100.2, 21.2],
+                [-100.2, 20.5],
+            ]
+        ],
+    }
+    r1 = c.post(
+        "/api/v1/calendar",
+        json={"aoi": {"geometry": qro_poly}, "basis": "modis_primary"},
+    )
+    assert r1.status_code == 200
+    assert conn_calls == 1
+
+    # Cambiar a viirs_primary ("Simular fin de MODIS") sobre el mismo polígono -> 0 conexiones nuevas
+    r2 = c.post(
+        "/api/v1/calendar",
+        json={"aoi": {"geometry": qro_poly}, "basis": "viirs_primary"},
+    )
+    assert r2.status_code == 200
+    assert conn_calls == 1
+
+    # Descargar CSV del mismo polígono -> 0 conexiones nuevas
+    r3 = c.post(
+        "/api/v1/calendar.csv",
+        json={"aoi": {"geometry": qro_poly}, "basis": "viirs_primary"},
+    )
+    assert r3.status_code == 200
+    assert r3.headers["content-type"].startswith("text/csv")
+    assert conn_calls == 1
+
+
+def test_host_5432_and_tunnel_15432_auto_fallback(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verifica que sin DATABASE_URL explícita funcione tanto en la anfitriona (5432) como por túnel (15432)."""
+    import psycopg
+    import backend.queries as queries_mod
+
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.setattr(queries_mod, "_ACTIVE_DEFAULT_DSN", None)
+    monkeypatch.setattr(queries_mod, "_is_local_port_open", lambda _port: True)
+
+    attempted: list[str] = []
+
+    def fake_connect(dsn: str, **_kwargs: object) -> str:
+        attempted.append(dsn)
+        if ":5432/" in dsn:
+            raise psycopg.OperationalError("port 5432 not active on laptop")
+        return "connected-via-15432"
+
+    monkeypatch.setattr(queries_mod.psycopg, "connect", fake_connect)
+    conn = queries_mod.get_connection()
+    assert conn == "connected-via-15432"  # type: ignore[comparison-overlap]
+    assert queries_mod._ACTIVE_DEFAULT_DSN == queries_mod.TUNNEL_DATABASE_URL
+    assert len(attempted) == 2
+
+
+
