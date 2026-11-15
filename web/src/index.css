@@ -9,6 +9,7 @@
   --color-panel-hover: #151e2e;
   --color-panel-selected: #1a2436;
   --color-drawer: #0f172a;
+  --color-sidebar: #0b101b;
   --color-line: #1e293b;
   --color-line-2: #334155;
   --color-ink: #e8edf2;
@@ -157,7 +158,7 @@
   }
   .kicker {
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--color-mute);
@@ -327,4 +328,27 @@
 }
 .ml-timeline-compact::-moz-range-thumb {
   height: 1.5rem;
+}
+
+/* Barras de desplazamiento GLOBALES: oscuras y ultrafinas en toda la app (nunca la gris del navegador). */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) var(--color-bg);
+}
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+*::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-line);
+  border-radius: 2px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-line-2);
+}
+*::-webkit-scrollbar-corner {
+  background: var(--color-bg);
 }

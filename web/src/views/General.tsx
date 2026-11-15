@@ -4,11 +4,11 @@ import { Calendar } from '../components/Calendar';
 import { HideCalendarButton } from '../components/CalendarToggle';
 import { LevelLegend } from '../components/Legend';
 import { MapPanel } from '../components/LazyMapPanel';
-import { ModisSwitch } from '../components/ModisSwitch';
-import { MonthCard } from '../components/MonthCard';
+import { MonthCard, MonthNotes } from '../components/MonthCard';
 import { Timeline } from '../components/Timeline';
 import { Skeleton } from '../components/ui';
 import { YearPicker, YearView } from '../components/YearView';
+import { fmtNum } from '../lib/format';
 import { useApp } from '../state';
 import type { CalendarResponse } from '../types';
 import { WithCalendar } from './WithCalendar';
@@ -35,26 +35,27 @@ export function General() {
   const monthTag = selected ? ` · ${t(`month.${selected.month}`).slice(0, 3)} ${selected.year}` : '';
 
   return (
-    // En pantallas anchas la vista llena exactamente el alto disponible: nada se desplaza.
-    // Columna izquierda (tarjeta del mes) a todo lo alto; a la derecha el mapa y, debajo, la línea de tiempo.
-    <div className="grid gap-3 p-3 xl:h-full xl:grid-cols-[minmax(300px,340px)_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)_auto]">
-      {/* En pantallas anchas el panel cabe en la ventana; si no alcanza, la tarjeta hace scroll por dentro. */}
-      <section className="panel flex min-h-0 flex-col xl:row-span-2">
-        <div className="shrink-0 border-b border-line px-4 py-3">
-          <h1 className="text-[22px] font-semibold leading-tight">{t('gen.title')}</h1>
-          <p className="mt-0.5 text-[14px] text-mute">{t('gen.sub')}</p>
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-          <WithCalendar skeleton={<Skeleton className="h-64" />}>{(d) => <MonthCard data={d} />}</WithCalendar>
-        </div>
-        {/* "Simular fin de MODIS" (main): fijo al pie de la tarjeta, siempre visible para el jurado. */}
-        <div className="shrink-0 border-t border-line px-4 py-3">
-          <WithCalendar skeleton={<Skeleton className="h-10" />}>{(d) => <ModisSwitch k={d.calibration.k} />}</WithCalendar>
-        </div>
-      </section>
+    // La vista llena exactamente el alto disponible (bajo el header h-14): nada se desplaza.
+    //   [ barra lateral 340 px a todo el alto | mapa ]
+    //   [ línea de tiempo h-20, a todo el ancho      ]
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex min-h-0 flex-1">
+        {/* Barra lateral: arriba el estado del mes y las notas (colapsadas); abajo el resumen de la región,
+            para que la columna llegue limpia hasta la línea de tiempo sin huecos. */}
+        <aside className="flex h-full w-[340px] shrink-0 flex-col justify-between gap-2.5 overflow-y-auto border-r border-line/80 bg-sidebar p-3">
+          <div className="flex flex-col gap-2.5">
+            <section className="panel p-3.5">
+              <h1 className="text-lg font-semibold leading-snug">{t('gen.title')}</h1>
+              <p className="mb-3 text-sm text-mute">{t('gen.sub')}</p>
+              <WithCalendar skeleton={<Skeleton className="h-56" />}>{(d) => <MonthCard data={d} />}</WithCalendar>
+            </section>
+            <WithCalendar skeleton={<Skeleton className="h-10" />}>{(d) => <MonthNotes data={d} />}</WithCalendar>
+          </div>
+          <WithCalendar skeleton={<Skeleton className="h-28" />}>{(d) => <RegionSummary data={d} />}</WithCalendar>
+        </aside>
 
-      <div className="flex min-h-[420px] flex-col xl:min-h-0">
-        <MapPanel className="min-h-[420px] flex-1 xl:min-h-0" padRight={calOpen ? DRAWER_W + 10 : 40}>
+      <div className="flex min-w-0 flex-1 flex-col p-3">
+        <MapPanel className="min-h-0 flex-1" padRight={calOpen ? DRAWER_W + 10 : 40}>
           {/* Botón flotante para abrir el calendario; sale con un fundido mientras el panel está abierto. */}
           <AnimatePresence>
             {!calOpen && (
@@ -110,11 +111,48 @@ export function General() {
           </AnimatePresence>
         </MapPanel>
       </div>
+      </div>
 
-      <div className="xl:col-start-2">
-        <WithCalendar skeleton={<Skeleton className="h-20" />}>{(d) => <Timeline data={d} />}</WithCalendar>
+      {/* Línea de tiempo fija abajo, a todo el ancho y siempre completa. */}
+      <div className="h-20 shrink-0 border-t border-line">
+        <WithCalendar skeleton={<Skeleton className="h-full" />}>{(d) => <Timeline data={d} bar />}</WithCalendar>
       </div>
     </div>
+  );
+}
+
+/**
+ * Resumen de la región activa (pie de la barra lateral). Solo datos de la API (`aoi`, `range`,
+ * `latest`) y la cobertura conocida de los sensores (MODIS desde 2000, VIIRS desde 2012).
+ */
+function RegionSummary({ data }: { data: CalendarResponse }) {
+  const { t, lang, aoiName } = useApp();
+  const rows: [string, string][] = [
+    [t('region.area'), `${fmtNum(lang, data.aoi.area_km2)} km²`],
+    [t('region.years'), `${data.range.start_year}–${data.range.end_year}`],
+    [t('region.latest'), `${t(`month.${data.latest.month}`).slice(0, 3)} ${data.latest.year}`],
+    [t('region.country'), t(`country.${data.aoi.country}`)],
+  ];
+  return (
+    <section className="rounded border border-line bg-panel/50 p-3">
+      <p className="kicker">{t('region.title')}</p>
+      <p className="mt-1 truncate text-sm font-semibold">{aoiName}</p>
+      <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+        {rows.map(([k, v]) => (
+          <div key={k}>
+            <dt className="text-mute">{k}</dt>
+            <dd className="font-mono text-ink">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="mt-2.5 border-t border-line pt-2 text-xs">
+        <p className="text-mute">{t('region.coverage')}</p>
+        <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
+          <span><span className="text-ink">MODIS</span> <span className="font-mono text-mute">2000 →</span></span>
+          <span><span className="text-ink">VIIRS</span> <span className="font-mono text-mute">2012 →</span></span>
+        </p>
+      </div>
+    </section>
   );
 }
 
@@ -173,7 +211,7 @@ function CalendarPanel({ data: d, onHide }: { data: CalendarResponse; onHide: ()
           type="button"
           aria-expanded={history}
           onClick={() => setHistory((h) => !h)}
-          className="font-mono text-[11.5px] text-cyan underline decoration-cyan/40 underline-offset-4 hover:decoration-cyan"
+          className="font-mono text-xs text-cyan underline decoration-cyan/40 underline-offset-4 hover:decoration-cyan"
         >
           {history ? `‹ ${t('cal.backYear')}` : `${t('cal.history', span)} ›`}
         </button>

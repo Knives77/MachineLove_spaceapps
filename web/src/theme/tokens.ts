@@ -10,6 +10,7 @@ export const SURFACE = {
   panelHover: '#151e2e',
   panelSelected: '#1a2436',
   drawer: '#0f172a', // panel flotante del calendario (al 90 % + blur)
+  sidebar: '#0b101b', // barra lateral izquierda de General
   line: '#1e293b', // bordes
   line2: '#334155',
 } as const;

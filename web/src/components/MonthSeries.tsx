@@ -97,7 +97,7 @@ export function MonthSeries({ data, month, height = 150 }: { data: CalendarRespo
           </text>
         ))}
       </svg>
-      <div className="relative h-4 font-mono text-[10px] text-mute">
+      <div className="relative h-4 font-mono text-xs text-mute">
         {Array.from({ length: n + 1 }, (_, i) => start_year + i)
           .filter((yr) => yr % 4 === 0)
           .map((yr) => (

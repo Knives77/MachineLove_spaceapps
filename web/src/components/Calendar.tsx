@@ -142,7 +142,7 @@ export function Calendar({
             <span
               key={i}
               role="columnheader"
-              className={`text-center font-mono text-[10px] text-mute ${stickyHeader ? 'sticky top-0 z-20 bg-panel py-1' : ''}`}
+              className={`text-center font-mono text-xs text-mute ${stickyHeader ? 'sticky top-0 z-20 bg-panel py-1' : ''}`}
             >
               {s}
             </span>
@@ -152,7 +152,7 @@ export function Calendar({
           <div key={y} role="row" className="contents">
             <span
               role="rowheader"
-              className={`pr-1 text-right font-mono text-[10.5px] leading-[var(--cell-h)] ${
+              className={`pr-1 text-right font-mono text-xs leading-[var(--cell-h)] ${
                 selected?.year === y ? 'text-cyan' : 'text-mute'
               }`}
             >
@@ -227,7 +227,7 @@ export function Calendar({
                   }}
                   onBlur={() => setHover(null)}
                   onMouseEnter={(e) => showTip(k, e.currentTarget)}
-                  className={`relative flex h-[var(--cell-h)] items-center justify-center rounded-[2px] font-mono text-[10px] font-semibold leading-none ${cls} ${
+                  className={`relative flex h-[var(--cell-h)] items-center justify-center rounded-[2px] font-mono text-xs font-semibold leading-none ${cls} ${
                     isSel ? (levels ? 'sel-glow z-10 border' : 'z-10 ring-2 ring-cyan ring-offset-1 ring-offset-bg') : ''
                   }`}
                   style={style}
@@ -292,7 +292,7 @@ export function Tooltip({
   return (
     <div
       role="tooltip"
-      className="pointer-events-none absolute z-30 w-64 rounded border border-cyan bg-panel px-3 py-2 font-mono text-[11px] shadow-xl shadow-black/60"
+      className="pointer-events-none absolute z-30 w-64 rounded border border-cyan bg-panel px-3 py-2 font-mono text-xs shadow-xl shadow-black/60"
       style={{
         left: Math.min(Math.max(x, 130), Math.max(130, width - 130)),
         top: below ? y + 26 : y - 8,

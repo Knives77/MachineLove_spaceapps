@@ -73,7 +73,7 @@ export function YearPicker({ data }: { data: CalendarResponse }) {
 }
 
 export const NAV_BTN =
-  'flex h-9 w-9 items-center justify-center rounded border border-line text-[18px] leading-none text-mute transition-colors hover:border-cyan hover:text-ink disabled:opacity-30 disabled:hover:border-line disabled:hover:text-mute';
+  'flex h-9 w-9 items-center justify-center rounded border border-line bg-line/60 text-[18px] leading-none text-ink/90 transition-colors hover:border-cyan hover:text-select disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-line disabled:hover:text-ink/90';
 
 /** Color del nivel: barra lateral, puntos de la leyenda y fondo translúcido del badge. */
 export function levelAccent(palette: Palette, status: Status): string {
@@ -122,7 +122,7 @@ export function YearView({ data }: { data: CalendarResponse }) {
         const name = t(`month.${m}`);
         const hasFlags = !!row && row.flags.length > 0;
         const accent = row ? rowAccent(palette, row) : null;
-        const statusText = !row ? '' : isZero(row) ? t('level.zeroShort') : t(`status.${row.status}`);
+        const statusText = !row ? '' : isZero(row) ? t('level.zeroTile') : t(`status.${row.status}`);
         const flagsText = hasFlags ? row!.flags.map((f) => t(`flag.${f}`)).join(' ') : '';
 
         return (
@@ -154,16 +154,16 @@ export function YearView({ data }: { data: CalendarResponse }) {
               />
             )}
             <span className="flex items-start justify-between gap-1">
-              <span className={`text-[13px] font-medium ${isSel ? 'text-ink' : 'text-ink/85'}`}>{name.slice(0, 3)}</span>
+              <span className={`text-sm font-semibold ${isSel ? 'text-ink' : 'text-ink/85'}`}>{name.slice(0, 3)}</span>
               {hasFlags && (
-                <span aria-hidden="true" className="text-[10px] leading-none text-cyan/80">
+                <span aria-hidden="true" className="text-xs leading-none text-cyan/80">
                   ◥
                 </span>
               )}
             </span>
             {row && (
               <span
-                className="self-start whitespace-nowrap rounded-full px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide"
+                className="self-start whitespace-nowrap rounded-full px-1.5 py-px text-[11px] font-semibold uppercase"
                 style={
                   row.status === 'no_data'
                     ? undefined

@@ -17,7 +17,7 @@ const VIIRS_START = 2012; // S-NPP desde 2012
  * con `detailed` muestra las pistas MODIS/VIIRS, ▲ meses extremos y ▪ caídas de sensor
  * (las marcas salen de `status` y `flags`).
  */
-export function Timeline({ data, detailed = false }: { data: CalendarResponse; detailed?: boolean }) {
+export function Timeline({ data, detailed = false, bar = false }: { data: CalendarResponse; detailed?: boolean; /** Franja a todo el ancho y alto fijo (pie de General). */ bar?: boolean }) {
   const { t, lang, palette, selected, setSelected, basis, aoi } = useApp();
   // "Simular fin de MODIS" (basis = viirs_primary): la serie con MODIS se marca punteada en cada año,
   // igual que en las barras anuales de Experto, para ver cuánto cambia.
@@ -97,7 +97,7 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
   const row = byKey.get(ymKey(sel.year, sel.month));
 
   return (
-    <div className="panel flex items-center gap-5 px-4 py-2">
+    <div className={`flex items-center gap-5 px-4 ${bar ? 'h-full bg-panel' : 'panel py-2'}`}>
       <button
         type="button"
         onClick={togglePlay}
@@ -112,18 +112,18 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
         )}
       </button>
       <div className="w-32 shrink-0">
-        <p className="kicker text-[10px]">{t('time.month')}</p>
+        <p className="kicker text-xs">{t('time.month')}</p>
         <p className="font-mono text-sm uppercase">
           {t(`month.${sel.month}`)} {sel.year}
         </p>
-        {row && <p className="font-mono text-[10px] text-mute">{isZero(row) ? t('level.zeroShort') : t(`status.${row.status}`)}</p>}
+        {row && <p className="font-mono text-xs text-mute">{isZero(row) ? t('level.zeroShort') : t(`status.${row.status}`)}</p>}
       </div>
 
       {!detailed && (
         <div className="relative min-w-0 flex-1">
           {/* Totales anuales (years[]) como mini histograma sobre el mismo eje 2000–2026:
               reemplaza el panel "Total por año". Clic en una barra = ese año. */}
-          <div className="relative h-9" aria-hidden="true">
+          <div className={`relative ${bar ? 'h-7' : 'h-9'}`} aria-hidden="true">
             {data.years.map((y) => {
               const left = (toIdx(y.year, 1) / total) * 100;
               const h = Math.max(2, ((y.harmonized ?? 0) / yearMax) * 100);
@@ -182,7 +182,7 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
               className="ml-timeline ml-timeline-compact absolute inset-0 h-6 w-full"
             />
           </div>
-          <div className="mt-0.5 flex justify-between font-mono text-[10px] text-mute">
+          <div className="mt-0.5 flex justify-between font-mono text-xs text-mute">
             <span>{start_year}</span>
             <span className="truncate px-2 font-sans text-dim">
               {t('years.title')} · {t('unit.cellDays')}
@@ -212,7 +212,7 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
         </div>
         <div className="relative h-8">
           <div className="absolute inset-x-0 top-1 flex items-center gap-2">
-            <span className="absolute -top-0.5 left-0 font-mono text-[9px] text-mute" style={{ left: `${pct(toIdx(MODIS_START, 1))}%` }}>
+            <span className="absolute -top-0.5 left-0 font-mono text-xs text-mute" style={{ left: `${pct(toIdx(MODIS_START, 1))}%` }}>
               MODIS · {MODIS_START} →
             </span>
           </div>
@@ -220,7 +220,7 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
           {marks.out.map((i) => (
             <span key={`o${i}`} aria-hidden="true" className="absolute top-3 h-2.5 w-1.5 -translate-x-1/2 bg-bg ring-1 ring-mute" style={{ left: `${pct(i)}%` }} />
           ))}
-          <span className="absolute top-[22px] font-mono text-[9px] text-mute" style={{ left: `${pct(toIdx(VIIRS_START, 1))}%` }}>
+          <span className="absolute top-[22px] font-mono text-xs text-mute" style={{ left: `${pct(toIdx(VIIRS_START, 1))}%` }}>
             VIIRS · {VIIRS_START} →
           </span>
           <div
@@ -241,7 +241,7 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
           }}
           className="ml-timeline absolute inset-x-0 top-3 h-8 w-full"
         />
-        <div className="relative mt-3 h-4 font-mono text-[10px] text-mute">
+        <div className="relative mt-3 h-4 font-mono text-xs text-mute">
           {Array.from({ length: end_year - start_year + 1 }, (_, i) => start_year + i)
             .filter((y) => y % 4 === 0)
             .map((y) => (

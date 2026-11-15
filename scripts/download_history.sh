@@ -12,7 +12,9 @@ list() {
   done
 }
 get() {
-  local s=$1 y=$2 c=$3 o="$D/$c/$s/${s}_${y}_${c}.csv"
+  local s=$1 y=$2 c=$3
+  # En otro `local`: en uno solo, bash expande la ruta antes de asignar s, y, c (quedaba "///__.csv").
+  local o="$D/$c/$s/${s}_${y}_${c}.csv"
   mkdir -p "$(dirname "$o")"
   [ -s "$o" ] && { echo "SKIP $o"; return; }
   if curl -sf -m 900 --retry 3 -o "$o.part" "$B/$s/$y/${s}_${y}_${c}.csv"; then

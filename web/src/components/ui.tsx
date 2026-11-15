@@ -59,9 +59,9 @@ export function Segmented<T extends string>({
             role="radio"
             aria-checked={on}
             onClick={() => onChange(o.value)}
-            className={`relative rounded-[3px] font-display font-medium uppercase tracking-wider transition-colors ${
+            className={`relative rounded border font-display font-medium uppercase tracking-wider transition-colors ${
               size === 'sm' ? 'px-2 py-1 text-[11px]' : 'px-3 py-1.5 text-xs'
-            } ${on ? 'text-select' : 'text-mute hover:text-ink'}`}
+            } ${on ? 'border-cyan bg-cyan-deep text-select' : 'border-transparent text-mute hover:text-ink'}`}
           >
             {/* El marcador se desliza de una opción a la otra. */}
             {on && (
