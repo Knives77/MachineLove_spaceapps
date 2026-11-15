@@ -14,8 +14,12 @@ import { useIconAnim, type IconAnimHandle } from './icons/useIconAnim';
 const TABS: Tab[] = ['general', 'learn', 'edu', 'expert'];
 const PALETTES: Palette[] = ['inferno', 'cividis', 'contrast'];
 
-/** Barra superior mínima: nombre a la izquierda y 3 botones de 44 × 44 a la derecha. */
-export function TopBar() {
+/**
+ * Barra superior mínima: nombre a la izquierda y 3 botones de 44 × 44 a la derecha.
+ * `floating` (consola de Experto): solo los 3 botones, como control flotante sobre el mapa.
+ */
+export function TopBar({ floating = false, lead }: { floating?: boolean; /** Botones extra al inicio de la franja flotante. */ lead?: ReactNode }) {
+  const btn = floating ? ICON_BTN_SM : ICON_BTN;
   const { t, tab, setTab, lang, setLang, palette, setPalette, sound, setSound } = useApp();
   const langIcon = useIconAnim();
   const viewIcon = useIconAnim();
@@ -32,8 +36,8 @@ export function TopBar() {
   }, [tab]);
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-4 border-b border-line bg-bg/95 px-4">
-      <div className="mr-2 min-w-[170px]">
+    <header className={floating ? 'hud flex items-center p-1' : 'flex h-14 shrink-0 items-center gap-4 border-b border-line bg-bg/95 px-4'}>
+      {!floating && <div className="mr-2 min-w-[170px]">
         <p className="text-[15px] font-semibold tracking-[0.18em] uppercase">{t('app.name')}</p>
         <p className="kicker text-xs">
           {t('app.subtitle')}
@@ -48,9 +52,10 @@ export function TopBar() {
             </span>
           )}
         </p>
-      </div>
+      </div>}
 
-      <div className="ml-auto flex items-center gap-2">
+      <div className={`ml-auto flex items-center ${floating ? 'gap-0.5' : 'gap-2'}`}>
+        {lead}
         {/* Idioma: un clic cambia al otro idioma. */}
         <button
           type="button"
@@ -58,13 +63,13 @@ export function TopBar() {
           aria-label={t('top.langSwitch')}
           title={t('top.langSwitch')}
           {...langIcon.trigger}
-          className={`${ICON_BTN} gap-1 px-2 font-mono text-[12px] font-semibold`}
+          className={`${btn} gap-1 px-2 font-mono text-[12px] font-semibold`}
         >
           <LanguagesIcon ref={langIcon.ref} size={17} aria-hidden="true" className="flex" />
           <span aria-hidden="true">{lang.toUpperCase()}</span>
         </button>
 
-        <IconMenu id="a11y-menu" label={t('top.a11y')} icon={<EyeIcon />}>
+        <IconMenu id="a11y-menu" compact={floating} label={t('top.a11y')} icon={<EyeIcon />}>
           {(item) => (
             <>
               <MenuHeading>{t('a11y.colors')}</MenuHeading>
@@ -105,13 +110,14 @@ export function TopBar() {
 
         <IconMenu
           id="view-menu"
+          compact={floating}
           label={`${t('top.viewLabel')}: ${t(`tab.${tab}`)}`}
           icon={<ViewIcon key={tab} ref={viewIcon.ref} tab={tab} size={17} />}
           iconAnim={viewIcon}
           accent={tab !== 'general'}
           text={
             <span className="flex items-center gap-1.5 text-[12.5px]">
-              <span className="text-mute">{t('top.viewLabel')}:</span>
+              {!floating && <span className="text-mute">{t('top.viewLabel')}:</span>}
               <span className="font-semibold text-ink">{t(`tab.${tab}`)}</span>
             </span>
           }
@@ -137,6 +143,9 @@ export function TopBar() {
   );
 }
 
+const ICON_BTN_SM =
+  'flex h-9 min-w-9 items-center justify-center rounded-[3px] border border-transparent text-mute transition-colors hover:border-line-2 hover:text-ink';
+
 const ICON_BTN =
   'flex h-11 min-w-11 items-center justify-center rounded border border-line bg-panel text-mute transition-colors hover:text-ink';
 
@@ -158,9 +167,12 @@ function IconMenu({
   icon,
   text,
   accent = false,
+  compact = false,
   iconAnim,
   children,
 }: {
+  /** Franja flotante: botón cuadrado de 36 px, sin píldora. */
+  compact?: boolean;
   id: string;
   label: string;
   icon: ReactNode;
@@ -217,7 +229,11 @@ function IconMenu({
           }
         }}
         className={
-          text
+          compact
+            ? `relative flex h-9 min-w-9 items-center justify-center gap-2 rounded-[3px] border font-display transition-colors ${text ? 'px-2.5 text-ink' : 'text-mute hover:text-ink'} ${
+                open ? 'border-cyan bg-cyan-deep' : 'border-transparent hover:border-line-2'
+              }`
+            : text
             ? `relative flex h-11 items-center gap-2 rounded-full border bg-line/80 pl-3.5 pr-4 text-ink transition-colors hover:border-line-2 ${
                 open || accent ? 'border-cyan/70' : 'border-line-2'
               }`
@@ -226,7 +242,12 @@ function IconMenu({
       >
         {icon}
         {text}
-        {text && accent && (
+        {compact && text && (
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={`text-mute transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
+            <path d="M2 3.5 5 6.5 8 3.5" />
+          </svg>
+        )}
+        {text && accent && !compact && (
           <span aria-hidden="true" className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-bg bg-cyan" />
         )}
       </button>
@@ -237,7 +258,7 @@ function IconMenu({
           id={id}
           role="menu"
           aria-label={label}
-          className="absolute right-0 top-full z-[1000] mt-2 min-w-[260px] rounded border border-line bg-panel p-1 shadow-xl shadow-black/50"
+          className="pop absolute right-0 top-full z-[1000] mt-2 min-w-[260px] rounded border border-line-2 bg-panel p-1 shadow-xl shadow-black/60"
           onKeyDown={(e) => {
             const all = items();
             const i = all.findIndex((el) => el === document.activeElement);

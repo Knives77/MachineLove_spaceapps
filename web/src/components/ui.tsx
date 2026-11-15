@@ -1,4 +1,5 @@
-import type { ReactNode } from 'react';
+import { motion } from 'motion/react';
+import { useId, type ReactNode } from 'react';
 import { errorText, useApp } from '../state';
 import { RefreshCWIcon } from './icons/refresh-cw';
 import { useIconAnim } from './icons/useIconAnim';
@@ -46,6 +47,7 @@ export function Segmented<T extends string>({
   onChange: (v: T) => void;
   size?: 'sm' | 'md';
 }) {
+  const group = useId();
   return (
     <div role="radiogroup" aria-label={label} className="flex items-center gap-1 rounded border border-line bg-panel p-1">
       {options.map((o) => {
@@ -57,11 +59,20 @@ export function Segmented<T extends string>({
             role="radio"
             aria-checked={on}
             onClick={() => onChange(o.value)}
-            className={`rounded border font-mono uppercase tracking-wider transition-colors ${
-              size === 'sm' ? 'px-2 py-1 text-xs' : 'px-3 py-1.5 text-xs'
-            } ${on ? 'border-cyan bg-cyan-deep text-ink' : 'border-transparent text-mute hover:text-ink'}`}
+            className={`relative rounded border font-display font-medium uppercase tracking-wider transition-colors ${
+              size === 'sm' ? 'px-2 py-1 text-[11px]' : 'px-3 py-1.5 text-xs'
+            } ${on ? 'border-cyan bg-cyan-deep text-select' : 'border-transparent text-mute hover:text-ink'}`}
           >
-            {o.label}
+            {/* El marcador se desliza de una opción a la otra. */}
+            {on && (
+              <motion.span
+                layoutId={`seg-${group}`}
+                aria-hidden="true"
+                className="absolute inset-0 rounded-[3px] border border-cyan bg-cyan-deep"
+                transition={{ type: 'spring', stiffness: 520, damping: 40 }}
+              />
+            )}
+            <span className="relative">{o.label}</span>
           </button>
         );
       })}
@@ -152,5 +163,23 @@ export function StatusIcon({ status, color, size = 14 }: { status: string; color
     <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
       <circle cx="8" cy="8" r="7" fill={color} />
     </svg>
+  );
+}
+
+/**
+ * Texto de una línea que "se enciende" letra por letra cada vez que cambia (CSS, sin bucles).
+ * El lector de pantalla recibe el texto completo; las letras sueltas van ocultas.
+ */
+export function Reveal({ text, className = '' }: { text: string; className?: string }) {
+  return (
+    <span aria-label={text} className={`whitespace-nowrap ${className}`}>
+      <span key={text} aria-hidden="true">
+        {[...text].map((ch, i) => (
+          <span key={i} className="char" style={{ ['--i' as string]: i }}>
+            {ch === ' ' ? '\u00a0' : ch}
+          </span>
+        ))}
+      </span>
+    </span>
   );
 }

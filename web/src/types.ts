@@ -93,6 +93,18 @@ export interface HotspotsRequest {
   end_date: string;
 }
 
+/** POST /hotspots (api.md): un punto por detección dentro del área. */
+export interface HotspotFeature {
+  type: 'Feature';
+  geometry: { type: 'Point'; coordinates: number[] }; // [lon, lat]
+  properties: { acq_date: string; satellite: string; family: string; frp: number; is_vegetation_fire: boolean };
+}
+
+export interface HotspotCollection {
+  type: 'FeatureCollection';
+  features: HotspotFeature[];
+}
+
 export interface PresetFeature {
   type: 'Feature';
   id: string;

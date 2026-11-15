@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import json
 import os
+import socket
+import time
 from datetime import date
 from typing import Iterator
 
@@ -32,18 +34,75 @@ from backend.models import (
     PresetProperties,
 )
 
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    "postgresql://firms:firms_local@127.0.0.1:5432/firms",
-)
+HOST_DATABASE_URL = "postgresql://firms:firms_local@127.0.0.1:5432/firms"
+TUNNEL_DATABASE_URL = "postgresql://firms:firms_local@127.0.0.1:15432/firms"
+DATABASE_URL = os.environ.get("DATABASE_URL", HOST_DATABASE_URL)
+_ACTIVE_DEFAULT_DSN: str | None = None
 
 MAX_HOTSPOTS_ROWS = 2_000_000
 MAX_HOTSPOTS_GEOJSON_ROWS = 20_000
 MAX_HOTSPOTS_GEOJSON_DAYS = 62
 
+COUNTRY_METADATA_TTL_SECONDS = 300.0
+_COUNTRY_METADATA_CACHE: dict[
+    tuple[str, type],
+    tuple[float, set[MonthKey], list[OutageInterval], float | None, date],
+] = {}
+
+
+def _is_local_port_open(port: int) -> bool:
+    try:
+        with socket.create_connection(("127.0.0.1", port), timeout=0.05):
+            return True
+    except OSError:
+        return False
+
+
+def resolve_database_url(dsn: str | None = None) -> str:
+    """Devuelve DATABASE_URL activa (explícita, descubierta en 5432 anfitrión o 15432 túnel)."""
+    if dsn:
+        return dsn
+    env_url = os.environ.get("DATABASE_URL")
+    if env_url:
+        return env_url
+    if _ACTIVE_DEFAULT_DSN is not None:
+        return _ACTIVE_DEFAULT_DSN
+    if _is_local_port_open(5432):
+        return HOST_DATABASE_URL
+    if _is_local_port_open(15432):
+        return TUNNEL_DATABASE_URL
+    return HOST_DATABASE_URL
+
 
 def get_connection(dsn: str | None = None) -> psycopg.Connection:
-    return psycopg.connect(dsn or os.environ.get("DATABASE_URL", DATABASE_URL))
+    """Abre conexión a PostgreSQL; sin DATABASE_URL explícita prueba 5432 (host) y 15432 (túnel)."""
+    global _ACTIVE_DEFAULT_DSN
+    env_url = os.environ.get("DATABASE_URL")
+    if dsn or env_url:
+        target = dsn or env_url or HOST_DATABASE_URL
+        return psycopg.connect(target)
+
+    candidates: list[str] = []
+    if _ACTIVE_DEFAULT_DSN is not None:
+        candidates.append(_ACTIVE_DEFAULT_DSN)
+    for url, port in ((HOST_DATABASE_URL, 5432), (TUNNEL_DATABASE_URL, 15432)):
+        if url not in candidates and _is_local_port_open(port):
+            candidates.append(url)
+    for url in (HOST_DATABASE_URL, TUNNEL_DATABASE_URL):
+        if url not in candidates:
+            candidates.append(url)
+
+    last_exc: Exception | None = None
+    for candidate in candidates:
+        try:
+            conn = psycopg.connect(candidate, connect_timeout=2)
+            _ACTIVE_DEFAULT_DSN = candidate
+            return conn
+        except psycopg.OperationalError as exc:
+            last_exc = exc
+            continue
+    assert last_exc is not None
+    raise last_exc
 
 
 def fetch_data_through(conn: psycopg.Connection) -> str:
@@ -54,7 +113,7 @@ def fetch_data_through(conn: psycopg.Connection) -> str:
             SELECT d.acq_date
             FROM cell_day d
             JOIN cell c USING (cy, cx)
-            WHERE c.country = 'MX'
+            WHERE c.country = 'MX' AND d.cy > 0
             ORDER BY d.acq_date DESC
             LIMIT 1
             """
@@ -252,21 +311,31 @@ def fetch_calendar_inputs(
 ]:
     """Ejecuta la consulta central de /calendar (2000..2026) y metadatos de calibración/caídas."""
     counts: dict[MonthKey, MonthlyCounts] = {}
+    meta_key = (resolved_aoi.country, type(conn))
+    now = time.monotonic()
+    cached_meta = _COUNTRY_METADATA_CACHE.get(meta_key)
+
     with conn.cursor() as cur:
-        # 1. Meses con datos NRT en México (usando índice detection_date)
-        cur.execute(
-            """
-            SELECT DISTINCT
-                extract(year FROM acq_date)::int,
-                extract(month FROM acq_date)::int
-            FROM detection
-            WHERE acq_date >= '2026-01-01'
-              AND country = %(country)s
-              AND source = 'nrt'
-            """,
-            {"country": resolved_aoi.country},
-        )
-        nrt_months: set[MonthKey] = {(r[0], r[1]) for r in cur.fetchall()}
+        if (
+            cached_meta is not None
+            and (now - cached_meta[0]) < COUNTRY_METADATA_TTL_SECONDS
+        ):
+            _, nrt_months, outages, country_k, data_through = cached_meta
+        else:
+            # 1. Meses con datos NRT en México (usando índice detection_date)
+            cur.execute(
+                """
+                SELECT DISTINCT
+                    extract(year FROM acq_date)::int,
+                    extract(month FROM acq_date)::int
+                FROM detection
+                WHERE acq_date >= '2026-01-01'
+                  AND country = %(country)s
+                  AND source = 'nrt'
+                """,
+                {"country": resolved_aoi.country},
+            )
+            nrt_months = {(r[0], r[1]) for r in cur.fetchall()}
 
         # 2. Consulta central de /calendar sobre cell_day (siempre 2000-01-01 a 2027-01-01, filtrando cell.country = 'MX')
         cur.execute(
@@ -309,52 +378,67 @@ def fetch_calendar_inputs(
             if ym not in counts:
                 counts[ym] = MonthlyCounts(has_nrt=True)
 
-        # 3. Caídas de sensor del país
-        cur.execute(
-            """
-            SELECT satellite, trim(country), start_date, end_date, origin
-            FROM sensor_outage
-            WHERE country = %(country)s
-            ORDER BY start_date
-            """,
-            {"country": resolved_aoi.country},
-        )
-        outages = [
-            OutageInterval(
-                satellite=r[0],
-                country=r[1],
-                start_date=r[2],
-                end_date=r[3],
-                origin=r[4],
+        if (
+            cached_meta is None
+            or (now - cached_meta[0]) >= COUNTRY_METADATA_TTL_SECONDS
+        ):
+            # 3. Caídas de sensor del país
+            cur.execute(
+                """
+                SELECT satellite, trim(country), start_date, end_date, origin
+                FROM sensor_outage
+                WHERE country = %(country)s
+                ORDER BY start_date
+                """,
+                {"country": resolved_aoi.country},
             )
-            for r in cur.fetchall()
-        ]
+            outages = [
+                OutageInterval(
+                    satellite=r[0],
+                    country=r[1],
+                    start_date=r[2],
+                    end_date=r[3],
+                    origin=r[4],
+                )
+                for r in cur.fetchall()
+            ]
 
-        # 4. Factor k de respaldo por país
-        cur.execute(
-            "SELECT k FROM calibration_country WHERE country = %(country)s",
-            {"country": resolved_aoi.country},
-        )
-        cal_row = cur.fetchone()
-        country_k = float(cal_row[0]) if cal_row and cal_row[0] is not None else None
+            # 4. Factor k de respaldo por país
+            cur.execute(
+                "SELECT k FROM calibration_country WHERE country = %(country)s",
+                {"country": resolved_aoi.country},
+            )
+            cal_row = cur.fetchone()
+            country_k = (
+                float(cal_row[0])
+                if cal_row and cal_row[0] is not None
+                else None
+            )
 
-        # 5. Fecha tope de datos para México (MVP)
-        cur.execute(
-            """
-            SELECT d.acq_date
-            FROM cell_day d
-            JOIN cell c USING (cy, cx)
-            WHERE c.country = 'MX'
-            ORDER BY d.acq_date DESC
-            LIMIT 1
-            """,
-        )
-        max_row = cur.fetchone()
-        data_through = (
-            max_row[0]
-            if max_row and max_row[0] is not None
-            else date(2026, 11, 1)
-        )
+            # 5. Fecha tope de datos para México (MVP)
+            cur.execute(
+                """
+                SELECT d.acq_date
+                FROM cell_day d
+                JOIN cell c USING (cy, cx)
+                WHERE c.country = 'MX' AND d.cy > 0
+                ORDER BY d.acq_date DESC
+                LIMIT 1
+                """,
+            )
+            max_row = cur.fetchone()
+            data_through = (
+                max_row[0]
+                if max_row and max_row[0] is not None
+                else date(2026, 11, 1)
+            )
+            _COUNTRY_METADATA_CACHE[meta_key] = (
+                now,
+                nrt_months,
+                outages,
+                country_k,
+                data_through,
+            )
 
     return counts, outages, country_k, data_through
 
@@ -408,7 +492,7 @@ def check_hotspots_limit(
 
 
 def stream_hotspots_csv(
-    dsn: str,
+    dsn: str | None,
     resolved_aoi: ResolvedAoi,
     start_date: date,
     end_date: date,
@@ -416,7 +500,7 @@ def stream_hotspots_csv(
     """Generador streaming que consulta detection con un cursor de servidor."""
     yield HOTSPOTS_CSV_HEADER
 
-    with psycopg.connect(dsn) as conn:
+    with get_connection(dsn) as conn:
         with conn.cursor(name="hotspots_stream_cursor") as cur:
             cur.itersize = 2000
             cur.execute(

@@ -6,7 +6,7 @@ import type { CalendarResponse } from '../types';
 import { SURFACE, UI } from '../theme/tokens';
 
 /** Totales anuales de `years[]`, con el mismo interruptor crudo/armonizado. */
-export function YearBars({ data, height = 120 }: { data: CalendarResponse; height?: number }) {
+export function YearBars({ data, height = 120, axis = true }: { data: CalendarResponse; height?: number; /** Años bajo las barras (se omite si otra pieza ya los rotula). */ axis?: boolean }) {
   const { t, lang, mode, palette, selected, setSelected, basis, aoi } = useApp();
   const { start_year, end_year } = data.range;
   const n = end_year - start_year + 1;
@@ -87,7 +87,7 @@ export function YearBars({ data, height = 120 }: { data: CalendarResponse; heigh
                   x2={i * bw + bw * 0.92}
                   y1={refY}
                   y2={refY}
-                  stroke="#f8fafc"
+                  stroke={UI.select}
                   strokeWidth={2}
                   strokeDasharray="4 3"
                   vectorEffect="non-scaling-stroke"
@@ -97,7 +97,8 @@ export function YearBars({ data, height = 120 }: { data: CalendarResponse; heigh
           );
         })}
       </svg>
-      <div className="relative h-4 font-mono text-xs text-mute">
+      {axis && (
+      <div className="relative h-4 font-mono text-[10px] text-mute">
         {Array.from({ length: n }, (_, i) => start_year + i)
           .filter((y) => y % 4 === 0)
           .map((y) => (
@@ -106,6 +107,7 @@ export function YearBars({ data, height = 120 }: { data: CalendarResponse; heigh
             </span>
           ))}
       </div>
+      )}
     </figure>
   );
 }

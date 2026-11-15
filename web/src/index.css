@@ -22,7 +22,8 @@
   --color-zero: #161c25;
   --color-warn: #f5b84a;
   --font-sans: 'Inter Variable', 'Inter', system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+  --font-display: 'Space Grotesk Variable', 'Inter Variable', system-ui, sans-serif;
 }
 
 @layer base {
@@ -41,6 +42,10 @@
     outline: 2px solid var(--color-cyan);
     outline-offset: 2px;
   }
+  /* Cifras tabulares en todo lo monoespaciado: los números no bailan al animarse. */
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
   button {
     cursor: pointer;
   }
@@ -55,6 +60,102 @@
     border: 1px solid var(--color-line);
     border-radius: 4px;
   }
+  /* Tarjeta técnica: borde fino con acentos de 7 px en las 4 esquinas. */
+  .bracket {
+    --c: var(--color-line-2);
+    border: 1px solid var(--color-line);
+    border-radius: 2px;
+    background:
+      linear-gradient(var(--c), var(--c)) top left / 7px 1px no-repeat,
+      linear-gradient(var(--c), var(--c)) top left / 1px 7px no-repeat,
+      linear-gradient(var(--c), var(--c)) top right / 7px 1px no-repeat,
+      linear-gradient(var(--c), var(--c)) top right / 1px 7px no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom left / 7px 1px no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom left / 1px 7px no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom right / 7px 1px no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom right / 1px 7px no-repeat,
+      color-mix(in srgb, var(--color-panel) 60%, transparent);
+  }
+  .bracket-on {
+    --c: var(--color-cyan);
+  }
+  /* Controles flotantes sobre el mapa (barra de herramientas, píldoras). */
+  .hud {
+    position: relative;
+    border: 1px solid var(--color-line-2);
+    box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.8);
+    border-radius: 4px;
+    /* Sin desenfoque de fondo: sobre un lienzo WebGL obliga a recomponer el panel en cada cuadro del mapa. */
+    background: color-mix(in srgb, var(--color-drawer) 96%, transparent);
+  }
+  .tool {
+    display: flex;
+    min-width: 3.4rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    border-radius: 3px;
+    border: 1px solid transparent;
+    padding: 0.3rem 0.45rem;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-mute);
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .tool svg {
+    transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .tool:hover svg {
+    transform: translateY(-2px) scale(1.08);
+  }
+  .tool:active {
+    transform: scale(0.94);
+  }
+  .tool:hover {
+    color: var(--color-ink);
+    border-color: var(--color-line-2);
+  }
+  .tool[aria-pressed='true'] {
+    color: var(--color-select);
+    border-color: var(--color-cyan);
+    background: var(--color-cyan-deep);
+    box-shadow: 0 0 10px -2px color-mix(in srgb, var(--color-cyan) 60%, transparent);
+  }
+  /* Mosaico del calendario: cuadrado redondeado con separación (se agranda al pasar el cursor). */
+  .tile {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 3px;
+    transition: transform 0.12s, box-shadow 0.12s;
+    /* Entrada: se encienden por columnas (año), de 2000 a 2026. */
+    animation: tile-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: calc(var(--c, 0) * 13ms);
+  }
+  /* Letras que se encienden una por una (componente Reveal). */
+  .char {
+    display: inline-block;
+    animation: char-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 16ms);
+  }
+  /* Menús flotantes. */
+  .pop {
+    transform-origin: top right;
+    animation: pop-in 0.16s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+  /* Laptop baja (1366 × 657): mosaicos un poco más bajos para que quepan los 12 meses. */
+  @media (max-height: 720px) {
+    .tile {
+      aspect-ratio: 5 / 4;
+    }
+  }
+  .tile:hover,
+  .tile:focus-visible {
+    transform: scale(1.3);
+    z-index: 5;
+    box-shadow: 0 0 0 1.5px var(--color-select), 0 0 8px 0 color-mix(in srgb, var(--color-cyan) 70%, transparent);
+  }
   .kicker {
     font-family: var(--font-mono);
     font-size: 12px;
@@ -63,22 +164,28 @@
     color: var(--color-mute);
   }
   .heading {
+    font-family: var(--font-display);
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.1em;
     text-transform: uppercase;
   }
   .btn {
+    font-family: var(--font-display);
     border: 1px solid var(--color-line-2);
     border-radius: 4px;
     padding: 0.45rem 0.9rem;
     font-size: 13px;
     color: var(--color-ink);
     background: transparent;
-    transition: background 0.15s, border-color 0.15s;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+  }
+  .btn:active:not(:disabled) {
+    transform: scale(0.97);
   }
   .btn:hover:not(:disabled) {
     border-color: var(--color-cyan);
+    box-shadow: 0 0 12px -4px var(--color-cyan);
   }
   /* Estado activo: blanco con resplandor cian, reservado para la interacción. */
   .btn-on {
@@ -116,6 +223,26 @@
   }
 }
 
+/* Solo opacidad y transformación: las anima el compositor, sin repintar. */
+@keyframes tile-in {
+  from {
+    opacity: 0;
+    transform: scale(0.35);
+  }
+}
+@keyframes char-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.4em);
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+}
+
 @keyframes shimmer {
   from {
     background-position: 200% 0;
@@ -126,7 +253,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .skeleton {
+  .skeleton,
+  .tile,
+  .char,
+  .pop {
     animation: none;
   }
 }

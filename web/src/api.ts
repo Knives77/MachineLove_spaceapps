@@ -2,18 +2,11 @@
 // VITE_API_URL definido → llama a la API. Vacío → devuelve los mocks de src/mocks/.
 // Ningún componente hace fetch directo.
 import { areaKm2, centroid } from './lib/geo';
-import { buildDemo } from './mocks/demoCalendar';
-import presetsMock from './mocks/presets.response.json';
-import demoSierra from './mocks/calendar.demo.qro-sierra-gorda.json';
-import demoBajio from './mocks/calendar.demo.qro-bajio.json';
-import demoRecuadro from './mocks/calendar.demo.qro-recuadro.json';
-import viirsSierra from './mocks/calendar.viirs.qro-sierra-gorda.json';
-import viirsBajio from './mocks/calendar.viirs.qro-bajio.json';
-import viirsRecuadro from './mocks/calendar.viirs.qro-recuadro.json';
 import {
   ApiError,
   type CalendarRequest,
   type CalendarResponse,
+  type HotspotCollection,
   type HotspotsRequest,
   type Polygon,
   type PresetCollection,
@@ -23,18 +16,9 @@ const BASE = ((import.meta.env.VITE_API_URL as string | undefined) ?? '').replac
 
 export const usingMocks = BASE === '';
 
-const DEMO: Record<string, unknown> = {
-  'qro-sierra-gorda': demoSierra,
-  'qro-bajio': demoBajio,
-  'qro-recuadro': demoRecuadro,
-};
-
-// Mismos presets con `basis = viirs_primary` ("Simular fin de MODIS"), también copiados de la API real.
-const DEMO_VIIRS: Record<string, unknown> = {
-  'qro-sierra-gorda': viirsSierra,
-  'qro-bajio': viirsBajio,
-  'qro-recuadro': viirsRecuadro,
-};
+/** Mocks bajo demanda: ver src/mocks/index.ts. */
+const mocks = () => import('./mocks');
+type BuildDemo = Awaited<ReturnType<typeof mocks>>['buildDemo'];
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -70,7 +54,7 @@ const postJson = (path: string, body: unknown) =>
 export async function getPresets(): Promise<PresetCollection> {
   if (usingMocks) {
     await wait(150);
-    return presetsMock as PresetCollection;
+    return (await mocks()).PRESETS as PresetCollection;
   }
   return (await request('/presets')).json();
 }
@@ -85,7 +69,7 @@ const COVERAGE = {
  * (mismos errores del contrato) y varía con la ubicación y el tamaño del área; los valores
  * son INVENTADOS para ver reaccionar la interfaz.
  */
-function demoForGeometry(geometry: Polygon): CalendarResponse {
+function demoForGeometry(geometry: Polygon, buildDemo: BuildDemo): CalendarResponse {
   const area = areaKm2(geometry);
   if (area > 200_000) throw new ApiError('aoi_too_large');
   const [lon, lat] = centroid(geometry);
@@ -121,12 +105,22 @@ function demoForGeometry(geometry: Polygon): CalendarResponse {
 export async function getCalendar(req: CalendarRequest): Promise<CalendarResponse> {
   if (usingMocks) {
     await wait(350);
-    if ('geometry' in req.aoi) return demoForGeometry(req.aoi.geometry);
-    const demo = (req.basis === 'viirs_primary' ? DEMO_VIIRS : DEMO)[req.aoi.preset_id];
+    const m = await mocks();
+    if ('geometry' in req.aoi) return demoForGeometry(req.aoi.geometry, m.buildDemo);
+    const demo = (req.basis === 'viirs_primary' ? m.DEMO_VIIRS : m.DEMO)[req.aoi.preset_id];
     if (!demo) throw new ApiError('unknown_preset');
     return demo as CalendarResponse;
   }
   return (await postJson('/calendar', req)).json();
+}
+
+/**
+ * POST /hotspots → puntos del área en un rango de hasta 62 días (máx. 20,000; si se excede, `aoi_too_large`).
+ * Con mocks no hay puntos de ejemplo: devuelve la colección vacía.
+ */
+export async function getHotspots(req: HotspotsRequest): Promise<HotspotCollection> {
+  if (usingMocks) return { type: 'FeatureCollection', features: [] };
+  return (await postJson('/hotspots', req)).json();
 }
 
 function saveBlob(blob: Blob, filename: string) {
