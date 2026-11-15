@@ -17,7 +17,7 @@ import { CustomAreaPanel } from './CustomAreaPanel';
 import { useFireLayer } from './fire';
 import { bboxOf, easeOutCubic, reducedMotion, regionsData } from './geometry';
 import { addMapLayers, CAM_2D, CAM_3D, STYLE_URL } from './layers';
-import { attachHotspotPopup, hotspotAt } from './hotspotPopup';
+import { attachHotspotPopup } from './hotspotPopup';
 import { MapToolbar } from './Toolbar';
 import { useDrawTool } from './useDrawTool';
 
@@ -121,7 +121,6 @@ export function MapPanel({
       // Clic en una región de ejemplo = elegirla (salvo mientras se dibuja).
       map.on('click', 'regions-fill', (e: MapLayerMouseEvent) => {
         if (drawing.current) return;
-        if (hotspotAt(map, e.point)) return; // el clic era para la ficha del punto
         const id = e.features?.[0]?.properties?.id as string | undefined;
         if (id && id !== '__drawn') setAoiRef.current({ preset_id: id });
       });
@@ -131,7 +130,7 @@ export function MapPanel({
       map.on('mouseleave', 'regions-fill', () => {
         if (!drawing.current) map.getCanvas().style.cursor = '';
       });
-      // Ficha de un punto de calor al tocarlo (hotspotPopup.ts).
+      // Ficha de un punto de calor al pasar el cursor (hotspotPopup.ts).
       hotPopup.current = attachHotspotPopup(map, () => textRef.current, () => drawing.current);
       setReady(true);
     });

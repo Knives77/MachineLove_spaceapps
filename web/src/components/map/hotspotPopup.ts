@@ -1,5 +1,5 @@
-// Ficha de un punto de calor: al tocar un punto del mapa se ven su fecha, satélite, potencia (FRP) y tipo,
-// tal como los devuelve POST /hotspots (api.md). Aquí no se calcula nada: solo se da formato.
+// Ficha de un punto de calor: al pasar el cursor sobre un punto del mapa se ven su fecha, satélite,
+// potencia (FRP) y tipo, tal como los devuelve POST /hotspots (api.md). Aquí no se calcula nada: solo se da formato.
 import { Popup, type MapLibreMap, type MapMouseEvent, type MapGeoJSONFeature, type PointLike, type PositionAnchor } from 'maplibre-gl';
 import type { Lang } from '../../types';
 
@@ -15,7 +15,7 @@ type Translate = (key: string, vars?: Record<string, string | number>) => string
 type HotProps = { veg?: boolean; frp?: number; fam?: string; date?: string; sat?: string; lon?: number; lat?: number };
 
 /** El punto de calor bajo el cursor (el más cercano dentro de la holgura), o null. */
-export function hotspotAt(map: MapLibreMap, point: { x: number; y: number }): MapGeoJSONFeature | null {
+function hotspotAt(map: MapLibreMap, point: { x: number; y: number }): MapGeoJSONFeature | null {
   const layers = HOT_LAYERS.filter((id) => map.getLayer(id));
   if (!layers.length) return null;
   const box: [PointLike, PointLike] = [
@@ -70,54 +70,76 @@ function card(p: HotProps, t: Translate, lang: Lang): HTMLElement {
   return box;
 }
 
+function keyOf(p: HotProps): string {
+  return `${p.lon}|${p.lat}|${p.date ?? ''}|${p.sat ?? ''}|${p.frp ?? ''}`;
+}
+
 /**
  * Registra la ficha en el mapa ya cargado. `text` da el idioma vigente; `blocked` la desactiva mientras se dibuja.
  * Devuelve `close` para cerrarla cuando cambian los datos (otro mes, otra área).
  */
 export function attachHotspotPopup(map: MapLibreMap, text: () => { t: Translate; lang: Lang }, blocked: () => boolean) {
   let popup: Popup | null = null;
+  let activeKey: string | null = null;
   let hovering = false;
-
-  map.on('click', (e: MapMouseEvent) => {
-    if (blocked()) return;
-    const f = hotspotAt(map, e.point);
-    if (!f) return;
-    const p = f.properties as HotProps;
-    const { t, lang } = text();
-    // La ficha se abre hacia el centro de lo que se ve en pantalla: lejos de los paneles de los bordes.
-    const box = map.getCanvas().getBoundingClientRect();
-    const at = map.project([p.lon as number, p.lat as number]);
-    const x = box.left + at.x;
-    const y = box.top + at.y;
-    const anchor = `${y > window.innerHeight / 2 ? 'bottom' : 'top'}-${x > window.innerWidth / 2 ? 'right' : 'left'}` as PositionAnchor;
-    popup?.remove();
-    // Sin enfocar el botón de cerrar al abrir: el foco desplazaba la página en ventanas angostas.
-    popup = new Popup({ closeButton: true, closeOnClick: true, focusAfterOpen: false, offset: 10, maxWidth: '300px', className: 'hot-pop', anchor })
-      .setLngLat([p.lon as number, p.lat as number])
-      .setDOMContent(card(p, t, lang))
-      .addTo(map);
-  });
-  // Cursor de mano sobre un punto (como mucho una consulta por cuadro).
   let raf = 0;
+
+  const close = () => {
+    if (raf) {
+      cancelAnimationFrame(raf);
+      raf = 0;
+    }
+    popup?.remove();
+    popup = null;
+    activeKey = null;
+  };
+
+  // Ficha al pasar el cursor sobre un punto + cursor de mano (como mucho una consulta por cuadro).
   map.on('mousemove', (e: MapMouseEvent) => {
-    if (raf || blocked()) return;
+    if (raf) return;
     const pt = e.point;
     raf = requestAnimationFrame(() => {
       raf = 0;
-      const over = !!hotspotAt(map, pt);
+      if (blocked()) {
+        close();
+        return;
+      }
+      const f = hotspotAt(map, pt);
+      const over = !!f;
       if (over !== hovering) {
         hovering = over;
         // Al salir de un punto, la mano sigue si debajo hay una región que se puede elegir.
         const region = !over && map.getLayer('regions-fill') && map.queryRenderedFeatures(pt, { layers: ['regions-fill'] }).length > 0;
         map.getCanvas().style.cursor = over || region ? 'pointer' : '';
       }
+      if (!f) {
+        close();
+        return;
+      }
+      const p = f.properties as HotProps;
+      const k = keyOf(p);
+      if (k === activeKey && popup) return;
+      activeKey = k;
+      const { t, lang } = text();
+      // La ficha se abre hacia el centro de lo que se ve en pantalla: lejos de los paneles de los bordes.
+      const box = map.getCanvas().getBoundingClientRect();
+      const at = map.project([p.lon as number, p.lat as number]);
+      const x = box.left + at.x;
+      const y = box.top + at.y;
+      const anchor = `${y > window.innerHeight / 2 ? 'bottom' : 'top'}-${x > window.innerWidth / 2 ? 'right' : 'left'}` as PositionAnchor;
+      popup?.remove();
+      popup = new Popup({ closeButton: false, closeOnClick: false, focusAfterOpen: false, offset: 10, maxWidth: '300px', className: 'hot-pop', anchor })
+        .setLngLat([p.lon as number, p.lat as number])
+        .setDOMContent(card(p, t, lang))
+        .addTo(map);
     });
   });
 
-  return {
-    close: () => {
-      popup?.remove();
-      popup = null;
-    },
-  };
+  map.on('mouseout', () => {
+    hovering = false;
+    close();
+  });
+  map.on('dragstart', close);
+
+  return { close };
 }
