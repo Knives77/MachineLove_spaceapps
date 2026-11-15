@@ -131,7 +131,7 @@ def parse_and_validate_polygon(geom_dict: dict[str, Any]) -> Polygon:
 
 
 def detect_country_from_bbox(poly: Polygon) -> Country:
-    """Determina el país comparando la intersección con los rectángulos de México y Argentina."""
+    """Determina el país comparando la intersección con el rectángulo de México."""
     overlaps: list[tuple[float, Country]] = []
     for code, bbox in COUNTRY_BBOXES.items():
         if poly.intersects(bbox):
@@ -142,7 +142,7 @@ def detect_country_from_bbox(poly: Polygon) -> Country:
         raise ApiException(
             422,
             "aoi_outside_coverage",
-            "The requested AOI does not intersect Mexico or Argentina coverage",
+            "The requested AOI does not intersect Mexico coverage",
         )
     overlaps.sort(reverse=True)
     return overlaps[0][1]
