@@ -15,9 +15,40 @@ Tres ideas que el jurado debe repetir al salir:
 2. **Lo validamos** con 14 años en que ambos sensores midieron juntos, y decimos el error.
 3. **Sirve hoy y en cualquier lugar de México** (febrero de 2026 fue récord en el Bajío; el jurado lo prueba en su propio lugar) y sigue funcionando cuando MODIS se apague.
 
+### 1.1 Rúbrica del jurado (Space Apps Querétaro 2026)
+
+Cuatro criterios, cada uno de 1 a 5. La tabla dice qué pide el 5, en qué momento del guion se gana y con qué evidencia. **El jurado no tiene que deducir nada: cada criterio se dice en voz alta una vez** (frases en el cierre, §2).
+
+| Criterio | Qué pide el 5 | Dónde se gana | Qué se dice | Evidencia |
+|---|---|---|---|---|
+| **Impacto** | "Alto impacto global o transformador: resuelve un gran problema y ayuda a muchísimos" | Apertura (0:00), acto 2 (febrero de 2026), acto 3 (lugar del jurado), cierre | El problema es de todos los que usan FIRMS: cualquier serie larga de focos de calor tiene el salto de 2012 y pierde su referencia cuando MODIS se apague. Aquí cualquier persona, sin saber de satélites, sabe si el fuego de su zona este mes es normal o extremo. Usuarios: Protección Civil, brigadas, CONAFOR, áreas protegidas. Hoy México; el método se calcula solo en cualquier área y Argentina ya está cargada | A1, A8, A12; "Lugares probados" en `HALLAZGOS.md` |
+| **Creatividad e innovación** | "Altamente creativo, disruptivo, novedoso o inesperado" | Acto 1 (el salto que desaparece), acto 3 (`k` del lugar que eligen), acto 4 (un juez apaga MODIS) | No usamos un factor global: el factor se mide **dentro del área que dibuja el usuario**, al momento. No contamos puntos sino **lugares con fuego por día** (celda-día), que es lo que los dos sensores sí ven igual. Y el fin de MODIS no se explica: **se simula con un interruptor** y se ve cuánto cambia la historia | A3, A11 |
+| **Viabilidad científica y técnica** | "Altamente viable, fundamentos sólidos, prototipo funcional y aplicable en la práctica" | Toda la demo (es la app real, no láminas), acto 4 (validación) | Funciona hoy, en esta laptop, con 26 años de datos reales de la NASA guardados en la propia máquina (solo el mapa de fondo usa internet). El factor se valida con 14 años en que los dos sensores midieron juntos, dejando un año fuera cada vez, y **decimos el error**: 6–17 % anual, ~35 % mensual. Repo público, con cifras de control y pruebas automáticas | A2, A4, A5, A6, A7, A12 |
+| **Receptivo al desafío** | "Responde completamente, solución robusta, completa y bien alineada" | Acto 2 (calendario), acto 3 (región), cierre | El reto pide dos cosas y están las dos: (1) una serie armonizada MODIS + VIIRS y (2) una app web con calendario año × mes. Lista de abajo | Lista de abajo |
+
+**Lo que pide el reto, punto por punto** (el operador lo muestra; quien habla lo nombra en el cierre):
+
+| Pide el reto | Dónde se ve en la app |
+|---|---|
+| Armonizar MODIS y VIIRS en una serie consistente | Armonizado / Crudo; factor `k` y su error en la lectura del mes (arriba a la izquierda) |
+| Calendario de actividad de quema, año × mes | Panel "Calendario" (derecha) |
+| El usuario elige la región | 3 regiones listas, dibujar en el mapa, o buscador por coordenadas |
+| Patrones estacionales | Filas del calendario (enero–marzo en el Bajío, abril–junio en la sierra) |
+| Años extremos | "Total por año" y cuadros de nivel Extremo |
+| El mes actual contra la mediana histórica | Lectura del mes: nivel y "N× la mediana" |
+| Descarga en CSV | Botón de descarga en la lectura del mes |
+| Que siga sirviendo sin MODIS | Interruptor de MODIS en la línea de tiempo |
+
+**Huecos que bajan la nota y cómo se tapan:**
+
+- **Impacto "global":** el MVP es México. No se dice "funciona en todo el mundo" (§4); se dice que **el problema es global y el método no depende del lugar**. Si preguntan, Argentina ya está cargada.
+- **Impacto sin caso real:** A9 sigue ⏳. Si procesamiento A encuentra la noticia de febrero de 2026 en el Bajío, se dice en el acto 2; es lo que más sube este criterio. Sin noticia, se dice solo lo que muestra la app.
+- **Receptivo:** el caso oficial de Chilecito (CONAE) no está en la demo. Respuesta en §5.
+- **Viabilidad:** el error mensual (~35 %) se dice antes de que lo pregunten; por eso se habla de niveles y no de cifras exactas.
+
 ---
 
-## 2. Presentación en vivo con dinámica · v3 (propuesta; la decide el analista)
+## 2. Presentación en vivo con dinámica · v4 (propuesta; la decide el analista)
 
 **No hay video.** Se presenta en vivo ante el jurado, en la máquina del líder, y **el jurado participa**: adivina, elige un lugar y apaga MODIS. La duración exacta sale de D1; esta versión dura ~4 minutos. Si hay que recortar a 3: quitar Sierra Gorda del cierre y dejar el acto 3 en un solo lugar. El acto 4 no se quita: es donde se ve el factor `k` trabajando.
 
@@ -25,29 +56,38 @@ Datos reales (14-nov): el Bajío quema en **enero–marzo** y la sierra en **abr
 
 **Ruta:** Bajío → Crudo → (votación) → Armonizado → febrero de 2026 → lugar del jurado → Simular fin de MODIS → validación → cierre.
 
-**Dónde está cada cosa en la app (14-nov 19:00):** el interruptor **Crudo / Armonizado** solo existe en las vistas **Experto** y **Aprendizaje**; la vista General siempre muestra armonizado. El botón **"Apagar MODIS"** está en General (bajo las barras anuales) y en Experto (panel Capas). Con MODIS apagado, cada barra anual muestra una **línea punteada blanca** con el valor con MODIS: es lo que el jurado tiene que mirar. Para el acto 1, usar **Experto**, o pedirle a front que lleve el interruptor a General.
+**Dónde está cada cosa en la app (15-nov 08:30):** la demo usa **solo la vista Experto**; el menú de vistas está oculto, así que el guion no pasa por General ni Aprendizaje.
+
+- **Armonizado / Crudo:** consola de abajo, al centro.
+- **Regiones** (Sierra Gorda, Bajío, Querétaro completo): consola de abajo, a la izquierda; teclas 1–3.
+- **Apagar MODIS:** el interruptor a la derecha de las pistas MODIS / VIIRS de la línea de tiempo. Debajo aparece el factor (`×.304` en el Bajío). En Crudo está desactivado. Con MODIS apagado, "Total por año" muestra una **línea punteada** con el valor con MODIS: es lo que el jurado tiene que mirar.
+- **Validación** (factor `k`, error anual y mensual): lectura del mes, arriba a la izquierda, junto con el nivel y las descargas.
+- **Calendario año × mes y "Total por año":** panel derecho (botón "Calendario").
+- **Lugar del jurado:** herramientas de dibujo en la consola de abajo, o el buscador "lat, lon" arriba a la derecha (±25 / 50 / 100 km).
+- **Fuego en el mapa:** aparece al elegir un mes con actividad.
+- **Nombres de los niveles en pantalla:** Bajo, Normal, Alto, **Extremo**. Lo que el guion llama "crítico" o "récord" se ve como "Extremo".
 
 ### Acto 1 · "¿Cuánto creció el fuego?" (0:00–1:00)
 
 | Tiempo | En pantalla | Qué pasa | Dato |
 |---|---|---|---|
-| 0:00–0:15 | Portada | "Desde 2000 contamos incendios desde el espacio. Pero el satélite que los contaba se está apagando." | S-NPP se apagó el 2-nov-2026 |
-| 0:15–0:35 | Bajío, modo **Crudo**, barras anuales | **Pregunta al jurado:** "Si sumamos los datos de la NASA tal cual, el fuego en el Bajío se multiplicó por 15 entre 2011 y 2019. ¿Quién cree que es cierto? Levanten la mano." | 349 → 5,137 puntos |
+| 0:00–0:15 | App abierta en el Bajío | "Desde 2000 contamos focos de calor desde el espacio, y con eso deciden brigadas y Protección Civil. Pero el satélite que los contaba se está apagando, y el nuevo cuenta distinto." | S-NPP se apagó el 2-nov-2026 |
+| 0:15–0:35 | Bajío, modo **Crudo**, "Total por año" | **Pregunta al jurado:** "Si sumamos los datos de la NASA tal cual, el fuego en el Bajío se multiplicó por 15 entre 2011 y 2019. ¿Quién cree que es cierto? Levanten la mano." | 349 → 5,137 puntos |
 | 0:35–1:00 | Interruptor a **Armonizado** | "No era fuego: era un satélite nuevo que ve más. Con una sola regla, el salto desaparece." | 243 → 260 celdas-día (×1.07) |
 
 ### Acto 2 · "Este año" (1:00–1:40)
 
 | Tiempo | En pantalla | Qué pasa | Dato |
 |---|---|---|---|
-| 1:00–1:20 | Calendario año × mes | "Cada cuadro es un mes; cuanto más claro, más fuego. Aquí se quema en enero–marzo: quemas agrícolas." | `seasonality` |
-| 1:20–1:40 | Clic en **febrero de 2026** | **Pregunta:** "¿Normal, alto o récord?" (tarjetas de votación). Revelar: "El mes con más fuego en 26 años: cinco veces lo normal." (+ la noticia, si procesamiento A la encuentra) | 150 celdas-día, 5.0×, crítico |
+| 1:00–1:20 | Calendario año × mes | "Esto es lo que pide el reto: un calendario de quema. Cada cuadro es un mes; cuanto más claro, más fuego. Aquí se quema en enero–marzo: quemas agrícolas." | `seasonality` |
+| 1:20–1:40 | Clic en **febrero de 2026** | **Pregunta:** "¿Normal, alto o extremo?" (tarjetas de votación). Revelar: "El mes con más fuego en 26 años: cinco veces lo normal." El mapa muestra dónde ardió (+ la noticia, si procesamiento A la encuentra) | 150 celdas-día, 5.0×, Extremo |
 
 ### Acto 3 · "Elijan un lugar" (1:40–2:40)
 
 | Tiempo | En pantalla | Qué pasa | Dato |
 |---|---|---|---|
-| 1:40–2:00 | Mapa | "Díganme un lugar de México que les importe." Se dibuja un rectángulo en vivo | Responde en ~0.2 s |
-| 2:00–2:40 | Calendario y tarjeta del lugar | Leer en voz alta su temporada, su peor mes en 26 años y cómo va 2026. Si piden un lugar fuera de México: "En esta versión cubrimos México; Argentina ya está cargada para la siguiente" (la app muestra el aviso, no se rompe) | Ver "Lugares probados" en `HALLAZGOS.md` |
+| 1:40–2:00 | Mapa | "Díganme un lugar de México que les importe." Se dibuja un rectángulo en vivo, o se pegan sus coordenadas en el buscador | Responde en ~0.2 s |
+| 2:00–2:40 | Calendario y lectura del lugar | Leer en voz alta su temporada, su peor mes en 26 años y cómo va 2026. Señalar que el factor `k` de ese lugar se acaba de medir, y es distinto al del Bajío. Si piden un lugar fuera de México: "En esta versión cubrimos México; Argentina ya está cargada para la siguiente" (la app muestra el aviso, no se rompe) | Ver "Lugares probados" en `HALLAZGOS.md` |
 
 **Plan B del acto 3:** si nadie propone un lugar o la app tarda, el operador usa uno de los probados (La Primavera, Ajusco, Chimalapas…).
 
@@ -55,15 +95,24 @@ Datos reales (14-nov): el Bajío quema en **enero–marzo** y la sierra en **abr
 
 | Tiempo | En pantalla | Qué pasa | Dato |
 |---|---|---|---|
-| 2:40–3:05 | Bajío, botón **Simular fin de MODIS** | Darle el mouse a un juez: **"Ustedes apagan MODIS."** Las barras casi no se mueven | 9 % de cambio en mediana; `k` = 0.30 medido en 14 años de traslape |
-| 3:05–3:30 | Panel de validación | "Y decimos cuánto nos equivocamos: 10 % al año, ~35 % al mes. Por eso hablamos de niveles, no de cifras exactas." | `calibration.*` |
+| 2:40–3:05 | Bajío, **interruptor de MODIS** en la línea de tiempo | Darle el mouse a un juez: **"Ustedes apagan MODIS."** Las barras de "Total por año" casi no se separan de la línea punteada | 9 % de cambio en mediana; `k` = 0.30 medido en 14 años de traslape |
+| 3:05–3:30 | Lectura del mes (factor `k` y errores) | "Lo validamos con los 14 años en que los dos sensores midieron juntos. Y decimos cuánto nos equivocamos: 10 % al año, ~35 % al mes. Por eso hablamos de niveles, no de cifras exactas." | `calibration.*` |
 
 ### Cierre (3:30–4:00)
 
 | Tiempo | En pantalla | Qué pasa |
 |---|---|---|
-| 3:30–3:50 | Sierra Gorda (opcional) o portada | "Mismo estado, otro fuego: la sierra quema en abril–junio, con otro factor. Por eso se calcula para cada región." |
-| 3:50–4:00 | Portada | Frase de cierre (§1) y quién lo usaría: Protección Civil, brigadas, CONAFOR |
+| 3:30–3:40 | Sierra Gorda (opcional) | "Mismo estado, otro fuego: la sierra quema en abril–junio, con otro factor. Por eso se calcula para cada región." |
+| 3:40–4:00 | App en el Bajío, febrero de 2026 | Las cuatro frases de la rúbrica, en este orden, y la frase de cierre (§1) |
+
+**Las cuatro frases (una por criterio; se dicen tal cual):**
+
+1. **Responde al reto:** "El reto pedía una serie armonizada y un calendario de quema con región, estacionalidad, extremos, comparación con la mediana y CSV. Lo acaban de usar."
+2. **Es viable:** "No es una idea: es un prototipo que corre hoy con 26 años de datos de la NASA, validado con 14 años de traslape y con su error a la vista."
+3. **Es distinto:** "El factor no es global: se mide en el lugar que ustedes eligieron. Y el fin de MODIS lo apagaron ustedes."
+4. **Importa:** "Cualquier brigada o Protección Civil puede saber en segundos si este mes es normal o extremo en su zona, y lo seguirá sabiendo cuando MODIS se apague."
+
+Si hay que recortar el cierre a 10 s: frases 2 y 4.
 
 ### Extra si la app lo permite · "Escuchen 26 años"
 
@@ -71,9 +120,10 @@ Reproducir la línea de tiempo con sonido: cada mes suena según su nivel, y los
 
 ### Materiales
 
-- Tarjetas impresas o en el celular: **Normal · Alto · Récord**, para que el jurado vote en el acto 2.
+- Tarjetas impresas o en el celular: **Normal · Alto · Extremo** (los nombres que usa la app), para que el jurado vote en el acto 2.
 - Una persona habla y otra opera. El operador tiene la ruta impresa.
-- La app abierta en Bajío y en modo Crudo antes de empezar.
+- La app abierta en Bajío y en modo Crudo antes de empezar, con el panel del calendario abierto.
+- La rúbrica impresa junto a la ruta: quien habla marca cada criterio cuando lo dice.
 
 ## 3. Afirmaciones y su evidencia
 
@@ -117,6 +167,9 @@ Reproducir la línea de tiempo con sonido: cada mes suena según su nivel, y los
 | ¿Y las plataformas petroleras? | En datos recientes sin clasificar no se filtran: probamos y las celdas costeras tenían más fuego real que plataformas. |
 | ¿Por qué no usaron IA? | El reto es de consistencia histórica, no de predicción. Un método simple y medible es más defendible. |
 | ¿Quién lo usaría? | Protección Civil, brigadas, CONAFOR, gestores de áreas protegidas como Sierra Gorda. |
+| ¿Qué impacto tiene fuera de México? | El problema es el mismo en cualquier país que use FIRMS: el salto de 2012 y el fin de MODIS. El método no depende del lugar, porque el factor se mide en cada área. Hoy está probado en México; Argentina ya está cargada. |
+| ¿Qué tiene de nuevo? FIRMS ya muestra los focos | FIRMS muestra puntos de cada sensor. Nosotros los ponemos en una sola escala de 26 años, con el factor medido en el área del usuario, el error declarado y la respuesta a "¿es normal este mes?". |
+| ¿Se puede usar mañana? | Sí: corre en una laptop con Postgres y los CSV públicos de FIRMS; la base se arma desde cero en unos 2 minutos (`POBLAR_BASE.md`). Falta conectarlo a los datos en vivo, que quedó fuera del MVP. |
 | ¿Y el caso de Chilecito de la CONAE? | Los datos de Argentina 2000–2026 ya están cargados y procesados; es la siguiente fase. Elegimos cerrar bien México primero. |
 
 ---
@@ -129,7 +182,7 @@ Reproducir la línea de tiempo con sonido: cada mes suena según su nivel, y los
 |---|---|---|---|
 | D1 | Abrir la app sin red externa (solo localhost) | Carga completa; el mapa base puede faltar, todo lo demás funciona | |
 | D2 | Preset Sierra Gorda | Calendario 2000–2026 en < 2 s; `k` ≈ 0.26 | |
-| D3 | Preset Bajío, modo Crudo | Salto visible en 2012 | |
+| D3 | Región Bajío, modo Crudo (vista Experto) | Salto visible en 2012 | |
 | D4 | Interruptor a Armonizado | Salto desaparece; matriz y barras cambian juntas | |
 | D5 | Pasar el cursor por un mes de 2001 | Muestra banderas (`terra_only`, `modis_outage` si aplica) | |
 | D6 | Meses de nov–dic 2026 | Gris con trama ("sin dato"), no color de cero. Noviembre es mes parcial: puede mostrar su valor en el tooltip, pero su nivel es "sin dato" | |
@@ -141,7 +194,9 @@ Reproducir la línea de tiempo con sonido: cada mes suena según su nivel, y los
 | D12 | Descargar los dos CSV | Abren en hoja de cálculo; columnas del contrato | |
 | D13 | Recargar la página a mitad de la demo | Vuelve a un estado usable | |
 | D14 | Dibujar en vivo 3 lugares de "Lugares probados" | Cada uno responde en < 1 s y la tarjeta se lee en voz alta sin buscar | |
-| D15 | Un juez presiona "Simular fin de MODIS" | Cambian las barras anuales; se puede volver al modo normal | |
+| D15 | Un juez mueve el interruptor de MODIS en la línea de tiempo | Cambia "Total por año" y aparece la línea punteada; se puede volver a encender | |
+| D16 | Pegar "20.55, -103.60" en el buscador de coordenadas | Consulta el cuadro alrededor del punto y actualiza calendario y lectura | |
+| D17 | Recorrer la lista "Lo que pide el reto" (§1.1) en la app | Cada punto se encuentra en menos de 5 s sin salir de Experto | |
 
 ### Coherencia de números (el analista cruza la app contra la base)
 

@@ -11,7 +11,7 @@ Formato de cada entrada: **qué** · **valor** · **fuente** (enlace, consulta o
 | Campos de la página del proyecto | | |
 | Presentación en vivo: cuándo, cuánto dura, si hay preguntas | | |
 | ¿Piden video o algo más para la entrega? | | |
-| Criterios de evaluación de los jueces | | |
+| Criterios de evaluación de los jueces | 4 criterios, de 1 a 5: impacto, creatividad e innovación, viabilidad científica y técnica, receptivo al desafío. Cómo se gana cada uno: `PITCH.md` §1.1 | Rúbrica de evaluación, NASA Space Apps Querétaro 2026 (PDF, 15-nov) |
 | ¿Repo público? ¿Declarar uso de IA? | | |
 | Hora de cierre y zona horaria | | |
 

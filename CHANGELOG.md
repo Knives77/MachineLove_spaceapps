@@ -61,6 +61,7 @@ Resumen para quien llega: **hagan `git pull`**. Front: además `pnpm install --f
 - `etl.verify` usa el criterio nuevo de `viirs_primary`: **54/54**.
 
 ### Docs
+- **Pitch alineado con la rúbrica del jurado (dom 15-nov).** `PITCH.md` §1.1 nuevo: los 4 criterios (impacto, creatividad, viabilidad, receptivo al desafío), dónde se gana cada uno y la lista de lo que pide el reto contra la app. Guion v4: solo vista Experto (interruptor de MODIS en la línea de tiempo, buscador por coordenadas), cierre con una frase por criterio, tarjetas "Normal · Alto · Extremo", 3 preguntas de jueces y pruebas D16–D17. ⚠️ Analista: revisar y ensayar el cierre nuevo.
 - **`k` en el guion = `k` en pantalla.** `scripts/pitch_numbers.py` redondeaba `k` distinto que el front: la API manda 4 decimales (0.3035) y Python daba 0.303 mientras la pantalla muestra 0.304. Ahora redondea como la pantalla. `HALLAZGOS.md` → Cifras regenerado (H4): solo cambian Bajío 0.304 y Querétaro 0.290; `PITCH.md` ya decía eso. ⚠️ Analista: usar 0.304 y 0.290.
 - Skill de backend: el comando de pruebas es `uv run pytest backend` (decía `pytest api`, una carpeta que ya no existe).
 - `docs/TOPOLOGIA.md` reemplaza a `docs/ACCESS.md`, que describía cuentas y una carpeta `/srv/machinelove` que no existen. La guía y las plantillas de SSH se movieron a `docs/acceso/`.
