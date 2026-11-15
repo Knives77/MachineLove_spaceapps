@@ -103,8 +103,20 @@ export const FIRE = FIRE_PALETTES.inferno;
 
 /** Mapa (MapLibre). */
 export const MAP = {
-  background: SURFACE.bg,
-  water: '#0b1626',
+  // Mapa base (sobre el estilo "dark" de OpenFreeMap): tierra un poco más clara que la interfaz para que
+  // el territorio se distinga; el agua queda más oscura y azul.
+  background: '#1a2433', // tierra
+  landcover: '#1f2a3a', // bosque y parques
+  residential: '#222d3e', // zonas urbanas
+  water: '#0e1a2b',
+  boundaryState: '#536379', // límites estatales
+  boundaryCountry: '#6b7d95', // límites de país
+  // Nombres: claros con halo oscuro firme (contraste ≥ 7:1 sobre la tierra).
+  labelMajor: '#d5dee9', // estados y países
+  labelCity: '#b4c0cf', // ciudades y pueblos
+  labelMinor: '#97a6b8', // colonias y otros
+  labelWater: '#8fb3d6',
+  labelHalo: '#0b111b',
   regionActive: UI.accent,
   regionGlow: UI.accent,
   regionIdle: NEUTRAL.zero,

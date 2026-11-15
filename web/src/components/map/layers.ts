@@ -78,9 +78,29 @@ export function applyFirePalette(map: MapLibreMap, palette: Palette) {
  */
 export function addMapLayers(map: MapLibreMap, tools: boolean, palette: Palette = 'inferno') {
   // Tono de la app sobre el estilo base.
-  if (map.getLayer('background')) map.setPaintProperty('background', 'background-color', MAP.background);
-  if (map.getLayer('water')) map.setPaintProperty('water', 'fill-color', MAP.water);
-  if (map.getLayer('waterway')) map.setPaintProperty('waterway', 'line-color', MAP.water);
+  type Paint = Parameters<MapLibreMap['setPaintProperty']>;
+  const set = (id: string, prop: Paint[1], value: Paint[2]) => {
+    if (map.getLayer(id)) map.setPaintProperty(id, prop, value);
+  };
+  set('background', 'background-color', MAP.background);
+  set('water', 'fill-color', MAP.water);
+  set('waterway', 'line-color', MAP.water);
+  for (const id of ['landcover_wood', 'landuse_park']) set(id, 'fill-color', MAP.landcover);
+  set('landuse_residential', 'fill-color', MAP.residential);
+  set('boundary_state', 'line-color', MAP.boundaryState);
+  for (const id of ['boundary_country_z0-4', 'boundary_country_z5-']) set(id, 'line-color', MAP.boundaryCountry);
+  // Nombres de entidades y territorios: más claros y con halo oscuro para que se lean sobre la tierra.
+  const label = (ids: string[], color: string) => {
+    for (const id of ids) {
+      set(id, 'text-color', color);
+      set(id, 'text-halo-color', MAP.labelHalo);
+      set(id, 'text-halo-width', 1.4);
+    }
+  };
+  label(['place_state', 'place_country_other', 'place_country_minor', 'place_country_major'], MAP.labelMajor);
+  label(['place_city', 'place_city_large', 'place_town', 'place_village'], MAP.labelCity);
+  label(['place_other', 'place_suburb'], MAP.labelMinor);
+  label(['water_name'], MAP.labelWater);
   // Las regiones van debajo de la primera capa de etiquetas: los nombres siguen legibles.
   const firstLabel = map.getStyle().layers.find((l) => l.type === 'symbol')?.id;
 
