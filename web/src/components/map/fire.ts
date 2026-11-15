@@ -4,9 +4,9 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import { getHotspots } from '../../api';
 import { monthRange } from '../../lib/format';
 import { setHud } from '../../lib/hud';
-import { ApiError, type Aoi, type HotspotCollection, type Mode, type Source } from '../../types';
+import { ApiError, type Aoi, type HotspotCollection, type Mode, type Palette, type Source } from '../../types';
 import { EMPTY, reducedMotion, type Feat } from './geometry';
-import { fireIntensity } from './layers';
+import { applyFirePalette, fireIntensity } from './layers';
 
 /** Hotspots ya consultados por área y mes: volver a un mes es instantáneo (se guardan los últimos 40). */
 const HOT_CACHE = new Map<string, Promise<HotspotCollection>>();
@@ -38,6 +38,7 @@ export function useFireLayer({
   selected,
   mode,
   source,
+  palette,
 }: {
   mapRef: RefObject<MapLibreMap | null>;
   ready: boolean;
@@ -49,6 +50,8 @@ export function useFireLayer({
   mode: Mode;
   /** Fuente del mes elegido según el calendario (`months[].source`); `undefined` mientras carga. */
   source: Source | null | undefined;
+  /** Paleta activa: adapta los colores de la mancha térmica y los focos de calor. */
+  palette: Palette;
 }) {
   // Sube en cada cambio de lo pintado: dispara un parpadeo breve (no continuo).
   const [flare, setFlare] = useState(0);
@@ -146,6 +149,13 @@ export function useFireLayer({
     if (ready) paint();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, mode, source]);
+
+  // Cambiar de paleta (Estándar / Daltónicos / Alto contraste) actualiza la rampa y los puntos del mapa.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (ready && map) applyFirePalette(map, palette);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, palette]);
 
   // Parpadeo del fuego: al aparecer la mancha "prende" durante ~1.5 s y queda fija. Cada cambio de
   // intensidad repinta el mapa entero (con relieve), así que no se deja respirando: en reposo el mapa

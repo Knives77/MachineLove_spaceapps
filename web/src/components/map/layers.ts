@@ -1,7 +1,8 @@
 // Estilo, fuentes y capas del mapa. Todo lo que se añade al estilo base vive aquí;
 // MapPanel solo decide cuándo llamarlo y con qué datos.
 import type { ExpressionSpecification, MapLibreMap } from 'maplibre-gl';
-import { FIRE, MAP } from '../../theme/tokens';
+import { FIRE_PALETTES, MAP } from '../../theme/tokens';
+import type { Palette } from '../../types';
 import { EMPTY } from './geometry';
 
 const ACTIVE = MAP.regionActive; // borde y relleno de la región activa
@@ -32,11 +33,50 @@ function rgba(hex: string, a: number): string {
 /** Intensidad de la mancha de fuego según el zoom; `m` la hace respirar (parpadeo). */
 export const fireIntensity = (m: number): ExpressionSpecification => ['interpolate', ['linear'], ['zoom'], 5, 0.38 * m, 8, 0.5 * m, 12, 0.95 * m];
 
+const FRP_EXPR: ExpressionSpecification = ['sqrt', ['max', 0, ['coalesce', ['get', 'frp'], 0]]];
+
+function heatmapColorExpr(palette: Palette): ExpressionSpecification {
+  const { ramp } = FIRE_PALETTES[palette];
+  return [
+    'interpolate',
+    ['linear'],
+    ['heatmap-density'],
+    0, rgba(ramp[0], 0),
+    0.03, rgba(ramp[1], 0.55),
+    0.1, rgba(ramp[2], 0.95),
+    0.3, ramp[3],
+    0.72, ramp[4],
+    1, ramp[5],
+  ];
+}
+
+function fireDotColorExpr(palette: Palette): ExpressionSpecification {
+  const { dotLow, dotMid, dotHigh, dotPeak } = FIRE_PALETTES[palette];
+  return [
+    'interpolate',
+    ['linear'],
+    FRP_EXPR,
+    1, dotLow,
+    2.8, dotMid,
+    5, dotHigh,
+    8, dotPeak,
+  ];
+}
+
+/** Actualiza los colores de la mancha y los focos de calor según la paleta activa. */
+export function applyFirePalette(map: MapLibreMap, palette: Palette) {
+  if (map.getLayer('hot-fire')) map.setPaintProperty('hot-fire', 'heatmap-color', heatmapColorExpr(palette));
+  if (map.getLayer('hot-core')) {
+    map.setPaintProperty('hot-core', 'circle-color', fireDotColorExpr(palette));
+    map.setPaintProperty('hot-core', 'circle-stroke-color', FIRE_PALETTES[palette].dotStroke);
+  }
+}
+
 /**
  * Añade al mapa ya cargado el tono de la app, las regiones, las capas de fuego, la herramienta de
  * dibujo y, con `tools` (consola de Experto), el relieve. Orden = orden de pintado.
  */
-export function addMapLayers(map: MapLibreMap, tools: boolean) {
+export function addMapLayers(map: MapLibreMap, tools: boolean, palette: Palette = 'inferno') {
   // Tono de la app sobre el estilo base.
   if (map.getLayer('background')) map.setPaintProperty('background', 'background-color', MAP.background);
   if (map.getLayer('water')) map.setPaintProperty('water', 'fill-color', MAP.water);
@@ -108,7 +148,6 @@ export function addMapLayers(map: MapLibreMap, tools: boolean) {
     paint: { 'line-color': ACTIVE, 'line-width': 2.2 },
   });
   // Hotspots del mes elegido (POST /hotspots). Aro gris = detección en fuente fija (no es fuego de vegetación).
-  const frp: ExpressionSpecification = ['sqrt', ['max', 0, ['coalesce', ['get', 'frp'], 0]]];
   map.addSource('hotspots', { type: 'geojson', data: EMPTY });
   map.addLayer({
     id: 'hot-static',
@@ -123,63 +162,44 @@ export function addMapLayers(map: MapLibreMap, tools: boolean) {
       'circle-stroke-width': 1,
     },
   });
-  // Fuego extendido: mancha térmica rojiza (capa `heatmap` nativa) que enmarca las zonas con actividad
-  // sin lavar los puntos individuales hacia blanco.
+  // Fuego extendido: mancha térmica (capa `heatmap` nativa) adaptada a la paleta activa, que enmarca
+  // las zonas con actividad sin lavar los puntos individuales hacia blanco.
   map.addLayer({
     id: 'hot-fire',
     type: 'heatmap',
     source: 'hotspots',
     filter: ['get', 'veg'],
     paint: {
-      'heatmap-weight': ['interpolate', ['linear'], frp, 0, 0.5, 4, 0.75, 10, 1],
+      'heatmap-weight': ['interpolate', ['linear'], FRP_EXPR, 0, 0.5, 4, 0.75, 10, 1],
       'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 5, 7, 8, 19, 11, 40, 13, 58],
       'heatmap-intensity': fireIntensity(1),
       // El parpadeo cambia la intensidad ~9 veces por segundo: sin transición. Con la de 300 ms por
       // defecto siempre queda una a medias y el mapa (con relieve) se repinta a 60 cuadros por segundo.
       'heatmap-intensity-transition': NO_TRANSITION,
       'heatmap-opacity': 0.78,
-      'heatmap-color': [
-        'interpolate',
-        ['linear'],
-        ['heatmap-density'],
-        0, rgba(FIRE.ramp[0], 0),
-        0.03, rgba(FIRE.ramp[1], 0.55),
-        0.1, rgba(FIRE.ramp[2], 0.95),
-        0.3, FIRE.ramp[3],
-        0.72, FIRE.ramp[4],
-        1, FIRE.ramp[5],
-      ],
+      'heatmap-color': heatmapColorExpr(palette),
     },
   });
-  // Puntos de focos de calor (estilo CONAE): rojos/naranjas en detecciones bajas y amarillo brillante
-  // en los focos de mayor potencia (FRP), ordenados para que los más intensos queden arriba.
+  // Puntos de focos de calor ordenados por potencia (FRP) para que los más intensos queden arriba.
   map.addLayer({
     id: 'hot-core',
     type: 'circle',
     source: 'hotspots',
     filter: ['get', 'veg'],
     layout: {
-      'circle-sort-key': frp,
+      'circle-sort-key': FRP_EXPR,
     },
     paint: {
       'circle-radius': [
         'interpolate',
         ['linear'],
         ['zoom'],
-        6, ['interpolate', ['linear'], frp, 1, 1.8, 8, 3.4],
-        9, ['interpolate', ['linear'], frp, 1, 2.8, 8, 5.2],
-        12, ['interpolate', ['linear'], frp, 1, 4.2, 8, 8.0],
+        6, ['interpolate', ['linear'], FRP_EXPR, 1, 1.8, 8, 3.4],
+        9, ['interpolate', ['linear'], FRP_EXPR, 1, 2.8, 8, 5.2],
+        12, ['interpolate', ['linear'], FRP_EXPR, 1, 4.2, 8, 8.0],
       ],
-      'circle-color': [
-        'interpolate',
-        ['linear'],
-        frp,
-        1, FIRE.dotLow,
-        2.8, FIRE.dotMid,
-        5, FIRE.dotHigh,
-        8, FIRE.dotPeak,
-      ],
-      'circle-stroke-color': FIRE.dotStroke,
+      'circle-color': fireDotColorExpr(palette),
+      'circle-stroke-color': FIRE_PALETTES[palette].dotStroke,
       'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 6, 0.7, 9, 1.1, 12, 1.5],
     },
   });
