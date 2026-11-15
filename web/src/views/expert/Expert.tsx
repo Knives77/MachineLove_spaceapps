@@ -48,8 +48,10 @@ export function Expert() {
       {/* Lectura del mes (arriba a la izquierda). */}
       <Readout />
 
-      {/* Franja flotante: buscador por coordenadas, calendario, idioma, accesibilidad y vista (sin barra superior). */}
-      <div className="absolute right-2 top-2 z-[800] flex items-start gap-2">
+      {/* Franja flotante: buscador por coordenadas, calendario, idioma, accesibilidad y vista (sin barra superior).
+          Empieza a la derecha de la lectura del mes (21.5rem): en pantallas angostas (proyector a 1024 px) el
+          buscador se encoge en vez de tapar los botones de la lectura. La franja deja pasar los clics al mapa. */}
+      <div className="pointer-events-none absolute left-[22rem] right-2 top-2 z-[800] flex items-start justify-end gap-2 [&>*]:pointer-events-auto">
         <CoordSearch />
         <TopBar
           floating

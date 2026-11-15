@@ -32,6 +32,7 @@ Resumen para quien llega: **hagan `git pull`**. Front: además `pnpm install --f
 | **Procesamiento A y B pasan a apoyar el pitch** | Procesamiento | Tareas nuevas en `docs/CHECKLIST.md` |
 
 ### Front
+- **Buscador por coordenadas a 1024 px.** En pantallas angostas (proyector a 1024 px o zoom del navegador) el buscador tapaba 26 px de la lectura del mes, incluido el botón de Validación (acto 4). Ahora la franja empieza a la derecha de la lectura y el buscador se encoge (317 px a 1024; igual que antes desde 1280). Probado en Chromium a 1024, 1280 y 1366.
 - **Fuego también en General y puntos estilo CONAE.** El fuego del mes elegido (`POST /hotspots`) ahora se pinta en General además de Experto (en General no hay botón "Fuego": siempre encendido). Cada detección es un punto rojo → naranja → amarillo según su `frp` (más grande con más `frp`, los más intensos encima) sobre una mancha térmica rojiza que ya no lava a blanco; colores nuevos en `FIRE` de `theme/tokens.ts`. Probado en Chromium con la API real: Bajío, febrero de 2026 (202 hotspots, 44 en fuentes fijas) en General y en Experto. ⚠️ Front: General deja de ser "sin fuego"; el skill ya lo dice.
 - **Buscador por coordenadas (Experto).** Barra arriba a la derecha, junto a Calendario: se pega o escribe "lat, lon" y consulta un cuadro de ±25/50/100 km alrededor del punto (mismo `boxAround` que "Explorar otra zona"). Acepta lo que copia Google Maps: decimal (`21.2, -99.6`, `21,2; -99,6`), hemisferios (`21.2N 99.6W`, también `O`) y grados-minutos-segundos; invierte el orden si viene como lon, lat. Atajo `/`. `parseLatLon` y `boxAround` pasan a `lib/geo.ts` (sin maplibre, para no meter el mapa en el paquete principal); `components/map/geometry.ts` los reexporta. Probado en Chromium con la API real a 1366×768 y 1920×1080.
 - **Mapa en reposo: de 60 a ~18 cuadros por segundo y de 43 % a 14 % de CPU en JS** (Experto, medido en Chromium con GPU y la API real). El parpadeo del fuego dejaba siempre abierta la transición de 300 ms de `heatmap-intensity`, y MapLibre repintaba el relieve 3D en todos los cuadros. Ahora las propiedades que se animan desde código van con `*-transition: {duration: 0}` (`layers.ts`).
@@ -57,6 +58,7 @@ Resumen para quien llega: **hagan `git pull`**. Front: además `pnpm install --f
 - `etl.verify` usa el criterio nuevo de `viirs_primary`: **54/54**.
 
 ### Docs
+- **`k` en el guion = `k` en pantalla.** `scripts/pitch_numbers.py` redondeaba `k` distinto que el front: la API manda 4 decimales (0.3035) y Python daba 0.303 mientras la pantalla muestra 0.304. Ahora redondea como la pantalla. `HALLAZGOS.md` → Cifras regenerado (H4): solo cambian Bajío 0.304 y Querétaro 0.290; `PITCH.md` ya decía eso. ⚠️ Analista: usar 0.304 y 0.290.
 - Skill de backend: el comando de pruebas es `uv run pytest backend` (decía `pytest api`, una carpeta que ya no existe).
 - `docs/TOPOLOGIA.md` reemplaza a `docs/ACCESS.md`, que describía cuentas y una carpeta `/srv/machinelove` que no existen. La guía y las plantillas de SSH se movieron a `docs/acceso/`.
 - `docs/ANALISTA.md` reescrito con 7 tareas con hora; `docs/HALLAZGOS.md` con su plantilla.

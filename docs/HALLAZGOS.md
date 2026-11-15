@@ -47,10 +47,10 @@ Rectángulos dibujados en la API real (14-nov 18:00). Las pistas marcadas con �
 
 ## Cifras · las actualiza procesamiento B
 
-Salida de `python3 scripts/pitch_numbers.py` contra la API real (base `firms`), **14-nov 17:43**. Procesamiento B la vuelve a correr en H3 y H4 y reemplaza este bloque.
+Salida de `python3 scripts/pitch_numbers.py` contra la API real (base `firms`), **15-nov 07:35** (H4). Respecto a las 17:43 solo cambian dos `k` por redondeo: el script ahora redondea como la pantalla (Bajío 0.3035 → **0.304**, Querétaro 0.2895 → **0.290**); las demás cifras son idénticas. Procesamiento B la vuelve a correr en H3 y H4 y reemplaza este bloque.
 
 ```text
-=== qro-sierra-gorda  (14,706 km², respuesta en 0.01 s)
+=== qro-sierra-gorda  (14,706 km², respuesta en 0.03 s)
 k = 0.260 (aoi), 167 meses de traslape
 error anual (mediana dejando un año fuera) 17.2%, peor año 55.2%; error mensual 36.9%
 salto falso: crudo 2011 → 2019 = 175 → 2,167 puntos (×12.4); armonizado 167.0 → 154.0 (×0.92)
@@ -66,8 +66,8 @@ temporada: pico en may; abr, may, jun concentran 62% del fuego
 2026 por mes: ene critical, feb critical, mar normal, abr normal, may below, jun below, jul below, ago normal, sep critical, oct normal
 sin MODIS (viirs_primary): serie anual cambia 16% en mediana (peor año 51%); estado mensual igual en 56%, a un nivel o menos en 90%
 
-=== qro-bajio  (16,636 km², respuesta en 0.00 s)
-k = 0.303 (aoi), 167 meses de traslape
+=== qro-bajio  (16,636 km², respuesta en 0.02 s)
+k = 0.304 (aoi), 167 meses de traslape
 error anual (mediana dejando un año fuera) 10.1%, peor año 43.6%; error mensual 37.3%
 salto falso: crudo 2011 → 2019 = 349 → 5,137 puntos (×14.7); armonizado 243.0 → 260.0 (×1.07)
 temporada: pico en mar; ene, feb, mar concentran 46% del fuego
@@ -82,8 +82,8 @@ temporada: pico en mar; ene, feb, mar concentran 46% del fuego
 2026 por mes: ene critical, feb critical, mar critical, abr normal, may critical, jun normal, jul normal, ago critical, sep below, oct normal
 sin MODIS (viirs_primary): serie anual cambia 9% en mediana (peor año 37%); estado mensual igual en 55%, a un nivel o menos en 89%
 
-=== qro-recuadro  (31,342 km², respuesta en 0.00 s)
-k = 0.289 (aoi), 167 meses de traslape
+=== qro-recuadro  (31,342 km², respuesta en 0.02 s)
+k = 0.290 (aoi), 167 meses de traslape
 error anual (mediana dejando un año fuera) 5.9%, peor año 15.4%; error mensual 33.2%
 salto falso: crudo 2011 → 2019 = 524 → 7,304 puntos (×13.9); armonizado 410.0 → 414.0 (×1.01)
 temporada: pico en mar; mar, abr, may concentran 43% del fuego

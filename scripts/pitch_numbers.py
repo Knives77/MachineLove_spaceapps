@@ -15,6 +15,7 @@ import statistics
 import sys
 import time
 import urllib.request
+from decimal import ROUND_HALF_UP, Decimal
 
 API = os.environ.get("API_URL", "http://localhost:8000/api/v1").rstrip("/")
 PRESETS = ["qro-sierra-gorda", "qro-bajio", "qro-recuadro"]
@@ -36,6 +37,15 @@ def pct(x: float | None) -> str:
     return "—" if x is None else f"{x:.1%}"
 
 
+def como_en_pantalla(x: float, decimales: int = 3) -> str:
+    """Redondea como el front (Intl/toLocaleString: valor decimal tal como llega, mitades hacia arriba).
+
+    La API manda k con 4 decimales (p. ej. 0.3035). `f"{x:.3f}"` redondea el binario 0.30349999… → 0.303,
+    pero la pantalla muestra 0.304: el guion tiene que decir lo mismo que ve el jurado.
+    """
+    return str(Decimal(repr(x)).quantize(Decimal(1).scaleb(-decimales), rounding=ROUND_HALF_UP))
+
+
 def mes(m: dict) -> str:
     return f"{MESES[m['month'] - 1]}-{m['year']}"
 
@@ -48,7 +58,7 @@ def report(preset: str) -> None:
     vyears = {y["year"]: y for y in viirs["years"]}
 
     print(f"\n=== {preset}  ({cal['aoi']['area_km2']:,.0f} km², respuesta en {secs:.2f} s)")
-    print(f"k = {c['k']:.3f} ({c['scope']}), {c['overlap_months']} meses de traslape")
+    print(f"k = {como_en_pantalla(c['k'])} ({c['scope']}), {c['overlap_months']} meses de traslape")
     print(f"error anual (mediana dejando un año fuera) {pct(c['loyo_annual_mape'])}, "
           f"peor año {pct(c['loyo_annual_max'])}; error mensual {pct(c['monthly_mape'])}")
 

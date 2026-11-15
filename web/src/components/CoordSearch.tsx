@@ -35,12 +35,12 @@ export function CoordSearch() {
   };
 
   return (
-    <div className="relative">
+    <div className="relative min-w-0 shrink">
       <form
         role="search"
         aria-label={t('search.label')}
         onSubmit={submit}
-        className={`hud flex h-[2.875rem] w-[22rem] items-center gap-1 p-1 ${bad ? '!border-warn' : ''}`}
+        className={`hud flex h-[2.875rem] w-[22rem] max-w-full items-center gap-1 p-1 ${bad ? '!border-warn' : ''}`}
       >
         <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="ml-1.5 shrink-0 text-mute">
           <circle cx="11" cy="11" r="6.5" />
