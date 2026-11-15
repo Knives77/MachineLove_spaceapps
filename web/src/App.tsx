@@ -12,7 +12,11 @@ function Shell() {
     // La app ocupa exactamente la ventana: la barra superior y el pie no se desplazan nunca;
     // si una vista es más alta, se desplaza solo <main> (General está hecha para caber completa).
     <div className="flex h-dvh min-w-[1024px] flex-col overflow-hidden">
-      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-[999] focus:bg-panel focus:p-2">
+      {/* Solo visible al recibir foco con Tab: nunca tapa el header. */}
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[1100] focus:rounded-lg focus:border focus:border-cyan focus:bg-panel focus:px-4 focus:py-2 focus:text-ink"
+      >
         {t('skip')}
       </a>
       <TopBar />

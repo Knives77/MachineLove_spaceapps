@@ -17,7 +17,7 @@ const VIIRS_START = 2012; // S-NPP desde 2012
  * con `detailed` muestra las pistas MODIS/VIIRS, ▲ meses extremos y ▪ caídas de sensor
  * (las marcas salen de `status` y `flags`).
  */
-export function Timeline({ data, detailed = false }: { data: CalendarResponse; detailed?: boolean }) {
+export function Timeline({ data, detailed = false, bar = false }: { data: CalendarResponse; detailed?: boolean; /** Franja a todo el ancho y alto fijo (pie de General). */ bar?: boolean }) {
   const { t, lang, palette, selected, setSelected, basis, aoi } = useApp();
   // "Simular fin de MODIS" (basis = viirs_primary): la serie con MODIS se marca punteada en cada año,
   // igual que en las barras anuales de Experto, para ver cuánto cambia.
@@ -97,7 +97,7 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
   const row = byKey.get(ymKey(sel.year, sel.month));
 
   return (
-    <div className="panel flex items-center gap-5 px-4 py-2">
+    <div className={`flex items-center gap-5 px-4 ${bar ? 'h-full bg-panel' : 'panel py-2'}`}>
       <button
         type="button"
         onClick={togglePlay}
@@ -123,7 +123,7 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
         <div className="relative min-w-0 flex-1">
           {/* Totales anuales (years[]) como mini histograma sobre el mismo eje 2000–2026:
               reemplaza el panel "Total por año". Clic en una barra = ese año. */}
-          <div className="relative h-9" aria-hidden="true">
+          <div className={`relative ${bar ? 'h-7' : 'h-9'}`} aria-hidden="true">
             {data.years.map((y) => {
               const left = (toIdx(y.year, 1) / total) * 100;
               const h = Math.max(2, ((y.harmonized ?? 0) / yearMax) * 100);

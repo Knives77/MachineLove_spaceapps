@@ -73,7 +73,7 @@ export function YearPicker({ data }: { data: CalendarResponse }) {
 }
 
 export const NAV_BTN =
-  'flex h-9 w-9 items-center justify-center rounded border border-line text-[18px] leading-none text-mute transition-colors hover:border-cyan hover:text-ink disabled:opacity-30 disabled:hover:border-line disabled:hover:text-mute';
+  'flex h-9 w-9 items-center justify-center rounded border border-line bg-line/60 text-[18px] leading-none text-ink/90 transition-colors hover:border-cyan hover:text-select disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-line disabled:hover:text-ink/90';
 
 /** Color del nivel: barra lateral, puntos de la leyenda y fondo translúcido del badge. */
 export function levelAccent(palette: Palette, status: Status): string {

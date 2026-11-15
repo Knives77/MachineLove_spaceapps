@@ -86,14 +86,14 @@ export function MonthCard({ data }: { data: CalendarResponse }) {
             </>
           )}
 
-          <LevelBar baseline={row.baseline} value={row.harmonized} status={row.status} />
+          <LevelBar baseline={row.baseline} value={row.harmonized} status={isZero(row) ? 'zero' : row.status} />
 
         </>
       )}
     </div>
   );
 
-  function LevelBar({ baseline, value, status }: { baseline: Baseline | null; value: number | null; status: Status }) {
+  function LevelBar({ baseline, value, status }: { baseline: Baseline | null; value: number | null; status: Status | 'zero' }) {
     // 4 tramos fijos y siempre completos (Bajo, Normal, Alto, Extremo). El nivel lo decide la API
     // (`status`); el triángulo cae en el tramo de ese nivel y, dentro, según los percentiles.
     const segs = [
@@ -110,6 +110,7 @@ export function MonthCard({ data }: { data: CalendarResponse }) {
       const frac = [part(value, 0, p25), part(value, p25, p75), part(value, p75, p90), part(value, p90, p90 * 1.6 || 1)][seg];
       marker = (seg + Math.min(0.88, Math.max(0.12, frac))) * 25; // nunca en el borde
     }
+    if (status === 'zero') marker = 1.5; // 0 celdas-día: extremo izquierdo de la escala
     return (
       <div className="mt-6">
         <div className="relative h-3">

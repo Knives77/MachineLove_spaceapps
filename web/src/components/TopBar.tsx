@@ -32,7 +32,7 @@ export function TopBar() {
   }, [tab]);
 
   return (
-    <header className="flex items-center gap-4 border-b border-line bg-bg/95 px-4 py-2">
+    <header className="flex h-14 shrink-0 items-center gap-4 border-b border-line bg-bg/95 px-4">
       <div className="mr-2 min-w-[170px]">
         <p className="text-[15px] font-semibold tracking-[0.18em] uppercase">{t('app.name')}</p>
         <p className="kicker text-xs">
