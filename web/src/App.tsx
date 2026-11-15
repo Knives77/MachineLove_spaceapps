@@ -1,3 +1,4 @@
+import { MotionConfig } from 'motion/react';
 import { Downloads } from './components/Downloads';
 import { TopBar } from './components/TopBar';
 import { AppProvider, useApp } from './state';
@@ -32,8 +33,11 @@ function Shell() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <Shell />
-    </AppProvider>
+    // Los iconos animados respetan "reducir movimiento" del sistema.
+    <MotionConfig reducedMotion="user">
+      <AppProvider>
+        <Shell />
+      </AppProvider>
+    </MotionConfig>
   );
 }

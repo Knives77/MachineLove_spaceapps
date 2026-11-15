@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { errorText, useApp } from '../state';
+import { RefreshCWIcon } from './icons/refresh-cw';
+import { useIconAnim } from './icons/useIconAnim';
 
 export function Panel({
   children,
@@ -104,6 +106,7 @@ export function Skeleton({ className = '' }: { className?: string }) {
 
 export function ErrorBox({ code, onRetry }: { code: string; onRetry?: () => void }) {
   const { t } = useApp();
+  const icon = useIconAnim();
   return (
     <div role="alert" className="panel flex flex-col items-start gap-3 border-warn/60 p-4 text-sm">
       <p>
@@ -111,7 +114,17 @@ export function ErrorBox({ code, onRetry }: { code: string; onRetry?: () => void
         {errorText(t, code)}
       </p>
       {onRetry && (
-        <button type="button" className="btn" onClick={onRetry}>
+        <button
+          type="button"
+          className="btn flex items-center gap-2"
+          {...icon.trigger}
+          onClick={() => {
+            // Gira mientras se repite la petición (al cargar, este aviso se reemplaza).
+            icon.start();
+            onRetry();
+          }}
+        >
+          <RefreshCWIcon ref={icon.ref} size={15} aria-hidden="true" className="flex" />
           {t('error.retry')}
         </button>
       )}

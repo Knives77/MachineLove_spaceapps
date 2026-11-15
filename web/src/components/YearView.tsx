@@ -136,7 +136,7 @@ export function YearView({ data }: { data: CalendarResponse }) {
             onClick={() => row && setSelected({ year: sel.year, month: m })}
             onFocus={() => sound && row && playStatus(row.status)}
             onKeyDown={(e) => onKey(e, m)}
-            className={`relative flex h-[64px] flex-col justify-between overflow-hidden rounded-md border py-2 pl-3.5 pr-2.5 text-left transition-colors ${
+            className={`relative flex h-[56px] flex-col justify-between overflow-hidden rounded-md border py-1.5 pl-3.5 pr-2.5 text-left transition-colors ${
               !row
                 ? 'border-dashed border-line text-dim'
                 : isSel

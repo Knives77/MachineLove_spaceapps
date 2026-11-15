@@ -4,7 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "packageManager": "pnpm@12.18.0",
-  "engines": { "node": ">=24 <25" },
+  "engines": {
+    "node": ">=24 <25"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -17,6 +19,7 @@
     "@fontsource/ibm-plex-mono": "^5.1.0",
     "leaflet": "1.9.4",
     "leaflet-draw": "1.0.4",
+    "motion": "14.14.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1"

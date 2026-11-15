@@ -1,8 +1,10 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { statusColor } from '../lib/color';
 import { fmtNum, fmtPct, indexMonths, ymKey } from '../lib/format';
 import { showsRawToggle, useApp } from '../state';
 import type { Baseline, CalendarResponse } from '../types';
+import { BadgeAlertIcon } from './icons/badge-alert';
+import { useIconAnim } from './icons/useIconAnim';
 import { StatusIcon } from './ui';
 import { isZero, NAV_BTN, shiftMonth, ZERO_ACCENT } from './YearView';
 
@@ -104,14 +106,17 @@ export function MonthCard({ data }: { data: CalendarResponse }) {
           {data.calibration.scope === 'country' && (
             // Poco traslape entre sensores en esta área: el backend usó el k del país (harmonization.md).
             <p className="mt-3 flex gap-2 rounded border border-warn/40 bg-warn/5 px-3 py-2 text-[12.5px] text-warn">
-              <span aria-hidden="true">!</span>
+              <AlertOnce size={16} />
               <span>{t('val.scopeWarn')}</span>
             </p>
           )}
 
           {row.flags.length > 0 && (
             <div className="mt-3">
-              <p className="kicker">{t('card.flags')}</p>
+              <p className="kicker flex items-center gap-1.5">
+                <AlertOnce key={`${sel.year}-${sel.month}`} size={13} className="text-cyan" />
+                {t('card.flags')}
+              </p>
               <ul className="mt-1 space-y-1 text-[12.5px] text-mute">
                 {row.flags.map((f) => (
                   <li key={f} className="flex gap-2">
@@ -194,4 +199,14 @@ export function MonthCard({ data }: { data: CalendarResponse }) {
       </div>
     );
   }
+}
+
+/** Icono de aviso que se anima una sola vez al aparecer (sin bucle). */
+function AlertOnce({ size, className = '' }: { size: number; className?: string }) {
+  const icon = useIconAnim();
+  useEffect(() => {
+    icon.pulse(600);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return <BadgeAlertIcon ref={icon.ref} size={size} aria-hidden="true" className={`flex shrink-0 ${className}`} />;
 }

@@ -90,6 +90,22 @@
   /* Contorno del área elegida en el mapa (Leaflet SVG). */
   .ml-aoi-glow {
     filter: drop-shadow(0 0 4px #38bdf8);
+    /* Pulso sutil al elegir o cambiar de región: 2 veces y se detiene (no es un bucle). */
+    animation: aoi-pulse 1.1s ease-out 2;
+  }
+  @keyframes aoi-pulse {
+    0%,
+    100% {
+      filter: drop-shadow(0 0 4px #38bdf8);
+    }
+    45% {
+      filter: drop-shadow(0 0 11px #38bdf8) drop-shadow(0 0 3px #38bdf8);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .ml-aoi-glow {
+      animation: none;
+    }
   }
   .btn:disabled {
     color: var(--color-dim);

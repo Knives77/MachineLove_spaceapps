@@ -2,10 +2,14 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { GeoJSON, MapContainer, TileLayer, useMap } from 'react-leaflet';
 import { DEFAULT_PRESET, useApp } from '../state';
 import type { Polygon, PresetFeature } from '../types';
+import { MapPinPlusIcon } from './icons/map-pin-plus';
+import { PenToolIcon } from './icons/pen-tool';
+import { useIconAnim } from './icons/useIconAnim';
 
 const SELECT = '#f8fafc'; // contorno activo (interacción), con resplandor cian vía .ml-aoi-glow
 
@@ -24,11 +28,13 @@ function boundsOf(geom: Polygon) {
 
 function Controller({
   target,
+  padRight,
   drawMode,
   onDrawn,
   onDrawEnd,
 }: {
   target: Polygon | null;
+  padRight: number;
   drawMode: 'rect' | 'poly' | null;
   onDrawn: (g: Polygon) => void;
   onDrawEnd: () => void;
@@ -45,14 +51,34 @@ function Controller({
     return () => ro.disconnect();
   }, [map]);
 
-  // Encuadra la región completa con margen: 80 px arriba (píldoras flotantes) y 40 px en los demás lados.
+  // Dos movimientos distintos:
+  //  - Cambia la región (preset o área nueva): flyToBounds para encuadrarla completa en el espacio
+  //    VISIBLE (80 px arriba por las píldoras, 50 abajo, 40 a la izquierda y `padRight` a la derecha).
+  //  - Solo se abre/cierra el panel del calendario: paneo horizontal puro de la mitad del cambio de
+  //    margen, SIN cambiar el zoom, para que Leaflet reutilice las teselas que ya tiene.
+  const prevTarget = useRef<Polygon | null>(null);
+  const prevPad = useRef(padRight);
   useEffect(() => {
     if (!target) return;
-    const opts = { paddingTopLeft: [40, 80] as L.PointTuple, paddingBottomRight: [40, 40] as L.PointTuple, maxZoom: 9 };
     const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    if (reduce) map.fitBounds(boundsOf(target), { ...opts, animate: false });
-    else map.flyToBounds(boundsOf(target), { ...opts, duration: 0.8 });
-  }, [map, target]);
+    const targetChanged = prevTarget.current !== target;
+    const dPad = padRight - prevPad.current;
+    prevTarget.current = target;
+    prevPad.current = padRight;
+
+    if (targetChanged) {
+      const opts = {
+        paddingTopLeft: [40, 80] as L.PointTuple,
+        paddingBottomRight: [padRight, 50] as L.PointTuple,
+        maxZoom: 9,
+      };
+      if (reduce) map.fitBounds(boundsOf(target), { ...opts, animate: false });
+      else map.flyToBounds(boundsOf(target), { ...opts, duration: 0.7, easeLinearity: 0.25, animate: true });
+      return;
+    }
+    // Abrir (margen 40 → 410): +185 px, la región se corre a la izquierda; cerrar: −185 px.
+    if (dPad !== 0) map.panBy([dPad / 2, 0], { animate: !reduce, duration: 0.35, easeLinearity: 0.25 });
+  }, [map, target, padRight]);
 
   useEffect(() => {
     const onCreated = (e: L.LeafletEvent) => {
@@ -101,8 +127,19 @@ function boxAround(lat: number, lon: number, km: number): Polygon {
 
 const RADII = [25, 50, 100] as const;
 
-export function MapPanel({ className = '' }: { className?: string }) {
+export function MapPanel({
+  className = '',
+  padRight = 40,
+  children,
+}: {
+  className?: string;
+  /** Margen derecho para encuadrar la región (px); más grande si un panel cubre el lado derecho. */
+  padRight?: number;
+  /** Capas extra sobre el mapa (p. ej. el panel deslizante del calendario). */
+  children?: ReactNode;
+}) {
   const { t, presets, aoi, setAoi, presetName } = useApp();
+  const pinIcon = useIconAnim();
   const [drawMode, setDrawMode] = useState<'rect' | 'poly' | null>(null);
   const [panel, setPanel] = useState(false);
   const features: PresetFeature[] = presets.state === 'ok' ? presets.data.features : [];
@@ -121,7 +158,11 @@ export function MapPanel({ className = '' }: { className?: string }) {
           enlaces de atribución de Leaflet; la posición en pantalla no cambia (es absoluta). */}
       {/* Regiones de ejemplo + área personalizada */}
       {/* Ocupa hasta el borde inferior para limitar la altura del panel; deja pasar los clics al mapa. */}
-      <div className="pointer-events-none absolute inset-2 z-[500] flex flex-col items-start gap-2">
+      <div
+        className="pointer-events-none absolute inset-2 z-[500] flex flex-col items-start gap-2"
+        // Con un panel encima del lado derecho, las píldoras se acomodan solo en el espacio visible.
+        style={padRight > 40 ? { right: padRight } : undefined}
+      >
       <div className="pointer-events-auto flex max-w-full flex-wrap gap-1.5">
         <span className="sr-only">{t('map.presets')}</span>
         {features.map((f) => (
@@ -141,15 +182,18 @@ export function MapPanel({ className = '' }: { className?: string }) {
           aria-controls="custom-area"
           aria-pressed={!!drawn}
           onClick={() => setPanel((p) => !p)}
-          className={`btn whitespace-nowrap border-dashed bg-bg/85 px-2 py-1 text-[11.5px] backdrop-blur ${drawn || panel ? 'btn-on' : ''}`}
+          {...pinIcon.trigger}
+          className={`btn flex items-center gap-1.5 whitespace-nowrap border-dashed bg-bg/85 px-2 py-1 text-[11.5px] backdrop-blur ${drawn || panel ? 'btn-on' : ''}`}
         >
-          <span aria-hidden="true" className="mr-1 text-cyan">+</span>
+          <MapPinPlusIcon ref={pinIcon.ref} size={14} aria-hidden="true" className="flex text-cyan" />
           {t('map.custom')}
         </button>
       </div>
 
+      <AnimatePresence>
       {panel && (
         <CustomAreaPanel
+          key="custom-area"
           onClose={() => setPanel(false)}
           onDraw={startDraw}
           onBox={(g) => {
@@ -158,11 +202,15 @@ export function MapPanel({ className = '' }: { className?: string }) {
           }}
         />
       )}
+      </AnimatePresence>
       </div>
 
       <MapContainer
         center={[21.3, -99.8]}
         zoom={8}
+        // Medios niveles: encuadre más justo sin que las teselas raster se vean borrosas.
+        zoomSnap={0.5}
+        zoomDelta={0.5}
         className="isolate h-full w-full"
         zoomControl={false}
         attributionControl
@@ -173,6 +221,9 @@ export function MapPanel({ className = '' }: { className?: string }) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           maxZoom={12}
+          // Más teselas precargadas alrededor y carga también durante el paneo: sin huecos al deslizar.
+          keepBuffer={6}
+          updateWhenIdle={false}
         />
         {/* La región activa se dibuja al final para que ningún contorno gris quede encima. */}
         {[...features].sort((a, b) => Number(a.id === selectedId) - Number(b.id === selectedId)).map((f) => {
@@ -202,6 +253,7 @@ export function MapPanel({ className = '' }: { className?: string }) {
         )}
         <Controller
           target={target}
+          padRight={padRight}
           drawMode={drawMode}
           onDrawn={(g) => {
             setDrawMode(null);
@@ -213,7 +265,11 @@ export function MapPanel({ className = '' }: { className?: string }) {
 
       {/* Instrucciones mientras se dibuja */}
       {drawMode && (
-        <div role="status" className="absolute bottom-7 left-1/2 z-[500] flex -translate-x-1/2 items-center gap-3 rounded border border-cyan/60 bg-bg/90 px-3 py-2 text-[12.5px] backdrop-blur">
+        <div
+          role="status"
+          // Centrado en el espacio visible (a la izquierda de un panel abierto).
+          style={{ left: `calc((100% - ${padRight - 40}px) / 2)` }}
+          className="absolute bottom-7 z-[500] flex -translate-x-1/2 items-center gap-3 rounded border border-cyan/60 bg-bg/90 px-3 py-2 text-[12.5px] backdrop-blur">
           <span>{t(drawMode === 'rect' ? 'map.hintRect' : 'map.hintPoly')}</span>
           <button type="button" onClick={() => setDrawMode(null)} className="font-mono text-[11px] text-mute hover:text-ink">
             {t('map.cancelDraw')}
@@ -230,6 +286,8 @@ export function MapPanel({ className = '' }: { className?: string }) {
           ← {t('map.back')}
         </button>
       )}
+
+      {children}
     </div>
   );
 }
@@ -245,6 +303,7 @@ function CustomAreaPanel({
   onBox: (g: Polygon) => void;
 }) {
   const { t } = useApp();
+  const penIcon = useIconAnim();
   const [lat, setLat] = useState('');
   const [lon, setLon] = useState('');
   const [km, setKm] = useState<(typeof RADII)[number]>(50);
@@ -265,8 +324,13 @@ function CustomAreaPanel({
   const field = 'w-full rounded border border-line bg-panel-2 px-2 py-1.5 font-mono text-[12.5px] text-ink outline-none focus:border-cyan';
 
   return (
-    <div
+    <motion.div
       id="custom-area"
+      initial={{ opacity: 0, y: -8, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -6, scale: 0.98 }}
+      transition={{ type: 'spring', stiffness: 380, damping: 30, mass: 0.7 }}
+      style={{ transformOrigin: 'top left' }}
       role="dialog"
       aria-label={t('map.customTitle')}
       onKeyDown={(e) => e.key === 'Escape' && onClose()}
@@ -286,8 +350,14 @@ function CustomAreaPanel({
         <button ref={first} type="button" onClick={() => onDraw('rect')} className="btn px-2 py-1.5 text-xs">
           ▭ {t('map.rect')}
         </button>
-        <button type="button" onClick={() => onDraw('poly')} className="btn px-2 py-1.5 text-xs">
-          ⬠ {t('map.poly')}
+        <button
+          type="button"
+          onClick={() => onDraw('poly')}
+          {...penIcon.trigger}
+          className="btn flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs"
+        >
+          <PenToolIcon ref={penIcon.ref} size={14} aria-hidden="true" className="flex" />
+          {t('map.poly')}
         </button>
       </div>
 
@@ -324,6 +394,6 @@ function CustomAreaPanel({
         </div>
         {bad && <p className="text-[11px] text-warn">{t('map.badCoords')}</p>}
       </form>
-    </div>
+    </motion.div>
   );
 }

@@ -1,7 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { indexMonths, ymKey } from '../lib/format';
 import { useApp } from '../state';
 import type { CalendarResponse } from '../types';
+import { PauseIcon } from './icons/pause';
+import { PlayIcon } from './icons/play';
+import { useIconAnim } from './icons/useIconAnim';
 import { isZero } from './YearView';
 
 const MODIS_START = 2000; // Terra desde 2000
@@ -22,6 +25,17 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
   const sel = selected ?? data.latest;
   const idx = toIdx(sel.year, sel.month);
   const [playing, setPlaying] = useState(false);
+  const playIcon = useIconAnim();
+  // Al cambiar entre reproducir y pausar, el icono nuevo se anima una vez (no en la carga inicial).
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    playIcon.pulse();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing]);
   const byKey = useMemo(() => indexMonths(data.months), [data]);
 
   // Primer mes que trae dato: al repetir desde el final no se arranca en meses "sin dato"
@@ -72,17 +86,13 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
         type="button"
         onClick={togglePlay}
         aria-label={playing ? t('time.pause') : t('time.play')}
-        className="flex h-12 w-12 shrink-0 items-center justify-center rounded border-2 border-cyan bg-cyan-deep"
+        {...playIcon.trigger}
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded border-2 border-cyan bg-cyan-deep text-ink"
       >
         {playing ? (
-          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-            <rect x="3" y="2" width="4" height="14" fill="#e8edf2" />
-            <rect x="11" y="2" width="4" height="14" fill="#e8edf2" />
-          </svg>
+          <PauseIcon ref={playIcon.ref} size={20} aria-hidden="true" className="flex" />
         ) : (
-          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-            <path d="M4 2 L16 9 L4 16 Z" fill="#e8edf2" />
-          </svg>
+          <PlayIcon ref={playIcon.ref} size={20} aria-hidden="true" className="flex" />
         )}
       </button>
       <div className="w-32 shrink-0">
