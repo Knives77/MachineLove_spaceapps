@@ -3,6 +3,7 @@ import { fmtNum } from '../lib/format';
 import { useApp } from '../state';
 import { isZero } from './YearView';
 import type { CalendarResponse } from '../types';
+import { SURFACE, TEXT, UI } from '../theme/tokens';
 
 /** Un mes calendario a lo largo de los años: valor armonizado y banda p25–p75 de la API. */
 export function MonthSeries({ data, month, height = 150 }: { data: CalendarResponse; month: number; height?: number }) {
@@ -46,7 +47,7 @@ export function MonthSeries({ data, month, height = 150 }: { data: CalendarRespo
         aria-label={rows.map((r) => `${r.year}: ${r.harmonized === null ? t('status.no_data') : fmtNum(lang, r.harmonized, 1)}`).join(', ')}
       >
         {medianPts && (
-          <polyline points={medianPts} fill="none" stroke="#93a0ad" strokeDasharray="4 5" vectorEffect="non-scaling-stroke" />
+          <polyline points={medianPts} fill="none" stroke={TEXT.mute} strokeDasharray="4 5" vectorEffect="non-scaling-stroke" />
         )}
         {segments.map((seg, i) => {
           const band = seg.filter((p) => p.lo !== undefined && p.hi !== undefined);
@@ -60,11 +61,11 @@ export function MonthSeries({ data, month, height = 150 }: { data: CalendarRespo
               : '';
           return (
             <g key={i}>
-              {bandPath && <path d={bandPath} fill="#22d3ee" opacity={0.18} />}
+              {bandPath && <path d={bandPath} fill={UI.accent} opacity={0.18} />}
               <polyline
                 points={seg.map((p) => `${p.x},${y(p.v)}`).join(' ')}
                 fill="none"
-                stroke="#22d3ee"
+                stroke={UI.accent}
                 strokeWidth={2.5}
                 vectorEffect="non-scaling-stroke"
               />
@@ -79,8 +80,8 @@ export function MonthSeries({ data, month, height = 150 }: { data: CalendarRespo
                 cx={x(r.year)}
                 cy={y(r.harmonized)}
                 r={selected?.year === r.year && selected.month === month ? 7 : 3.5}
-                fill={selected?.year === r.year && selected.month === month ? '#22d3ee' : '#0d1117'}
-                stroke="#22d3ee"
+                fill={selected?.year === r.year && selected.month === month ? UI.accent : SURFACE.panel}
+                stroke={UI.accent}
                 strokeWidth={2}
                 vectorEffect="non-scaling-stroke"
                 className="cursor-pointer"
@@ -91,7 +92,7 @@ export function MonthSeries({ data, month, height = 150 }: { data: CalendarRespo
             ),
         )}
         {gaps.map((r) => (
-          <text key={`g${r.year}`} x={x(r.year)} y={H - 4} textAnchor="middle" fontSize="18" fill="#93a0ad">
+          <text key={`g${r.year}`} x={x(r.year)} y={H - 4} textAnchor="middle" fontSize="18" fill={TEXT.mute}>
             ◌<title>{`${r.year}: ${t('status.no_data')}`}</title>
           </text>
         ))}

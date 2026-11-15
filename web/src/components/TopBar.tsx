@@ -218,8 +218,8 @@ function IconMenu({
         }}
         className={
           text
-            ? `relative flex h-11 items-center gap-2 rounded-full border bg-[#1e293b]/80 pl-3.5 pr-4 text-[#e2e8f0] transition-colors hover:border-line-2 ${
-                open || accent ? 'border-cyan/70' : 'border-[#334155]'
+            ? `relative flex h-11 items-center gap-2 rounded-full border bg-line/80 pl-3.5 pr-4 text-ink transition-colors hover:border-line-2 ${
+                open || accent ? 'border-cyan/70' : 'border-line-2'
               }`
             : `${ICON_BTN} w-11 ${open ? '!border-cyan !text-ink' : ''}`
         }

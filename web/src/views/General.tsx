@@ -136,7 +136,7 @@ function CalendarPanel({ data: d, onHide }: { data: CalendarResponse; onHide: ()
   return (
     <section
       id="cal-panel"
-      className="flex h-full flex-col rounded border border-line bg-[#0f172a]/90 shadow-2xl shadow-black/60 backdrop-blur-md"
+      className="flex h-full flex-col rounded border border-line bg-drawer/90 shadow-2xl shadow-black/60 backdrop-blur-md"
     >
       <header className="shrink-0 px-4 pb-2 pt-3">
         <div className="flex items-start justify-between gap-2">

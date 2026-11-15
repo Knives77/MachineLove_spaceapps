@@ -2,6 +2,7 @@ import { useMemo, type KeyboardEvent } from 'react';
 import { readableOn, statusColor } from '../lib/color';
 import { indexMonths, ymKey } from '../lib/format';
 import { playStatus } from '../lib/sound';
+import { NEUTRAL } from '../theme/tokens';
 import { useApp } from '../state';
 import type { CalendarResponse, MonthRow, Palette, Status } from '../types';
 
@@ -84,7 +85,7 @@ export function levelAccent(palette: Palette, status: Status): string {
 export const levelText = (accent: string) => readableOn(accent);
 
 /** Acento neutro para los meses medidos con 0 celdas-día: "sin incendios", nunca un color de nivel. */
-export const ZERO_ACCENT = '#64748b';
+export const ZERO_ACCENT = NEUTRAL.zero;
 
 /** Un mes medido con 0: se muestra como "Sin incendios" aunque `status` diga otra cosa (p. ej. mediana 0). */
 export const isZero = (row: MonthRow) => row.status !== 'no_data' && row.harmonized === 0;
@@ -140,8 +141,8 @@ export function YearView({ data }: { data: CalendarResponse }) {
               !row
                 ? 'border-dashed border-line text-dim'
                 : isSel
-                  ? 'sel-glow bg-[#1a2436]'
-                  : 'border-line bg-panel hover:border-line-2 hover:bg-[#151e2e]'
+                  ? 'sel-glow bg-[var(--color-panel-selected)]'
+                  : 'border-line bg-panel hover:border-line-2 hover:bg-[var(--color-panel-hover)]'
             }`}
           >
             {/* Barra de acento de 4 px con el color del nivel; rayada si no hay dato. */}

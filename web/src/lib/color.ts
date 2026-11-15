@@ -1,16 +1,8 @@
+import { INK, LEVELS, NEUTRAL, RAMPS as TOKEN_RAMPS, SURFACE } from '../theme/tokens';
 import type { Palette, Status } from '../types';
 
-// Rampas secuenciales perceptualmente uniformes, recortadas para que el valor
-// más bajo se distinga del fondo oscuro. La luminancia crece de forma monótona,
-// así que se leen en escala de grises y con daltonismo.
-const RAMPS: Record<Palette, string[]> = {
-  // Estándar (térmica): inferno 0.30 → 1.00
-  inferno: ['#6a176e', '#932667', '#bc3754', '#dd513a', '#f37819', '#fca50a', '#f6d746', '#fcffa4'],
-  // Daltónicos (azul–amarillo): 4 paradas = Bajo, Normal, Alto, Extremo, con saltos claros de brillo.
-  cividis: ['#2b5c8f', '#5698a3', '#d4af37', '#fde725'],
-  // Alto contraste extremo: del violeta oscuro al blanco, luminancia en saltos grandes.
-  contrast: ['#5a189a', '#c2185b', '#ff9800', '#ffff00', '#ffffff'],
-};
+// Rampas secuenciales (src/theme/tokens.ts): luminancia monótona, se leen en grises y con daltonismo.
+const RAMPS: Record<Palette, readonly string[]> = TOKEN_RAMPS;
 
 // Posición en la rampa del color de acento de cada nivel. En la paleta de daltonismo
 // cada nivel cae exactamente en su parada.
@@ -50,8 +42,8 @@ export function sqrtT(v: number, max: number): number {
   return Math.sqrt(Math.max(0, v)) / Math.sqrt(max);
 }
 
-export const INK_LIGHT = '#ffffff';
-export const INK_DARK = '#0b0f17';
+export const INK_LIGHT = INK.light;
+export const INK_DARK = INK.dark;
 
 function luminance(hex: string): number {
   const [r, g, b] = hexToRgb(hex).map((c) => {
@@ -72,17 +64,10 @@ export function inkOn(bg: string): string {
   return contrast(bg, INK_LIGHT) >= contrast(bg, INK_DARK) ? INK_LIGHT : INK_DARK;
 }
 
-// Estándar: colores de nivel calibrados para fondo oscuro (no salen de la rampa de valores).
-const STANDARD_LEVELS: Partial<Record<Status, string>> = {
-  below: '#a855f7', // violeta luminoso
-  normal: '#e06d53', // coral / terracota suave
-  above: '#f97316', // naranja intenso
-  critical: '#fde047', // amarillo brillante
-};
-
 /** Color de acento por nivel; el nivel siempre va con texto e ícono. */
 export function statusColor(palette: Palette, s: Status): string {
-  if (palette === 'inferno' && STANDARD_LEVELS[s]) return STANDARD_LEVELS[s]!;
+  // Estándar y Daltónicos: colores de nivel fijos (tokens). Alto contraste: puntos de su rampa.
+  if (palette !== 'contrast' && s in LEVELS[palette]) return LEVELS[palette][s as keyof (typeof LEVELS)['inferno']];
   const [low, normal, high, extreme] = STATUS_T[palette];
   switch (s) {
     case 'below':
@@ -94,7 +79,7 @@ export function statusColor(palette: Palette, s: Status): string {
     case 'critical':
       return ramp(palette, extreme);
     default:
-      return '#5b6573';
+      return NEUTRAL.noLevel;
   }
 }
 
@@ -115,7 +100,7 @@ export function statusMark(s: Status): string {
 }
 
 /** Fondo de las tarjetas de mes (vista por año). */
-export const CARD_BG = '#111827';
+export const CARD_BG = SURFACE.panel;
 
 /**
  * Versión legible de un color de acento sobre fondo oscuro: lo mezcla hacia el blanco
@@ -127,5 +112,5 @@ export function readableOn(color: string, bg: string = CARD_BG, min = 4.5): stri
     const mixed = rgbToHex(c.map((v) => v + (255 - v) * f));
     if (contrast(mixed, bg) >= min) return mixed;
   }
-  return '#ffffff';
+  return INK.light;
 }

@@ -14,6 +14,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { areaKm2 } from '../lib/geo';
 import { DEFAULT_PRESET, useApp } from '../state';
+import { MAP } from '../theme/tokens';
 import type { Polygon, PresetFeature } from '../types';
 import { MapPinPlusIcon } from './icons/map-pin-plus';
 import { PenToolIcon } from './icons/pen-tool';
@@ -21,9 +22,9 @@ import { useIconAnim } from './icons/useIconAnim';
 
 setWorkerUrl(workerUrl);
 
-const ACTIVE = '#38bdf8'; // borde y relleno de la región activa
-const IDLE = '#64748b'; // contorno de las regiones no elegidas
-const DRAW = '#f8fafc'; // trazo mientras se dibuja (interacción)
+const ACTIVE = MAP.regionActive; // borde y relleno de la región activa
+const IDLE = MAP.regionIdle; // contorno de las regiones no elegidas
+const DRAW = MAP.draw; // trazo mientras se dibuja (interacción)
 const MAX_AREA_KM2 = 200_000; // api.md: aoi_too_large
 
 /**
@@ -157,9 +158,9 @@ export function MapPanel({
 
     map.on('load', () => {
       // Tono de la app sobre el estilo base.
-      if (map.getLayer('background')) map.setPaintProperty('background', 'background-color', '#090d14');
-      if (map.getLayer('water')) map.setPaintProperty('water', 'fill-color', '#0b1626');
-      if (map.getLayer('waterway')) map.setPaintProperty('waterway', 'line-color', '#0b1626');
+      if (map.getLayer('background')) map.setPaintProperty('background', 'background-color', MAP.background);
+      if (map.getLayer('water')) map.setPaintProperty('water', 'fill-color', MAP.water);
+      if (map.getLayer('waterway')) map.setPaintProperty('waterway', 'line-color', MAP.water);
       // Las regiones van debajo de la primera capa de etiquetas: los nombres siguen legibles.
       const firstLabel = map.getStyle().layers.find((l) => l.type === 'symbol')?.id;
 
@@ -214,7 +215,7 @@ export function MapPanel({
         type: 'circle',
         source: 'draw',
         filter: ['==', ['geometry-type'], 'Point'],
-        paint: { 'circle-radius': 4, 'circle-color': '#090d14', 'circle-stroke-color': DRAW, 'circle-stroke-width': 2 },
+        paint: { 'circle-radius': 4, 'circle-color': MAP.background, 'circle-stroke-color': DRAW, 'circle-stroke-width': 2 },
       });
 
       // Clic en una región de ejemplo = elegirla (salvo mientras se dibuja).

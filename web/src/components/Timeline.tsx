@@ -147,7 +147,7 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
               MODIS · {MODIS_START} →
             </span>
           </div>
-          <div className="absolute inset-x-0 top-3.5 h-1.5 rounded-sm bg-[#8a929e]" style={{ left: `${pct(toIdx(MODIS_START, 1))}%` }} />
+          <div className="absolute inset-x-0 top-3.5 h-1.5 rounded-sm bg-mute" style={{ left: `${pct(toIdx(MODIS_START, 1))}%` }} />
           {marks.out.map((i) => (
             <span key={`o${i}`} aria-hidden="true" className="absolute top-3 h-2.5 w-1.5 -translate-x-1/2 bg-bg ring-1 ring-mute" style={{ left: `${pct(i)}%` }} />
           ))}

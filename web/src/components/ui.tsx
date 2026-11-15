@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { errorText, useApp } from '../state';
 import { RefreshCWIcon } from './icons/refresh-cw';
 import { useIconAnim } from './icons/useIconAnim';
+import { TEXT } from '../theme/tokens';
 
 export function Panel({
   children,
@@ -136,14 +137,14 @@ export function StatusIcon({ status, color, size = 14 }: { status: string; color
   if (status === 'no_data') {
     return (
       <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
-        <circle cx="8" cy="8" r="6" fill="none" stroke="#93a0ad" strokeWidth="1.5" strokeDasharray="2 2" />
+        <circle cx="8" cy="8" r="6" fill="none" stroke={TEXT.mute} strokeWidth="1.5" strokeDasharray="2 2" />
       </svg>
     );
   }
   if (status === 'insufficient_baseline') {
     return (
       <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
-        <circle cx="8" cy="8" r="6" fill="none" stroke="#93a0ad" strokeWidth="1.5" />
+        <circle cx="8" cy="8" r="6" fill="none" stroke={TEXT.mute} strokeWidth="1.5" />
       </svg>
     );
   }

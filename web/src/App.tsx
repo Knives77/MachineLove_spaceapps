@@ -1,5 +1,4 @@
 import { MotionConfig } from 'motion/react';
-import { Downloads } from './components/Downloads';
 import { TopBar } from './components/TopBar';
 import { AppProvider, useApp } from './state';
 import { Edu } from './views/Edu';
@@ -23,9 +22,9 @@ function Shell() {
           {tab === 'expert' && <Expert />}
         </div>
       </main>
+      {/* Las descargas (CSV, GeoJSON) viven en Experto: General se mantiene limpia. */}
       <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-4 py-2">
         <p className="text-[11.5px] text-mute">{t('footer.source')}</p>
-        {tab === 'general' && <Downloads compact />}
       </footer>
     </div>
   );

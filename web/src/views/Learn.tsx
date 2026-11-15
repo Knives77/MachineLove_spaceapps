@@ -4,6 +4,7 @@ import { fmtNum } from '../lib/format';
 import { useApp } from '../state';
 import type { CalendarResponse, MonthRow } from '../types';
 import { WithCalendar } from './WithCalendar';
+import { TEXT } from '../theme/tokens';
 
 const STEPS = ['s1', 's2', 's3', 's4'] as const;
 
@@ -103,7 +104,7 @@ function StepChart({ data, step }: { data: CalendarResponse; step: number }) {
     title = t('learn.chart3', { y: year });
     series = [
       { key: 'learn.legendViirs', color: ramp(palette, 0.68), vals: viirs },
-      { key: 'learn.legendModis', color: '#93a0ad', vals: modis },
+      { key: 'learn.legendModis', color: TEXT.mute, vals: modis },
     ];
   } else {
     title = t('learn.chart4', { y: year });

@@ -3,6 +3,7 @@ import { ramp, statusColor } from '../lib/color';
 import { fmtNum } from '../lib/format';
 import { useApp } from '../state';
 import type { CalendarResponse } from '../types';
+import { SURFACE, UI } from '../theme/tokens';
 
 /** Totales anuales de `years[]`, con el mismo interruptor crudo/armonizado. */
 export function YearBars({ data, height = 120 }: { data: CalendarResponse; height?: number }) {
@@ -37,7 +38,7 @@ export function YearBars({ data, height = 120 }: { data: CalendarResponse; heigh
           .map((y) => `${y.year} ${fmtNum(lang, (mode === 'harmonized' ? y.harmonized : y.raw_points) ?? 0)}`)
           .join(', ')}`}
       >
-        <line x1={0} x2={W} y1={H - pad} y2={H - pad} stroke="#313c4a" />
+        <line x1={0} x2={W} y1={H - pad} y2={H - pad} stroke={SURFACE.line2} />
         {Array.from({ length: n }, (_, i) => {
           const y = start_year + i;
           const v = val(y);
@@ -54,7 +55,7 @@ export function YearBars({ data, height = 120 }: { data: CalendarResponse; heigh
                 y={H - pad - h}
                 height={Math.max(h, 1)}
                 fill={r.complete ? color : 'transparent'}
-                stroke={r.complete ? (sel ? '#f8fafc' : 'none') : color}
+                stroke={r.complete ? (sel ? UI.select : 'none') : color}
                 strokeWidth={sel ? 3 : 2}
                 strokeDasharray={r.complete ? undefined : '5 4'}
                 vectorEffect="non-scaling-stroke"
