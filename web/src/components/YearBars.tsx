@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import { ramp, statusColor } from '../lib/color';
 import { fmtNum } from '../lib/format';
-import { useApp } from '../state';
+import { useApp, useCalendar } from '../state';
 import type { CalendarResponse } from '../types';
+import { SURFACE, UI } from '../theme/tokens';
 
 /** Totales anuales de `years[]`, con el mismo interruptor crudo/armonizado. */
 export function YearBars({ data, height = 120 }: { data: CalendarResponse; height?: number }) {
-  const { t, lang, mode, palette, selected, setSelected } = useApp();
+  const { t, lang, mode, palette, selected, setSelected, basis, aoi } = useApp();
   const { start_year, end_year } = data.range;
   const n = end_year - start_year + 1;
   const byYear = useMemo(() => new Map(data.years.map((y) => [y.year, y])), [data]);
@@ -15,7 +16,18 @@ export function YearBars({ data, height = 120 }: { data: CalendarResponse; heigh
     if (!r) return null;
     return mode === 'harmonized' ? r.harmonized : r.raw_points;
   };
-  const max = Math.max(1, ...data.years.map((y) => (mode === 'harmonized' ? y.harmonized ?? 0 : y.raw_points)));
+  // "Simular fin de MODIS": la serie con MODIS se dibuja punteada detrás, para ver cuánto cambia.
+  const compare = mode === 'harmonized' && basis === 'viirs_primary';
+  const [ref] = useCalendar(compare ? aoi : null, 'modis_primary');
+  const refByYear = useMemo(
+    () => (compare && ref.state === 'ok' ? new Map(ref.data.years.map((y) => [y.year, y.harmonized])) : null),
+    [compare, ref],
+  );
+  const max = Math.max(
+    1,
+    ...data.years.map((y) => (mode === 'harmonized' ? y.harmonized ?? 0 : y.raw_points)),
+    ...(refByYear ? [...refByYear.values()].map((v) => v ?? 0) : []),
+  );
   const W = 1000;
   const H = height;
   const pad = 18;
@@ -30,6 +42,12 @@ export function YearBars({ data, height = 120 }: { data: CalendarResponse; heigh
         <span className="kicker text-[10px] normal-case tracking-normal">
           {mode === 'harmonized' ? t('unit.cellDays') : t('unit.points')} ·{' '}
           <span className="inline-block h-2 w-3 border border-dashed border-mute align-middle" /> {t('years.incomplete')}
+          {refByYear && (
+            <>
+              {' · '}
+              <span className="inline-block h-0 w-3 border-t-2 border-dashed border-ink align-middle" /> {t('years.withModis')}
+            </>
+          )}
         </span>
       </figcaption>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }} preserveAspectRatio="none" role="img"
@@ -37,7 +55,7 @@ export function YearBars({ data, height = 120 }: { data: CalendarResponse; heigh
           .map((y) => `${y.year} ${fmtNum(lang, (mode === 'harmonized' ? y.harmonized : y.raw_points) ?? 0)}`)
           .join(', ')}`}
       >
-        <line x1={0} x2={W} y1={H - pad} y2={H - pad} stroke="#313c4a" />
+        <line x1={0} x2={W} y1={H - pad} y2={H - pad} stroke={SURFACE.line2} />
         {Array.from({ length: n }, (_, i) => {
           const y = start_year + i;
           const v = val(y);
@@ -45,20 +63,36 @@ export function YearBars({ data, height = 120 }: { data: CalendarResponse; heigh
           if (v === null || v === undefined || !r) return null;
           const h = ((H - pad - 4) * v) / max;
           const sel = selected?.year === y;
+          const refV = refByYear?.get(y);
+          const refY = refV === null || refV === undefined ? null : H - pad - ((H - pad - 4) * refV) / max;
           return (
             <g key={y} onClick={() => setSelected({ year: y, month: selected?.month ?? 1 })} className="cursor-pointer">
-              <title>{`${y}: ${fmtNum(lang, v, 1)}${r.complete ? '' : ` (${t('years.incomplete')})`}`}</title>
+              <title>{`${y}: ${fmtNum(lang, v, 1)}${
+                refV === null || refV === undefined ? '' : ` · ${t('years.withModis')}: ${fmtNum(lang, refV, 1)}`
+              }${r.complete ? '' : ` (${t('years.incomplete')})`}`}</title>
               <rect
                 x={i * bw + bw * 0.15}
                 width={bw * 0.7}
                 y={H - pad - h}
                 height={Math.max(h, 1)}
                 fill={r.complete ? color : 'transparent'}
-                stroke={r.complete ? (sel ? '#f8fafc' : 'none') : color}
+                stroke={r.complete ? (sel ? UI.select : 'none') : color}
                 strokeWidth={sel ? 3 : 2}
                 strokeDasharray={r.complete ? undefined : '5 4'}
                 vectorEffect="non-scaling-stroke"
               />
+              {refY !== null && (
+                <line
+                  x1={i * bw + bw * 0.08}
+                  x2={i * bw + bw * 0.92}
+                  y1={refY}
+                  y2={refY}
+                  stroke="#f8fafc"
+                  strokeWidth={2}
+                  strokeDasharray="4 3"
+                  vectorEffect="non-scaling-stroke"
+                />
+              )}
             </g>
           );
         })}

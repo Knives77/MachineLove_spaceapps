@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
 import { errorText, useApp } from '../state';
+import { RefreshCWIcon } from './icons/refresh-cw';
+import { useIconAnim } from './icons/useIconAnim';
+import { TEXT } from '../theme/tokens';
 
 export function Panel({
   children,
@@ -81,6 +84,7 @@ export function Switch({
         type="button"
         role="switch"
         aria-checked={checked}
+        aria-label={label}
         onClick={() => onChange(!checked)}
         className={`relative h-6 w-11 shrink-0 rounded border transition-colors ${
           checked ? 'border-cyan bg-cyan-deep' : 'border-line-2 bg-panel-2'
@@ -103,6 +107,7 @@ export function Skeleton({ className = '' }: { className?: string }) {
 
 export function ErrorBox({ code, onRetry }: { code: string; onRetry?: () => void }) {
   const { t } = useApp();
+  const icon = useIconAnim();
   return (
     <div role="alert" className="panel flex flex-col items-start gap-3 border-warn/60 p-4 text-sm">
       <p>
@@ -110,7 +115,17 @@ export function ErrorBox({ code, onRetry }: { code: string; onRetry?: () => void
         {errorText(t, code)}
       </p>
       {onRetry && (
-        <button type="button" className="btn" onClick={onRetry}>
+        <button
+          type="button"
+          className="btn flex items-center gap-2"
+          {...icon.trigger}
+          onClick={() => {
+            // Gira mientras se repite la petición (al cargar, este aviso se reemplaza).
+            icon.start();
+            onRetry();
+          }}
+        >
+          <RefreshCWIcon ref={icon.ref} size={15} aria-hidden="true" className="flex" />
           {t('error.retry')}
         </button>
       )}
@@ -122,14 +137,14 @@ export function StatusIcon({ status, color, size = 14 }: { status: string; color
   if (status === 'no_data') {
     return (
       <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
-        <circle cx="8" cy="8" r="6" fill="none" stroke="#93a0ad" strokeWidth="1.5" strokeDasharray="2 2" />
+        <circle cx="8" cy="8" r="6" fill="none" stroke={TEXT.mute} strokeWidth="1.5" strokeDasharray="2 2" />
       </svg>
     );
   }
   if (status === 'insufficient_baseline') {
     return (
       <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true">
-        <circle cx="8" cy="8" r="6" fill="none" stroke="#93a0ad" strokeWidth="1.5" />
+        <circle cx="8" cy="8" r="6" fill="none" stroke={TEXT.mute} strokeWidth="1.5" />
       </svg>
     );
   }

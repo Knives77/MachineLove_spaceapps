@@ -3,7 +3,8 @@ import { ALL_LAYERS, Calendar, type Layers } from '../components/Calendar';
 import { CalendarRail, HideCalendarButton, gridCols, useCalOpen } from '../components/CalendarToggle';
 import { Downloads } from '../components/Downloads';
 import { KInspector } from '../components/KInspector';
-import { MapPanel } from '../components/MapPanel';
+import { MapPanel } from '../components/LazyMapPanel';
+import { ModisSwitch } from '../components/ModisSwitch';
 import { MonthSeries } from '../components/MonthSeries';
 import { Panel, Skeleton, Switch } from '../components/ui';
 import { useApp } from '../state';
@@ -23,6 +24,9 @@ export function Expert() {
           <div className="px-4 py-2">
             <Switch checked={mode === 'raw'} onChange={(v) => setMode(v ? 'raw' : 'harmonized')} label={`${t('mode.raw')} (raw_points)`} />
             <Switch checked={mode === 'harmonized'} onChange={(v) => setMode(v ? 'harmonized' : 'raw')} label={`${t('mode.harmonized')} (${t('unit.cellDays')})`} />
+            <div className="border-y border-line py-3">
+              <ModisSwitch />
+            </div>
             <Switch checked={layers.marks} onChange={set('marks')} label={t('exp.layer.marks')} />
             <Switch checked={layers.nodata} onChange={set('nodata')} label={t('exp.layer.nodata')} />
             <Switch checked={layers.flags} onChange={set('flags')} label={t('exp.layer.flags')} />

@@ -284,7 +284,8 @@ def test_real_system_full_workflow(real_system_client: TestClient) -> None:
         for m in cal["months"]
         if m["status"] == "no_data"
     ]
-    expected_no_data = [(2000, m) for m in range(1, 11)] + [(2026, 12)]
+    # nov-2026 es partial_month (solo el día 1) -> no_data por harmonization.md
+    expected_no_data = [(2000, m) for m in range(1, 11)] + [(2026, 11), (2026, 12)]
     assert no_data_months == expected_no_data
 
     # Verificar banderas nrt y partial_month en nov 2026
@@ -293,6 +294,7 @@ def test_real_system_full_workflow(real_system_client: TestClient) -> None:
     )
     assert "nrt" in m_2026_11["flags"]
     assert "partial_month" in m_2026_11["flags"]
+    assert m_2026_11["anomaly_ratio"] is None
     assert cal["latest"] == {"year": 2026, "month": 10}
 
     # 4. POST /api/v1/calendar con basis = viirs_primary (continuidad tras fin de MODIS)

@@ -480,8 +480,13 @@ def build_calendar_response(
             baseline = None
 
         status = classify_status(h_val, baseline)
+        partial = "partial_month" in fl
+        if partial:
+            # harmonization.md: un mes parcial no se compara contra meses completos.
+            status = "no_data"
         if (
-            baseline is not None
+            not partial
+            and baseline is not None
             and baseline.n_years >= MIN_BASELINE_YEARS
             and baseline.median > 0
         ):

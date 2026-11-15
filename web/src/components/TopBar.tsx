@@ -1,9 +1,15 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { forwardRef, useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
 import { usingMocks } from '../api';
 import { rampGradient } from '../lib/color';
 import { playStatus } from '../lib/sound';
 import { useApp } from '../state';
 import type { Palette, Tab } from '../types';
+import { EarthIcon } from './icons/earth';
+import { GraduationCapIcon } from './icons/graduation-cap';
+import { HomeIcon } from './icons/home';
+import { LanguagesIcon } from './icons/languages';
+import { SlidersHorizontalIcon } from './icons/sliders-horizontal';
+import { useIconAnim, type IconAnimHandle } from './icons/useIconAnim';
 
 const TABS: Tab[] = ['general', 'learn', 'edu', 'expert'];
 const PALETTES: Palette[] = ['inferno', 'cividis', 'contrast'];
@@ -11,6 +17,19 @@ const PALETTES: Palette[] = ['inferno', 'cividis', 'contrast'];
 /** Barra superior mínima: nombre a la izquierda y 3 botones de 44 × 44 a la derecha. */
 export function TopBar() {
   const { t, tab, setTab, lang, setLang, palette, setPalette, sound, setSound } = useApp();
+  const langIcon = useIconAnim();
+  const viewIcon = useIconAnim();
+
+  // Al quedar activa otra vista, su icono se anima una vez en el botón de modos.
+  const firstTab = useRef(true);
+  useEffect(() => {
+    if (firstTab.current) {
+      firstTab.current = false;
+      return;
+    }
+    viewIcon.pulse();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
   return (
     <header className="flex items-center gap-4 border-b border-line bg-bg/95 px-4 py-2">
@@ -38,9 +57,10 @@ export function TopBar() {
           onClick={() => setLang(lang === 'es' ? 'en' : 'es')}
           aria-label={t('top.langSwitch')}
           title={t('top.langSwitch')}
+          {...langIcon.trigger}
           className={`${ICON_BTN} gap-1 px-2 font-mono text-[12px] font-semibold`}
         >
-          <GlobeIcon />
+          <LanguagesIcon ref={langIcon.ref} size={17} aria-hidden="true" className="flex" />
           <span aria-hidden="true">{lang.toUpperCase()}</span>
         </button>
 
@@ -86,7 +106,8 @@ export function TopBar() {
         <IconMenu
           id="view-menu"
           label={`${t('top.viewLabel')}: ${t(`tab.${tab}`)}`}
-          icon={<GridIcon />}
+          icon={<ViewIcon key={tab} ref={viewIcon.ref} tab={tab} size={17} />}
+          iconAnim={viewIcon}
           accent={tab !== 'general'}
           text={
             <span className="flex items-center gap-1.5 text-[12.5px]">
@@ -104,6 +125,7 @@ export function TopBar() {
                   role: 'menuitemradio',
                   checked: tab === id,
                   onSelect: () => setTab(id),
+                  animIcon: (ref) => <ViewIcon ref={ref} tab={id} size={16} />,
                   children: <span className="uppercase tracking-wide">{t(`tab.${id}`)}</span>,
                 }),
               )}
@@ -124,6 +146,8 @@ interface ItemSpec {
   checked: boolean;
   onSelect: () => void;
   keepOpen?: boolean;
+  /** Icono animado de la opción; se anima con el hover o el foco de toda la opción. */
+  animIcon?: (ref: Ref<IconAnimHandle>) => ReactNode;
   children: ReactNode;
 }
 
@@ -134,6 +158,7 @@ function IconMenu({
   icon,
   text,
   accent = false,
+  iconAnim,
   children,
 }: {
   id: string;
@@ -143,6 +168,8 @@ function IconMenu({
   text?: ReactNode;
   /** Resalta el botón con acento cian (p. ej., hay una vista avanzada activa). */
   accent?: boolean;
+  /** Si el icono es animado: el hover y el foco del botón completo lo disparan. */
+  iconAnim?: ReturnType<typeof useIconAnim>;
   children: (item: (spec: ItemSpec) => ReactNode) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -169,27 +196,7 @@ function IconMenu({
     button.current?.focus();
   };
 
-  const item = ({ key, role, checked, onSelect, keepOpen, children: body }: ItemSpec) => (
-    <button
-      key={key}
-      type="button"
-      role={role}
-      aria-checked={checked}
-      tabIndex={-1}
-      onClick={() => {
-        onSelect();
-        if (!keepOpen) close();
-      }}
-      className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[13px] outline-none transition-colors focus-visible:bg-panel-2 ${
-        checked ? 'bg-cyan-deep text-ink' : 'text-mute hover:bg-panel-2 hover:text-ink'
-      }`}
-    >
-      <span aria-hidden="true" className={`w-3 shrink-0 font-mono text-cyan ${checked ? '' : 'invisible'}`}>
-        ✓
-      </span>
-      {body}
-    </button>
-  );
+  const item = (spec: ItemSpec) => <MenuItem key={spec.key} spec={spec} close={close} />;
 
   return (
     <div ref={wrap} className="relative">
@@ -201,6 +208,7 @@ function IconMenu({
         aria-controls={id}
         aria-label={label}
         title={label}
+        {...iconAnim?.trigger}
         onClick={() => setOpen((o) => !o)}
         onKeyDown={(e) => {
           if (e.key === 'ArrowDown') {
@@ -210,8 +218,8 @@ function IconMenu({
         }}
         className={
           text
-            ? `relative flex h-11 items-center gap-2 rounded-full border bg-[#1e293b]/80 pl-3.5 pr-4 text-[#e2e8f0] transition-colors hover:border-line-2 ${
-                open || accent ? 'border-cyan/70' : 'border-[#334155]'
+            ? `relative flex h-11 items-center gap-2 rounded-full border bg-line/80 pl-3.5 pr-4 text-ink transition-colors hover:border-line-2 ${
+                open || accent ? 'border-cyan/70' : 'border-line-2'
               }`
             : `${ICON_BTN} w-11 ${open ? '!border-cyan !text-ink' : ''}`
         }
@@ -254,18 +262,46 @@ function IconMenu({
   );
 }
 
-function MenuHeading({ children }: { children: ReactNode }) {
-  return <p className="kicker px-3 pb-1 pt-2 text-[10px]">{children}</p>;
+/** Opción de menú; si trae icono animado, el hover o el foco de toda la opción lo anima. */
+function MenuItem({ spec, close }: { spec: ItemSpec; close: () => void }) {
+  const { role, checked, onSelect, keepOpen, animIcon, children: body } = spec;
+  const icon = useIconAnim();
+  return (
+    <button
+      type="button"
+      role={role}
+      aria-checked={checked}
+      tabIndex={-1}
+      {...(animIcon ? icon.trigger : {})}
+      onClick={() => {
+        onSelect();
+        if (!keepOpen) close();
+      }}
+      className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-[13px] outline-none transition-colors focus-visible:bg-panel-2 ${
+        checked ? 'bg-cyan-deep text-ink' : 'text-mute hover:bg-panel-2 hover:text-ink'
+      }`}
+    >
+      <span aria-hidden="true" className={`w-3 shrink-0 font-mono text-cyan ${checked ? '' : 'invisible'}`}>
+        ✓
+      </span>
+      {animIcon?.(icon.ref)}
+      {body}
+    </button>
+  );
 }
 
-function GlobeIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.3">
-      <circle cx="8" cy="8" r="6.5" />
-      <ellipse cx="8" cy="8" rx="2.8" ry="6.5" />
-      <path d="M1.5 8h13M2.6 4.5h10.8M2.6 11.5h10.8" />
-    </svg>
-  );
+/** Icono animado de cada vista: General, Aprendizaje, Educacional, Experto. */
+const ViewIcon = forwardRef<IconAnimHandle, { tab: Tab; size: number }>(({ tab, size }, ref) => {
+  const common = { ref, size, 'aria-hidden': true, className: 'flex shrink-0' } as const;
+  if (tab === 'learn') return <GraduationCapIcon {...common} />;
+  if (tab === 'edu') return <EarthIcon {...common} />;
+  if (tab === 'expert') return <SlidersHorizontalIcon {...common} />;
+  return <HomeIcon {...common} />;
+});
+ViewIcon.displayName = 'ViewIcon';
+
+function MenuHeading({ children }: { children: ReactNode }) {
+  return <p className="kicker px-3 pb-1 pt-2 text-[10px]">{children}</p>;
 }
 
 function EyeIcon() {
@@ -277,13 +313,3 @@ function EyeIcon() {
   );
 }
 
-function GridIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
-      <rect x="1" y="1" width="6" height="6" rx="1" />
-      <rect x="9" y="1" width="6" height="6" rx="1" />
-      <rect x="1" y="9" width="6" height="6" rx="1" />
-      <rect x="9" y="9" width="6" height="6" rx="1" />
-    </svg>
-  );
-}

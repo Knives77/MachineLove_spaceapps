@@ -3,6 +3,7 @@ import { ramp } from '../lib/color';
 import { fmtNum, fmtPct } from '../lib/format';
 import { useApp, useCalendar } from '../state';
 import type { CalendarResponse, PresetFeature } from '../types';
+import { TEXT, UI } from '../theme/tokens';
 
 // Cerro forestal vs valle agrícola (diseño: docs/design/exports/10-*). MVP solo México.
 const PAIR = ['qro-sierra-gorda', 'qro-bajio'];
@@ -142,11 +143,11 @@ function MedianExplainer() {
             fill={i >= bars.length - 2 ? ramp(palette, 1) : ramp(palette, 0.3)}
           />
         ))}
-        <line x1={0} x2={W} y1={y(med)} y2={y(med)} stroke="#22d3ee" strokeWidth={2} />
-        <text x={2} y={y(med) - 6} fill="#22d3ee" fontSize="12">
+        <line x1={0} x2={W} y1={y(med)} y2={y(med)} stroke={UI.accent} strokeWidth={2} />
+        <text x={2} y={y(med) - 6} fill={UI.accent} fontSize="12">
           {t('edu.median')}
         </text>
-        <text x={W - 2} y={12} fill="#e8edf2" fontSize="12" textAnchor="end">
+        <text x={W - 2} y={12} fill={TEXT.ink} fontSize="12" textAnchor="end">
           {t('edu.anomaly')}
         </text>
       </svg>

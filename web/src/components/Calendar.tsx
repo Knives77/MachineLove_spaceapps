@@ -5,6 +5,7 @@ import { isZero, rowAccent } from './YearView';
 import { fmtNum, indexMonths, ymKey } from '../lib/format';
 import { useApp } from '../state';
 import type { CalendarResponse, MonthRow } from '../types';
+import { NEUTRAL } from '../theme/tokens';
 
 export interface Layers {
   marks: boolean;
@@ -165,14 +166,14 @@ export function Calendar({
               let cls = '';
               let style: CSSProperties = {};
               let label = '';
-              let ink = INK_LIGHT; // color de símbolo y aviso: blanco o negro según la celda
+              let ink: string = INK_LIGHT; // color de símbolo y aviso: blanco o negro según la celda
               let extreme = false;
               if (!row) {
                 cls = 'missing';
               } else if (v === null) {
                 cls = layers.nodata ? 'hatch' : 'missing';
               } else if (v === 0) {
-                style = { background: 'var(--color-zero)', color: '#8792a0' };
+                style = { background: 'var(--color-zero)', color: NEUTRAL.zeroText };
                 label = '0';
               } else {
                 const bg = ramp(palette, sqrtT(v, max));
@@ -204,9 +205,10 @@ export function Calendar({
                 ? t('legend.missing')
                 : v === null
                   ? t('status.no_data')
-                  : `${fmtNum(lang, v, 1)} ${mode === 'harmonized' ? t('unit.cellDays') : t('unit.points')}, ${t(
-                      `status.${row.status}`,
-                    )}`;
+                  : `${fmtNum(lang, v, 1)} ${mode === 'harmonized' ? t('unit.cellDays') : t('unit.points')}, ${
+                      // Mismo nombre que en la tarjeta y la vista por año: 0 → "Sin incendios".
+                      isZero(row) ? t('level.zeroShort') : t(`status.${row.status}`)
+                    }`;
               return (
                 <button
                   key={k}
@@ -302,7 +304,7 @@ function Tooltip({
         {row && (
           <span className="text-mute">
             {' '}
-            · {(simple && isZero(row) ? t('level.zeroShort') : t(`status.${row.status}`)).toUpperCase()}
+            · {(isZero(row) ? t('level.zeroShort') : t(`status.${row.status}`)).toUpperCase()}
           </span>
         )}
       </p>

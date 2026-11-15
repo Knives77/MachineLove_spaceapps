@@ -1,11 +1,14 @@
 @import 'tailwindcss';
 
-/* Tokens tomados de docs/design/exports/ */
+/* Tokens de color: ESPEJO de src/theme/tokens.ts (si cambias uno, cambia el otro). */
 @theme {
   /* Superficies: lienzo #090D14, paneles y tarjetas #111827 con borde #1E293B */
   --color-bg: #090d14;
   --color-panel: #111827;
   --color-panel-2: #172033;
+  --color-panel-hover: #151e2e;
+  --color-panel-selected: #1a2436;
+  --color-drawer: #0f172a;
   --color-line: #1e293b;
   --color-line-2: #334155;
   --color-ink: #e8edf2;
@@ -87,10 +90,6 @@
     border-color: var(--color-select) !important;
     box-shadow: 0 0 0 1px var(--color-select), 0 0 12px 0 color-mix(in srgb, var(--color-cyan) 50%, transparent);
   }
-  /* Contorno del área elegida en el mapa (Leaflet SVG). */
-  .ml-aoi-glow {
-    filter: drop-shadow(0 0 4px #38bdf8);
-  }
   .btn:disabled {
     color: var(--color-dim);
     border-color: var(--color-line);
@@ -131,29 +130,18 @@
   }
 }
 
-/* Mapa: teselas de OpenStreetMap oscurecidas para el tema del diseño. */
-.leaflet-container {
-  background: #0a0d12;
+/* Mapa (MapLibre): atribución y controles con el tema oscuro. */
+.maplibregl-map {
   font-family: var(--font-sans);
 }
-.ml-dark-tiles {
-  filter: invert(1) hue-rotate(180deg) brightness(0.72) contrast(0.9) saturate(0.35);
-}
-.leaflet-control-attribution {
-  background: rgba(7, 9, 12, 0.75) !important;
-  color: var(--color-mute) !important;
+/* (Selectores con .maplibregl-map: el CSS de MapLibre llega después, con el mapa diferido.) */
+.maplibregl-map .maplibregl-ctrl.maplibregl-ctrl-attrib {
+  background: rgba(9, 13, 20, 0.78);
+  color: var(--color-mute);
   font-size: 10px;
 }
-.leaflet-control-attribution a {
-  color: var(--color-cyan) !important;
-}
-.leaflet-draw-tooltip {
-  background: var(--color-panel);
-  border-color: var(--color-cyan);
-  color: var(--color-ink);
-}
-.leaflet-draw-tooltip:before {
-  border-right-color: var(--color-cyan);
+.maplibregl-map .maplibregl-ctrl-attrib a {
+  color: var(--color-cyan);
 }
 
 /* Deslizador de la línea de tiempo: pista invisible, perilla cian como en el diseño. */
@@ -195,4 +183,18 @@
 .ml-timeline:focus-visible::-moz-range-thumb {
   outline: 2px solid #fff;
   outline-offset: 2px;
+}
+
+/* Variante baja del deslizador (línea de tiempo de General, con histograma encima). */
+.ml-timeline-compact::-webkit-slider-runnable-track {
+  height: 1.5rem;
+}
+.ml-timeline-compact::-moz-range-track {
+  height: 1.5rem;
+}
+.ml-timeline-compact::-webkit-slider-thumb {
+  height: 1.5rem;
+}
+.ml-timeline-compact::-moz-range-thumb {
+  height: 1.5rem;
 }

@@ -1,7 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
-import { indexMonths, ymKey } from '../lib/format';
-import { useApp } from '../state';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { statusColor } from '../lib/color';
+import { fmtNum, indexMonths, ymKey } from '../lib/format';
+import { UI } from '../theme/tokens';
+import { useApp, useCalendar } from '../state';
 import type { CalendarResponse } from '../types';
+import { PauseIcon } from './icons/pause';
+import { PlayIcon } from './icons/play';
+import { useIconAnim } from './icons/useIconAnim';
 import { isZero } from './YearView';
 
 const MODIS_START = 2000; // Terra desde 2000
@@ -13,7 +18,21 @@ const VIIRS_START = 2012; // S-NPP desde 2012
  * (las marcas salen de `status` y `flags`).
  */
 export function Timeline({ data, detailed = false }: { data: CalendarResponse; detailed?: boolean }) {
-  const { t, selected, setSelected } = useApp();
+  const { t, lang, palette, selected, setSelected, basis, aoi } = useApp();
+  // "Simular fin de MODIS" (basis = viirs_primary): la serie con MODIS se marca punteada en cada año,
+  // igual que en las barras anuales de Experto, para ver cuánto cambia.
+  const compare = basis === 'viirs_primary';
+  const [ref] = useCalendar(compare ? aoi : null, 'modis_primary');
+  const refByYear = useMemo(
+    () => (compare && ref.state === 'ok' ? new Map(ref.data.years.map((y) => [y.year, y.harmonized])) : null),
+    [compare, ref],
+  );
+  const yearMax = Math.max(
+    1,
+    ...data.years.map((y) => y.harmonized ?? 0),
+    ...(refByYear ? [...refByYear.values()].map((v) => v ?? 0) : []),
+  );
+  const barColor = statusColor(palette, 'normal');
   const { start_year, end_year } = data.range;
   const total = (end_year - start_year + 1) * 12;
   const toIdx = (y: number, m: number) => (y - start_year) * 12 + (m - 1);
@@ -22,12 +41,40 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
   const sel = selected ?? data.latest;
   const idx = toIdx(sel.year, sel.month);
   const [playing, setPlaying] = useState(false);
+  const playIcon = useIconAnim();
+  // Al cambiar entre reproducir y pausar, el icono nuevo se anima una vez (no en la carga inicial).
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    playIcon.pulse();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing]);
   const byKey = useMemo(() => indexMonths(data.months), [data]);
+
+  // Primer mes que trae dato: al repetir desde el final no se arranca en meses "sin dato"
+  // (p. ej. ene–oct 2000, antes de Terra), que parecían un error.
+  const firstDataIdx = useMemo(() => {
+    let first = latestIdx;
+    for (const m of data.months) if (m.status !== 'no_data') first = Math.min(first, toIdx(m.year, m.month));
+    return first;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, latestIdx]);
+
+  const togglePlay = () => {
+    if (playing) return setPlaying(false);
+    // Si ya estás en el último mes, la reproducción vuelve a empezar desde el primero con dato.
+    if (idx >= latestIdx) setSelected(fromIdx(firstDataIdx));
+    setPlaying(true);
+  };
 
   useEffect(() => {
     if (!playing) return;
     const id = setInterval(() => {
-      const next = idx >= latestIdx ? 0 : idx + 1;
+      if (idx >= latestIdx) return setPlaying(false);
+      const next = idx + 1;
       setSelected(fromIdx(next));
       if (next === latestIdx) setPlaying(false);
     }, 450);
@@ -50,22 +97,18 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
   const row = byKey.get(ymKey(sel.year, sel.month));
 
   return (
-    <div className="panel flex items-center gap-5 px-4 py-3">
+    <div className="panel flex items-center gap-5 px-4 py-2">
       <button
         type="button"
-        onClick={() => setPlaying((p) => !p)}
+        onClick={togglePlay}
         aria-label={playing ? t('time.pause') : t('time.play')}
-        className="flex h-12 w-12 shrink-0 items-center justify-center rounded border-2 border-cyan bg-cyan-deep"
+        {...playIcon.trigger}
+        className="flex h-12 w-12 shrink-0 items-center justify-center rounded border-2 border-cyan bg-cyan-deep text-ink"
       >
         {playing ? (
-          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-            <rect x="3" y="2" width="4" height="14" fill="#e8edf2" />
-            <rect x="11" y="2" width="4" height="14" fill="#e8edf2" />
-          </svg>
+          <PauseIcon ref={playIcon.ref} size={20} aria-hidden="true" className="flex" />
         ) : (
-          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-            <path d="M4 2 L16 9 L4 16 Z" fill="#e8edf2" />
-          </svg>
+          <PlayIcon ref={playIcon.ref} size={20} aria-hidden="true" className="flex" />
         )}
       </button>
       <div className="w-32 shrink-0">
@@ -78,9 +121,53 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
 
       {!detailed && (
         <div className="relative min-w-0 flex-1">
-          <div className="relative h-8">
-            <div className="absolute inset-x-0 top-[13px] h-1.5 rounded-full bg-line-2" />
-            <div className="absolute left-0 top-[13px] h-1.5 rounded-full bg-cyan/70" style={{ width: `${pct(idx)}%` }} />
+          {/* Totales anuales (years[]) como mini histograma sobre el mismo eje 2000–2026:
+              reemplaza el panel "Total por año". Clic en una barra = ese año. */}
+          <div className="relative h-9" aria-hidden="true">
+            {data.years.map((y) => {
+              const left = (toIdx(y.year, 1) / total) * 100;
+              const h = Math.max(2, ((y.harmonized ?? 0) / yearMax) * 100);
+              const on = y.year === sel.year;
+              const refV = refByYear?.get(y.year);
+              return (
+                <button
+                  key={y.year}
+                  type="button"
+                  tabIndex={-1}
+                  title={`${y.year}: ${fmtNum(lang, y.harmonized ?? 0)} ${t('unit.cellDays')}${
+                    refV === null || refV === undefined ? '' : ` · ${t('years.withModis')}: ${fmtNum(lang, refV, 1)}`
+                  }${y.complete ? '' : ` · ${t('years.incomplete')}`}`}
+                  onClick={() => {
+                    setPlaying(false);
+                    setSelected(y.year === data.latest.year ? data.latest : { year: y.year, month: sel.month });
+                  }}
+                  className="group absolute bottom-0 flex h-full items-end px-[1px]"
+                  style={{ left: `${left}%`, width: `${(12 / total) * 100}%` }}
+                >
+                  <span
+                    className={`block w-full rounded-t-[2px] transition-opacity ${on ? 'opacity-100' : 'opacity-55 group-hover:opacity-90'} ${
+                      y.complete ? '' : 'border border-dashed bg-transparent'
+                    }`}
+                    style={{
+                      height: `${h}%`,
+                      background: y.complete ? barColor : undefined,
+                      borderColor: y.complete ? undefined : barColor,
+                      boxShadow: on ? `0 0 0 1px ${UI.select}` : undefined,
+                    }}
+                  />
+                  {refV !== null && refV !== undefined && (
+                    <span
+                      className="pointer-events-none absolute inset-x-0 border-t-2 border-dashed"
+                      style={{ bottom: `${(refV / yearMax) * 100}%`, borderColor: UI.select }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <div className="relative h-6">
+            <div className="absolute inset-x-0 top-[9px] h-1.5 rounded-full bg-line-2" />
+            <div className="absolute left-0 top-[9px] h-1.5 rounded-full bg-cyan/70" style={{ width: `${pct(idx)}%` }} />
             <input
               type="range"
               min={0}
@@ -92,11 +179,20 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
                 setPlaying(false);
                 setSelected(fromIdx(Number(e.target.value)));
               }}
-              className="ml-timeline absolute inset-0 h-8 w-full"
+              className="ml-timeline ml-timeline-compact absolute inset-0 h-6 w-full"
             />
           </div>
-          <div className="mt-1 flex justify-between font-mono text-[10px] text-mute">
+          <div className="mt-0.5 flex justify-between font-mono text-[10px] text-mute">
             <span>{start_year}</span>
+            <span className="truncate px-2 font-sans text-dim">
+              {t('years.title')} · {t('unit.cellDays')}
+              {refByYear && (
+                <>
+                  {' · '}
+                  <span className="inline-block h-0 w-3 border-t-2 border-dashed border-ink align-middle" /> {t('years.withModis')}
+                </>
+              )}
+            </span>
             <span>{end_year}</span>
           </div>
         </div>
@@ -120,7 +216,7 @@ export function Timeline({ data, detailed = false }: { data: CalendarResponse; d
               MODIS · {MODIS_START} →
             </span>
           </div>
-          <div className="absolute inset-x-0 top-3.5 h-1.5 rounded-sm bg-[#8a929e]" style={{ left: `${pct(toIdx(MODIS_START, 1))}%` }} />
+          <div className="absolute inset-x-0 top-3.5 h-1.5 rounded-sm bg-mute" style={{ left: `${pct(toIdx(MODIS_START, 1))}%` }} />
           {marks.out.map((i) => (
             <span key={`o${i}`} aria-hidden="true" className="absolute top-3 h-2.5 w-1.5 -translate-x-1/2 bg-bg ring-1 ring-mute" style={{ left: `${pct(i)}%` }} />
           ))}

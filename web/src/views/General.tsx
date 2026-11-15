@@ -1,26 +1,45 @@
-import { useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import { useEffect, useRef, useState } from 'react';
 import { Calendar } from '../components/Calendar';
-import { CalendarRail, HideCalendarButton, gridCols, useCalOpen } from '../components/CalendarToggle';
+import { HideCalendarButton } from '../components/CalendarToggle';
 import { LevelLegend } from '../components/Legend';
-import { MapPanel } from '../components/MapPanel';
+import { MapPanel } from '../components/LazyMapPanel';
+import { ModisSwitch } from '../components/ModisSwitch';
 import { MonthCard } from '../components/MonthCard';
 import { Timeline } from '../components/Timeline';
 import { Skeleton } from '../components/ui';
-import { YearBars } from '../components/YearBars';
 import { YearPicker, YearView } from '../components/YearView';
 import { useApp } from '../state';
 import type { CalendarResponse } from '../types';
 import { WithCalendar } from './WithCalendar';
 
+/** Ancho del panel deslizante del calendario; el mapa encuadra con este margen a la derecha. */
+const DRAWER_W = 400;
+
 export function General() {
-  const { t } = useApp();
-  // El panel del calendario se puede esconder para dar más espacio al mapa.
-  const [calOpen, setCalOpen] = useCalOpen();
+  const { t, selected } = useApp();
+  // El calendario arranca oculto: el mapa ocupa todo el centro. Se abre como panel deslizante
+  // encima del lado derecho del mapa, y el mapa recentra la región en el espacio que queda visible.
+  const [calOpen, setCalOpen] = useState(false);
+  const openBtn = useRef<HTMLButtonElement>(null);
+  const drawer = useRef<HTMLDivElement>(null);
+  const wasOpen = useRef(false);
+
+  // Foco: al abrir va al panel; al cerrar regresa al botón que lo abrió.
+  useEffect(() => {
+    if (calOpen) drawer.current?.focus();
+    else if (wasOpen.current) openBtn.current?.focus();
+    wasOpen.current = calOpen;
+  }, [calOpen]);
+
+  const monthTag = selected ? ` · ${t(`month.${selected.month}`).slice(0, 3)} ${selected.year}` : '';
+
   return (
-    <div className={`grid gap-3 p-3 ${gridCols(calOpen)}`}>
-      {/* En pantallas anchas los paneles laterales caben en la ventana; si no alcanza,
-          el contenido hace scroll por dentro y lo de abajo (la leyenda) queda siempre visible. */}
-      <section className="panel flex flex-col xl:sticky xl:top-3 xl:max-h-[calc(100dvh-5.5rem)] xl:self-start">
+    // En pantallas anchas la vista llena exactamente el alto disponible: nada se desplaza.
+    // Columna izquierda (tarjeta del mes) a todo lo alto; a la derecha el mapa y, debajo, la línea de tiempo.
+    <div className="grid gap-3 p-3 xl:h-full xl:grid-cols-[minmax(300px,340px)_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)_auto]">
+      {/* En pantallas anchas el panel cabe en la ventana; si no alcanza, la tarjeta hace scroll por dentro. */}
+      <section className="panel flex min-h-0 flex-col xl:row-span-2">
         <div className="shrink-0 border-b border-line px-4 py-3">
           <h1 className="text-[22px] font-semibold leading-tight">{t('gen.title')}</h1>
           <p className="mt-0.5 text-[14px] text-mute">{t('gen.sub')}</p>
@@ -28,27 +47,84 @@ export function General() {
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
           <WithCalendar skeleton={<Skeleton className="h-64" />}>{(d) => <MonthCard data={d} />}</WithCalendar>
         </div>
+        {/* "Simular fin de MODIS" (main): fijo al pie de la tarjeta, siempre visible para el jurado. */}
+        <div className="shrink-0 border-t border-line px-4 py-3">
+          <WithCalendar skeleton={<Skeleton className="h-10" />}>{(d) => <ModisSwitch k={d.calibration.k} />}</WithCalendar>
+        </div>
       </section>
 
-      <div className="flex min-h-[520px] flex-col gap-3">
-        <MapPanel className="min-h-[340px] flex-1" />
-        <section className="panel px-4 pb-2 pt-3">
-          <WithCalendar skeleton={<Skeleton className="h-36" />}>{(d) => <YearBars data={d} height={96} />}</WithCalendar>
-        </section>
+      <div className="flex min-h-[420px] flex-col xl:min-h-0">
+        <MapPanel className="min-h-[420px] flex-1 xl:min-h-0" padRight={calOpen ? DRAWER_W + 10 : 40}>
+          {/* Botón flotante para abrir el calendario; sale con un fundido mientras el panel está abierto. */}
+          <AnimatePresence>
+            {!calOpen && (
+              <motion.button
+                key="cal-open"
+                ref={openBtn}
+                type="button"
+                layout
+                aria-expanded={false}
+                aria-controls="cal-drawer"
+                onClick={() => setCalOpen(true)}
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4, transition: { duration: 0.15 } }}
+                whileHover={{ y: -1, scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                className="btn absolute right-2 top-2 z-[600] flex items-center gap-2 bg-bg/90 px-3 py-1.5 text-xs backdrop-blur"
+              >
+                <CalendarGlyph />
+                <motion.span layout="position">
+                  {t('cal.button')}
+                  <span className="text-mute">{monthTag}</span>
+                </motion.span>
+              </motion.button>
+            )}
+          </AnimatePresence>
+
+          {/* Panel flotante encima del mapa: el mapa nunca cambia de tamaño al abrir o cerrar.
+              Entra y sale con desplazamiento horizontal + opacidad. */}
+          <AnimatePresence>
+            {calOpen && (
+              <motion.aside
+                key="cal-drawer"
+                id="cal-drawer"
+                ref={drawer}
+                tabIndex={-1}
+                aria-label={t('cal.title')}
+                onKeyDown={(e) => e.key === 'Escape' && setCalOpen(false)}
+                initial={{ x: DRAWER_W + 16, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: DRAWER_W + 16, opacity: 0 }}
+                // Curva limpia sin rebote, sincronizada con el vuelo del mapa (0.7 s).
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                style={{ width: DRAWER_W }}
+                className="absolute bottom-6 right-2 top-2 z-[700] max-w-[calc(100%-1rem)] outline-none"
+              >
+                <WithCalendar skeleton={<Skeleton className="h-full" />}>
+                  {(d) => <CalendarPanel data={d} onHide={() => setCalOpen(false)} />}
+                </WithCalendar>
+              </motion.aside>
+            )}
+          </AnimatePresence>
+        </MapPanel>
       </div>
 
-      {calOpen ? (
-        <WithCalendar skeleton={<Skeleton className="h-[600px]" />}>
-          {(d) => <CalendarPanel data={d} onHide={() => setCalOpen(false)} />}
-        </WithCalendar>
-      ) : (
-        <CalendarRail onShow={() => setCalOpen(true)} />
-      )}
-
-      <div className="xl:col-span-3">
+      <div className="xl:col-start-2">
         <WithCalendar skeleton={<Skeleton className="h-20" />}>{(d) => <Timeline data={d} />}</WithCalendar>
       </div>
     </div>
+  );
+}
+
+/** Icono de calendario (trazo Lucide, ISC), estático. */
+function CalendarGlyph() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-cyan">
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
+    </svg>
   );
 }
 
@@ -61,13 +137,16 @@ function CalendarPanel({ data: d, onHide }: { data: CalendarResponse; onHide: ()
   const [history, setHistory] = useState(false);
   const span = { a: d.range.start_year, b: d.range.end_year };
   return (
-    <section id="cal-panel" className="panel flex flex-col xl:sticky xl:top-3 xl:max-h-[calc(100dvh-5.5rem)] xl:self-start">
+    <section
+      id="cal-panel"
+      className="flex h-full flex-col rounded border border-line bg-drawer/90 shadow-2xl shadow-black/60 backdrop-blur-md"
+    >
       <header className="shrink-0 px-4 pb-2 pt-3">
         <div className="flex items-start justify-between gap-2">
-          <h2 className="heading">{t('cal.title')}</h2>
+          <h2 className="heading truncate text-[12px] leading-[22px]">{t('cal.title')}</h2>
           <HideCalendarButton onHide={onHide} />
         </div>
-        <p className="mt-1.5 flex items-center gap-1.5 text-[13px] text-ink">
+        <p className="mt-1 flex items-center gap-1.5 text-[12.5px] text-ink">
           <span aria-hidden="true" className="text-cyan">→</span>
           {t('cal.hint')}
         </p>
@@ -85,7 +164,7 @@ function CalendarPanel({ data: d, onHide }: { data: CalendarResponse; onHide: ()
         )}
       </header>
 
-      <div data-cal-scroll className="min-h-0 flex-1 overflow-y-auto px-3 pb-2 pt-1">
+      <div data-cal-scroll className="min-h-0 flex-1 overflow-y-auto px-3 pb-1 pt-1">
         {history ? <Calendar data={d} stickyHeader variant="levels" /> : <YearView data={d} />}
       </div>
 
