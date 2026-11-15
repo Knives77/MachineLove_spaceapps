@@ -8,12 +8,13 @@ Cambios que importan al equipo: qué cambió, de qué área y qué hay que hacer
 
 ## Sin publicar
 
-Resumen para quien llega: **hagan `git pull`**. Front instala desde la raíz; el acceso pasa a ser solo por túneles; el analista se enfoca en el pitch; noviembre de 2026 sale como "sin dato".
+Resumen para quien llega: **hagan `git pull`**. Front: además `pnpm install --frozen-lockfile` y reiniciar `pnpm dev` (el front se reorganizó en carpetas). Front instala desde la raíz; el acceso pasa a ser solo por túneles; el analista se enfoca en el pitch; noviembre de 2026 sale como "sin dato".
 
 ### ⚠️ Lo que obliga a hacer algo
 
 | Cambio | Quién | Qué hacer |
 |---|---|---|
+| **Front reorganizado y consola de Experto nueva (dom 15-nov, 01:15).** `MapPanel.tsx`, `views/Expert.tsx` e `i18n.ts` ya no existen: ahora son las carpetas `components/map/`, `views/expert/` e `i18n/`. Cambiaron las fuentes (Space Grotesk y JetBrains Mono; se quitó IBM Plex Mono). Experto es la vista inicial, con fuego sobre el mapa y paneles flotantes | Front, analista | Front: `git pull`, `pnpm install --frozen-lockfile` desde la raíz y **reiniciar `pnpm dev`** (Vite guarda las rutas viejas y la página sale en blanco). Ramas que toquen esos tres archivos tendrán conflictos: avisar antes de fusionar. Analista: la demo abre directo en Experto; el fuego aparece al elegir un mes con actividad (Sierra Gorda en octubre de 2026 casi no tiene) |
 | **"Simular fin de MODIS" listo (19:00).** Botón "Apagar MODIS" en General y Experto; la serie con MODIS queda como línea punteada en las barras anuales; el CSV respeta el `basis`; mocks `calendar.viirs.*.json` copiados de la API. Probado en Chromium con la API real y con mocks | Front, analista | Front: `git pull` antes de tocar `state.tsx`, `YearBars.tsx` o `Downloads.tsx`. Analista: el acto 4 ya se puede ensayar; el acto 1 (Crudo) va en la vista Experto |
 | **Front fusionado (18:35):** sin Argentina en los textos, sin `tsbuildinfo`, panel del calendario plegable y correcciones de UI. Sigue pendiente **"Simular fin de MODIS"**: `basis` fijo en `state.tsx:77` y `Downloads.tsx:37` | Front | Punto 3 de su checklist: es MVP |
 | **Backend fusionado (18:30):** error nuevo `503 db_unavailable`, polígonos en el Golfo y el Pacífico → 422, `viirs_cell_days` desde enero de 2012 y `k` sin redondeo intermedio | Front | Nada: `error.db_unavailable` ya está en `i18n.ts` (se agregó en el merge de front) |
@@ -30,6 +31,9 @@ Resumen para quien llega: **hagan `git pull`**. Front instala desde la raíz; el
 | **Procesamiento A y B pasan a apoyar el pitch** | Procesamiento | Tareas nuevas en `docs/CHECKLIST.md` |
 
 ### Front
+- **Front modularizado (sin cambios de comportamiento).** `MapPanel.tsx` (934 líneas) → `components/map/` en 7 piezas; `views/Expert.tsx` → `views/expert/` en 6; `i18n.ts` → `i18n/es.ts`, `i18n/en.ts` e `index.ts`. ⚠️ Front: si tienen ramas que tocan esos tres archivos, habrá conflictos al fusionar; y reinicien `pnpm dev` después del pull (Vite se queda con las rutas viejas en caché).
+- **Fuego en el mapa, animaciones, fuentes nuevas y rendimiento (Experto).** Fuego extendido (mancha de calor que parpadea, con el brillo normalizado según cuántas detecciones hay) sobre las zonas con hotspots en el mes elegido, con datos de `POST /hotspots` (endpoint de mejora de `api.md`, sin cambio de contrato); botón "Fuego" para apagarlo. Fuentes Space Grotesk y JetBrains Mono en lugar de IBM Plex Mono (⚠️ dependencias cambiadas: `pnpm install --frozen-lockfile` desde la raíz). Paneles y secciones animados, franja única de botones arriba a la derecha. Rendimiento: sin desenfoque de fondo sobre el mapa, mapa a `pixelRatio` ≤ 1.5, mocks y vistas secundarias bajo demanda (JS inicial de 920 kB a 415 kB). Los colores del tema y de los niveles **no cambian** (se probó una paleta cálida y se descartó).
+- **Experto: mapa al 100 % y paneles flotantes.** Se quitó la barra superior en Experto (el nombre de la app ya no aparece; Calendario, idioma, accesibilidad y Vista van en una franja flotante arriba a la derecha). Controles a la izquierda y calendario a la derecha, ambos ocultables, con secciones plegables (Descargas e Inspector de k cerradas al inicio). Las regiones pasaron al panel de controles. Las demás vistas conservan su barra superior. La barra inferior de telemetría muestra cuántos hotspots hay en el mes elegido.
 - **Rediseño de Experto como consola y vista inicial.** La app abre en Experto: mapa 3D con relieve (MapLibre nativo) y barra flotante de herramientas, atajos 1–3 para las regiones, panel analítico con interruptor maestro Crudo/Armonizado, 3 indicadores, barras anuales alineadas con el calendario en mosaicos, y barra inferior de telemetría. General, Aprendizaje y Educacional no cambian. Skill de frontend y `CLAUDE.md` actualizados. Analista: la ruta de la demo ya no necesita cambiar de vista para el acto 1 (Crudo).
 
 ### Base de datos

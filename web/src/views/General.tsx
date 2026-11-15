@@ -72,7 +72,7 @@ export function General() {
                 whileHover={{ y: -1, scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: 'spring', stiffness: 420, damping: 30 }}
-                className="btn absolute right-2 top-2 z-[600] flex items-center gap-2 bg-bg/90 px-3 py-1.5 text-xs backdrop-blur"
+                className="btn absolute right-2 top-2 z-[600] flex items-center gap-2 bg-bg/95 px-3 py-1.5 text-xs"
               >
                 <CalendarGlyph />
                 <motion.span layout="position">
@@ -139,7 +139,7 @@ function CalendarPanel({ data: d, onHide }: { data: CalendarResponse; onHide: ()
   return (
     <section
       id="cal-panel"
-      className="flex h-full flex-col rounded border border-line bg-drawer/90 shadow-2xl shadow-black/60 backdrop-blur-md"
+      className="flex h-full flex-col rounded border border-line bg-drawer/95 shadow-2xl shadow-black/60"
     >
       <header className="shrink-0 px-4 pb-2 pt-3">
         <div className="flex items-start justify-between gap-2">

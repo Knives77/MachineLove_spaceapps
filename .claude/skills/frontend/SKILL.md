@@ -32,7 +32,7 @@ pnpm build                       # debe pasar antes de abrir PR
 |---|---|
 | `src/api.ts` | **Única puerta a la API.** `getPresets()`, `getCalendar(req)`, `downloadCalendarCsv(req)`, `downloadHotspotsCsv(req)`, `downloadAoiGeoJson(geom, name)` |
 | `src/types.ts` | Tipos del contrato. Si el contrato cambia, se cambia aquí primero |
-| `src/i18n.ts` | Diccionario ES/EN de todos los textos, incluidos `status.*`, `flag.*`, `source.*`, `error.*` |
+| `src/i18n/` | `es.ts` y `en.ts` (un diccionario por idioma, mismas claves) e `index.ts` (`translate`, idioma guardado). Incluye `status.*`, `flag.*`, `source.*`, `error.*` |
 | `src/state.tsx` | Estado global: idioma, pestaña, modo, `basis` ("Simular fin de MODIS"), paleta, área (`aoi`), calendario cargado, mes elegido. La caché de calendarios va por área **y** `basis`; cambiar solo `basis` conserva el mes elegido |
 | `src/components/ModisSwitch.tsx` | Botón "Apagar MODIS": cambia `basis` a `viirs_primary`. Las barras anuales (`YearBars` en Experto, histograma de la línea de tiempo en General) dibujan entonces la serie con MODIS como línea punteada |
 | `src/theme/tokens.ts` | **Única fuente de colores** en TS: superficies, acentos de UI, niveles por paleta, rampas, mapa. `@theme` de `src/index.css` es su espejo para Tailwind |
@@ -40,9 +40,12 @@ pnpm build                       # debe pasar antes de abrir PR
 | `src/components/` | Calendario (vista por año `YearView` + matriz `Calendar`), tarjeta del mes, leyenda, mapa (`MapPanel`, cargado con `LazyMapPanel`), línea de tiempo, barras anuales, inspector de k, serie mensual, descargas |
 | `src/components/CalendarTiles.tsx` | Calendario en mosaicos de Experto (años en columnas). Reusa `cellValue`, `useScaleMax` y `Tooltip` de `Calendar.tsx` |
 | `src/components/HudBar.tsx`, `src/lib/hud.ts` | Barra de telemetría y su almacén fuera de React (cursor, latencia) |
+| `src/mocks/index.ts` | Todos los mocks en un módulo que `api.ts` importa bajo demanda (`import('./mocks')`): con la API real no se descargan |
 | `src/components/AnimatedNumber.tsx` | Cifra que rueda al valor nuevo en 600 ms (solo presentación) |
 | `src/components/icons/` | Iconos animados de lucide-animated (MIT) + `useIconAnim` (el botón completo dispara la animación) |
-| `src/views/` | `General`, `Learn` (Aprendizaje), `Edu` (Educacional), `Expert` |
+| `src/components/map/` | El mapa, por piezas: `MapPanel.tsx` (orquesta: crea el mapa, cámara, datos, controles), `layers.ts` (fuentes y capas: tono, relieve, regiones, fuego, dibujo), `fire.ts` (hotspots del mes + parpadeo), `useDrawTool.ts` (rectángulo y polígono), `Toolbar.tsx` (barra flotante), `CustomAreaPanel.tsx` (coordenadas + radio), `geometry.ts` (utilidades puras). Se importa siempre por `components/LazyMapPanel.tsx` |
+| `src/views/` | `General`, `Learn` (Aprendizaje), `Edu` (Educacional) y `expert/` |
+| `src/views/expert/` | La consola, por piezas: `Expert.tsx` (arma la pantalla), `Controls.tsx` (panel izquierdo), `Kpis.tsx` (indicadores), `CalendarSide.tsx` (panel derecho), `panels.tsx` (`FloatPanel`, `Section`, `StripButton`), `hooks.ts` (paneles abiertos, ancho de pantalla) |
 | `src/mocks/` | Copias de la API real por preset + generador DEMO para polígonos dibujados (`demoCalendar.ts`) |
 
 Ningún componente hace `fetch` directo. **CSV del calendario:** el endpoint es `POST`, así que no existe una URL directa; `downloadCalendarCsv` hace el `POST` y guarda el archivo.
@@ -85,7 +88,7 @@ La barra superior es igual en todas: nombre a la izquierda; a la derecha 3 boton
 | General | Tarjeta del mes con flechas ‹ › · mapa a todo el centro con regiones, área personalizada y botón **Calendario** · el calendario es un panel flotante sobre el mapa (cerrado al inicio): 12 meses del año con selector ‹ año › y "Hoy", comparativa histórica 2000–2026 bajo demanda · botón **"Simular fin de MODIS"** al pie de la tarjeta · una sola barra de tiempo 2000–2026 con los totales anuales como mini histograma. **Nada se desplaza**: la vista cabe completa en la ventana (probado a 1366×657). **Sin** interruptor crudo, puntos crudos, pistas de sensores ni descargas |
 | Aprendizaje | Cuaderno de Don Modesto en 4 pasos (crudo → fuentes fijas → celdas-día → factor k) con barras mensuales de `raw_points`, `viirs_cell_days`/`modis_cell_days` y `harmonized`; 3 preguntas |
 | Educacional | Dos regiones lado a lado (Sierra Gorda y Bajío queretano) con `k` y `seasonality` en la misma escala; MODIS vs VIIRS; qué es la mediana |
-| Experto | **Consola a pantalla completa, sin scroll global.** 60 % mapa 3D (`MapPanel tools`) con regiones `[1] [2] [3]` (atajos de teclado) y barra flotante de herramientas (rectángulo, polígono, coordenadas, vista 3D, norte, encuadrar, zoom). 40 % panel analítico: (A) interruptor maestro Armonizado/Crudo con aviso ámbar en crudo, (B) 3 indicadores: estado del mes, `calibration.k`, error `loyo_annual_mape` / `monthly_mape`, (C) barras anuales alineadas con el calendario en mosaicos (`CalendarTiles`: columnas = años, filas = meses; color por valor o por nivel). Pie fijo: "Simular fin de MODIS" y descargas. Plegado: inspector de k y serie del mes. Probado a 1366×657 y 1920×1080 |
+| Experto | **Consola a pantalla completa, sin scroll global y sin barra superior.** El mapa 3D (`MapPanel tools`) ocupa toda la ventana; encima flotan dos paneles que se ocultan con un botón (se recuerda en `localStorage`). **Izquierda, Controles**, con secciones plegables: Regiones `[1] [2] [3]` (atajos de teclado), Datos (interruptor Armonizado/Crudo con aviso ámbar en crudo), Indicadores (estado del mes, `calibration.k`, error `loyo_annual_mape` / `monthly_mape`), "Simular fin de MODIS", y cerradas al inicio Descargas e Inspector de k. **Derecha, Calendario**: barras anuales alineadas con los mosaicos (`CalendarTiles`: columnas = años, filas = meses; color por valor o por nivel), avisos del mes y la serie del mes plegada. Arriba a la derecha, una sola franja flotante de botones de 36 px: Calendario (muestra u oculta el panel), idioma, accesibilidad y Vista (`<TopBar floating lead=… />`, sin el nombre de la app). Con Controles oculto queda un botón igual arriba a la izquierda. Barra de herramientas del mapa abajo al centro (dibujo, vista 3D, fuego, norte, encuadrar, zoom) (solo iconos si los dos paneles están abiertos en pantalla angosta). El mapa encuadra la región en el espacio libre entre paneles (`padLeft` / `padRight`). Probado a 1366×657 y 1920×1080 |
 
 ## Reglas de visualización
 
@@ -93,6 +96,9 @@ La barra superior es igual en todas: nombre a la izquierda; a la derecha 3 boton
 - Superficies `#090D14` (lienzo) y `#111827` (paneles y tarjetas) con borde `#1E293B`. El blanco `#F8FAFC` con resplandor cian `#38BDF8` es **solo** para interacción (mes elegido, región activa, botón activo), nunca para datos.
 - Niveles (Estándar): Sin incendios `#64748B`, Bajo `#A855F7`, Normal `#E06D53`, Alto `#F97316`, Extremo `#FDE047`. Daltónicos: `#2B5C8F`, `#5698A3`, `#D4AF37`, `#FDE725`. La misma escala en tarjeta del mes, vista por año, comparativa histórica y leyenda.
 - Un mes con `harmonized = 0` se muestra "Sin incendios (0)" en gris neutro, aunque la API diga `normal` (mediana 0).
+- **Tipografía:** Space Grotesk (`font-display`: títulos, botones, selectores), Inter (texto corrido) y JetBrains Mono (`font-mono`: cifras, etiquetas técnicas). Paquetes `@fontsource-variable/*`, sin red.
+- **Animación (todo respeta "reducir movimiento"):** paneles que entran y salen deslizándose y secciones que se pliegan (`motion`), marcador deslizante en `Segmented`, letras que aparecen una por una al cambiar región, mes o nivel (`Reveal` en `ui.tsx`), mosaicos que aparecen por año al cargar y se agrandan con un aro al pasar el cursor, menús con `.pop`. Sin iconos de llama.
+- **Rendimiento:** nada de `backdrop-filter` / `backdrop-blur` sobre el mapa (obliga a recomponer en cada cuadro del lienzo WebGL); animar solo `transform` y `opacity`; el mapa pinta a `pixelRatio` ≤ 1.5 y su único repintado en reposo es el parpadeo del fuego (~9 por segundo, y ninguno si no hay fuego); el tooltip del calendario guarda su propio estado (`TipHost`) para que pasar el cursor no repinte los 324 mosaicos; General, Aprendizaje y Educacional se cargan con `lazy`.
 - Clases de la consola en `src/index.css`: `.bracket` (tarjeta con acentos en las esquinas), `.hud` y `.tool` (controles flotantes), `.tile` (mosaico). Esquinas de 2–4 px como máximo; todas las cifras en monoespaciada con `tabular-nums`.
 - **Armonizado:** color de celda por `harmonized`. **Crudo:** color por `raw_points`. Cada modo con su propia escala; la leyenda avisa que no son comparables.
 - Rampas Inferno o Cividis, recortadas para que el valor más bajo se vea sobre fondo oscuro. Luminancia monótona: se leen en grises y con daltonismo. Escala de raíz cuadrada.
@@ -103,7 +109,7 @@ La barra superior es igual en todas: nombre a la izquierda; a la derecha 3 boton
 - Panel de validación: `k`, `scope`, meses de traslape, sumas, errores LOYO y mensual en porcentaje. Si `scope = "country"`, aviso de poco traslape.
 - El margen que se muestra es `calibration.monthly_mape`, no un ±30 % fijo.
 - Mientras carga, esqueleto; si la API responde error, mensaje según `error.code` con botón de reintentar.
-- **No hay mapa de píxeles de 1 km ni puntos crudos en pantalla:** la API no los devuelve. Para agregarlos, primero se cambia el contrato.
+- **Fuego sobre el mapa: solo en Experto** y solo con lo que devuelve `POST /hotspots` (api.md) para el mes elegido (`getHotspots` en `api.ts`; los meses ya consultados se guardan). Es una **mancha de calor** (capa `heatmap` nativa, rampa `FIRE.ramp` de tokens): fuego extendido sobre la zona con detecciones `is_vegetation_fire`, de brasa oscura a amarillo incandescente según cuántas hay y su `frp`; cada detección lleva además una chispa clara en su punto exacto. El brillo de la mancha se normaliza según cuántas detecciones hay (pocas → cada una brilla más; miles → se atenúa para no quemarse a blanco): es solo presentación, la mancha dice **dónde** y el calendario **cuánto**. En la consola el relleno de la región activa es más tenue (4 %) para no lavar el fuego. Aro gris = detección en fuente fija. La mancha parpadea cambiando `heatmap-intensity` ~9 veces por segundo (temporizador, no en cada cuadro; se detiene sin fuego, con la pestaña oculta o con "reducir movimiento"). **Nada de iconos de llama.** Se apaga con el botón "Fuego"; la barra inferior dice cuántos hotspots hay. Más de 20,000 → la API responde `aoi_too_large` y la barra lo avisa. Con mocks no hay puntos. General sigue sin fuego. No hay mapa de píxeles de 1 km: la API no devuelve celdas.
 
 ## Mapa
 
@@ -118,7 +124,7 @@ La barra superior es igual en todas: nombre a la izquierda; a la derecha 3 boton
 
 ## Bilingüe
 
-`src/i18n.ts` con claves para todos los textos. Idioma guardado en `localStorage`; por defecto, español. Los nombres de preset vienen en `name_es` / `name_en`. Texto nuevo → clave nueva en **los dos** diccionarios.
+`src/i18n/es.ts` y `src/i18n/en.ts` con claves para todos los textos. Idioma guardado en `localStorage`; por defecto, español. Los nombres de preset vienen en `name_es` / `name_en`. Texto nuevo → clave nueva en **los dos** diccionarios.
 
 ## Prompt base para Figma Make (solo para rediseños grandes)
 

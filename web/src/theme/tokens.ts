@@ -57,13 +57,22 @@ export const RAMPS = {
   contrast: ['#5a189a', '#c2185b', '#ff9800', '#ffff00', '#ffffff'],
 } as const;
 
+/** Fuego sobre el mapa: mancha de calor donde hubo hotspots, de brasa oscura a núcleo incandescente. */
+export const FIRE = {
+  /** Rampa de la mancha, de menor a mayor densidad de detecciones. */
+  ramp: ['#4a0c04', '#b3280a', '#ff5a1f', '#ffa02e', '#ffe27a', '#fff7d6'],
+  spark: '#ffe27a', // chispa en el punto exacto de cada detección
+} as const;
+
 /** Mapa (MapLibre). */
 export const MAP = {
   background: SURFACE.bg,
   water: '#0b1626',
   regionActive: UI.accent,
+  regionGlow: UI.accent,
   regionIdle: NEUTRAL.zero,
   draw: UI.select,
+  staticSource: NEUTRAL.zero, // detección que no es fuego de vegetación (fuente fija)
   hillShadow: '#02050a', // sombra del relieve
   hillLight: '#3b4a60', // ladera iluminada
 } as const;

@@ -1,10 +1,10 @@
-import { useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { forwardRef, useImperativeHandle, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { INK_LIGHT, inkOn, ramp, sqrtT, statusColor } from '../lib/color';
 import { fmtNum, indexMonths, ymKey } from '../lib/format';
 import { playStatus } from '../lib/sound';
 import { useApp } from '../state';
 import { NEUTRAL } from '../theme/tokens';
-import type { CalendarResponse, Status } from '../types';
+import type { CalendarResponse, MonthRow, Status } from '../types';
 import { cellValue, Tooltip, useScaleMax } from './Calendar';
 import { isZero } from './YearView';
 
@@ -43,14 +43,15 @@ export function CalendarTiles({
   const [focusKey, setFocusKey] = useState<number>(() =>
     selected ? selKey : ymKey(data.latest.year, data.latest.month),
   );
-  const [hover, setHover] = useState<{ key: number; x: number; y: number; below: boolean } | null>(null);
+  const tip = useRef<TipHandle>(null);
+  const setHover = (h: Hover | null) => tip.current?.set(h);
   const wrap = useRef<HTMLDivElement>(null);
 
   function showTip(key: number, el: HTMLElement) {
     const box = wrap.current?.getBoundingClientRect();
     if (!box) return;
     const r = el.getBoundingClientRect();
-    setHover({ key, x: r.left - box.left + r.width / 2, y: r.top - box.top, below: r.top - box.top < 150 });
+    setHover({ key, x: r.left - box.left + r.width / 2, y: r.top - box.top, below: r.top - box.top < 150, width: box.width });
   }
 
   function onKey(e: KeyboardEvent<HTMLButtonElement>, y: number, m: number) {
@@ -77,7 +78,6 @@ export function CalendarTiles({
     wrap.current?.querySelector<HTMLButtonElement>(`[data-k="${k}"]`)?.focus();
   }
 
-  const hovered = hover ? byKey.get(hover.key) : undefined;
   const cols = { gridTemplateColumns: `1.1rem repeat(${years.length}, minmax(0, 1fr))` };
 
   return (
@@ -85,7 +85,14 @@ export function CalendarTiles({
       <p id="tiles-help" className="sr-only">
         {t('con.tilesAria')}
       </p>
-      <div role="grid" aria-describedby="tiles-help" className="grid gap-[3px]" style={cols}>
+      {/* La clave vuelve a montar la malla al cambiar de área, serie o modo: los mosaicos se encienden de 2000 a 2026. */}
+      <div
+        key={`${data.aoi.preset_id ?? data.aoi.area_km2}-${data.basis}-${mode}-${byLevel}`}
+        role="grid"
+        aria-describedby="tiles-help"
+        className="grid gap-[3px]"
+        style={cols}
+      >
         <div role="row" className="contents">
           <span />
           {years.map((y) => (
@@ -110,7 +117,7 @@ export function CalendarTiles({
               >
                 {label}
               </span>
-              {years.map((y) => {
+              {years.map((y, yi) => {
                 const k = ymKey(y, m);
                 const row = byKey.get(k);
                 const v = row ? cellValue(row, mode) : null;
@@ -159,7 +166,7 @@ export function CalendarTiles({
                     onBlur={() => setHover(null)}
                     onMouseEnter={(e) => showTip(k, e.currentTarget)}
                     className={`tile ${cls} ${isSel ? 'z-10 ring-2 ring-select ring-offset-1 ring-offset-bg' : ''}`}
-                    style={style}
+                    style={{ ...style, ['--c' as string]: yi }}
                   >
                     {mark === 'ring' && (
                       <span aria-hidden="true" className="absolute inset-0 rounded-[3px] border-[1.5px]" style={{ borderColor: ink }} />
@@ -222,18 +229,30 @@ export function CalendarTiles({
         {legendRight && <span className="ml-auto">{legendRight}</span>}
       </div>
 
-      {hover && (
-        <Tooltip
-          x={hover.x}
-          y={hover.y}
-          below={hover.below}
-          simple={false}
-          width={wrap.current?.clientWidth ?? 400}
-          row={hovered}
-          year={Math.floor(hover.key / 100)}
-          month={hover.key % 100}
-        />
-      )}
+      <TipHost ref={tip} byKey={byKey} />
     </div>
   );
 }
+
+type Hover = { key: number; x: number; y: number; below: boolean; width: number };
+type TipHandle = { set: (h: Hover | null) => void };
+
+/** El tooltip guarda su propio estado: mover el cursor entre mosaicos solo lo repinta a él. */
+const TipHost = forwardRef<TipHandle, { byKey: Map<number, MonthRow> }>(({ byKey }, ref) => {
+  const [hover, setHover] = useState<Hover | null>(null);
+  useImperativeHandle(ref, () => ({ set: setHover }), []);
+  if (!hover) return null;
+  return (
+    <Tooltip
+      x={hover.x}
+      y={hover.y}
+      below={hover.below}
+      simple={false}
+      width={hover.width}
+      row={byKey.get(hover.key)}
+      year={Math.floor(hover.key / 100)}
+      month={hover.key % 100}
+    />
+  );
+});
+TipHost.displayName = 'TipHost';

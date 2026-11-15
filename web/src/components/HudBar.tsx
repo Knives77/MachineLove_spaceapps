@@ -8,8 +8,9 @@ import { useApp } from '../state';
  * consultada, estado de los sensores y latencia de la última consulta a la API.
  */
 export function HudBar() {
-  const { t, lang, calendar, basis } = useApp();
-  const { cursor, latencyMs } = useHud();
+  const { t, lang, calendar, basis, selected } = useApp();
+  const { cursor, latencyMs, hotspots } = useHud();
+  const sel = selected ?? (calendar.state === 'ok' ? calendar.data.latest : null);
   const area = calendar.state === 'ok' ? calendar.data.aoi.area_km2 : null;
   const fix = (v: number) => v.toFixed(4).padStart(9, ' ');
   return (
@@ -23,7 +24,20 @@ export function HudBar() {
           {t('hud.area')} {fmtNum(lang, area)} km²
         </span>
       )}
-      <span className="hidden whitespace-nowrap xl:inline">
+      {hotspots && sel && (
+        <span className="whitespace-nowrap" aria-live="polite">
+          {t('hud.hot', { m: `${t(`month.${sel.month}`).slice(0, 3).toLowerCase()} ${sel.year}` })}{' '}
+          {hotspots.state === 'ok' ? (
+            <>
+              <span className="text-cyan">{fmtNum(lang, hotspots.total)}</span>
+              {hotspots.fixed > 0 && <span className="text-dim"> · {t('hud.hot.fixed', { n: fmtNum(lang, hotspots.fixed) })}</span>}
+            </>
+          ) : (
+            <span className={hotspots.state === 'loading' || hotspots.state === 'off' ? 'text-dim' : 'text-warn'}>{t(`hud.hot.${hotspots.state}`)}</span>
+          )}
+        </span>
+      )}
+      <span className="hidden whitespace-nowrap min-[1700px]:inline">
         <span className={basis === 'viirs_primary' ? 'text-warn' : ''}>
           {basis === 'viirs_primary' ? t('hud.modisSim') : t('hud.modisOn')}
         </span>
