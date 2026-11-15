@@ -119,11 +119,13 @@ export function useFireLayer({
           if (!alive) return;
           const c: Counts = {};
           const features: Feat[] = fc.features.map((f) => {
-            const { family, is_vegetation_fire, frp } = f.properties;
+            const { family, is_vegetation_fire, frp, acq_date, satellite } = f.properties;
             const tally = (c[family] ??= { veg: 0, fixed: 0 });
             if (is_vegetation_fire) tally.veg++;
             else tally.fixed++;
-            return { type: 'Feature', properties: { veg: is_vegetation_fire, frp, fam: family }, geometry: f.geometry };
+            const [lon, lat] = f.geometry.coordinates;
+            // fecha, satélite y coordenadas solo para la ficha del punto (hotspotPopup.ts)
+            return { type: 'Feature', properties: { veg: is_vegetation_fire, frp, fam: family, date: acq_date, sat: satellite, lon, lat }, geometry: f.geometry };
           });
           src.setData({ type: 'FeatureCollection', features });
           counts.current = c;

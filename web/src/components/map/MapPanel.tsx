@@ -17,6 +17,7 @@ import { CustomAreaPanel } from './CustomAreaPanel';
 import { useFireLayer } from './fire';
 import { bboxOf, easeOutCubic, reducedMotion, regionsData } from './geometry';
 import { addMapLayers, CAM_2D, CAM_3D, STYLE_URL } from './layers';
+import { attachHotspotPopup, hotspotAt } from './hotspotPopup';
 import { MapToolbar } from './Toolbar';
 import { useDrawTool } from './useDrawTool';
 
@@ -50,7 +51,7 @@ export function MapPanel({
   /** Capas extra sobre el mapa (p. ej. el panel deslizante del calendario). */
   children?: ReactNode;
 }) {
-  const { t, presets, aoi, setAoi, presetName, selected, mode, calendar, palette } = useApp();
+  const { t, lang, presets, aoi, setAoi, presetName, selected, mode, calendar, palette } = useApp();
   const paletteRef = useRef(palette);
   paletteRef.current = palette;
   const pinIcon = useIconAnim();
@@ -70,6 +71,10 @@ export function MapPanel({
   const drawing = useRef(false);
   const setAoiRef = useRef(setAoi);
   setAoiRef.current = setAoi;
+  // Idioma vigente para la ficha de un punto de calor (el manejador se registra una vez).
+  const textRef = useRef({ t, lang });
+  textRef.current = { t, lang };
+  const hotPopup = useRef<{ close: () => void } | null>(null);
 
   // Crear el mapa (una vez) con sus fuentes y capas.
   useEffect(() => {
@@ -116,6 +121,7 @@ export function MapPanel({
       // Clic en una región de ejemplo = elegirla (salvo mientras se dibuja).
       map.on('click', 'regions-fill', (e: MapLayerMouseEvent) => {
         if (drawing.current) return;
+        if (hotspotAt(map, e.point)) return; // el clic era para la ficha del punto
         const id = e.features?.[0]?.properties?.id as string | undefined;
         if (id && id !== '__drawn') setAoiRef.current({ preset_id: id });
       });
@@ -125,6 +131,8 @@ export function MapPanel({
       map.on('mouseleave', 'regions-fill', () => {
         if (!drawing.current) map.getCanvas().style.cursor = '';
       });
+      // Ficha de un punto de calor al tocarlo (hotspotPopup.ts).
+      hotPopup.current = attachHotspotPopup(map, () => textRef.current, () => drawing.current);
       setReady(true);
     });
 
@@ -193,6 +201,10 @@ export function MapPanel({
       ? (calendar.data.months.find((m) => m.year === selected.year && m.month === selected.month)?.source ?? null)
       : undefined;
   useFireLayer({ mapRef, ready, fire, aoi, selected, mode, source, palette });
+  // La ficha de un punto se cierra al cambiar de mes, área, modo o capa de fuego.
+  useEffect(() => {
+    hotPopup.current?.close();
+  }, [aoi, selected, mode, fire]);
 
   // Vista 3D: el terreno se levanta con la elevación real (exagerada 1.6× para que se lea a esta escala).
   useEffect(() => {
