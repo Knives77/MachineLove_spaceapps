@@ -13,6 +13,7 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { areaKm2 } from '../lib/geo';
+import { setHud } from '../lib/hud';
 import { DEFAULT_PRESET, useApp } from '../state';
 import { MAP } from '../theme/tokens';
 import type { Polygon, PresetFeature } from '../types';
@@ -98,11 +99,20 @@ function boxAround(lat: number, lon: number, km: number): Polygon {
 
 const RADII = [25, 50, 100] as const;
 
+/** Relieve (solo con `tools`): teselas de elevación abiertas de Mapzen en AWS, sin API key. */
+const DEM_TILES = 'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png';
+/** Cámara de la vista 3D: inclinada y girada un poco, como una maqueta. */
+const CAM_3D = { pitch: 55, bearing: -18 };
+const CAM_2D = { pitch: 0, bearing: 0 };
+
 export function MapPanel({
   className = '',
   padRight = 40,
+  tools = false,
   children,
 }: {
+  /** Consola de Experto: vista 3D con relieve, barra de herramientas flotante, atajos 1–3 y coordenadas del cursor. */
+  tools?: boolean;
   className?: string;
   /** Margen derecho para encuadrar la región (px); más grande si un panel cubre el lado derecho. */
   padRight?: number;
@@ -114,6 +124,8 @@ export function MapPanel({
   const [drawMode, setDrawMode] = useState<'rect' | 'poly' | null>(null);
   const [drawMsg, setDrawMsg] = useState<string | null>(null);
   const [panel, setPanel] = useState(false);
+  const [view3d, setView3d] = useState(tools);
+  const [fitNonce, setFitNonce] = useState(0);
   const features: PresetFeature[] = presets.state === 'ok' ? presets.data.features : [];
   const selectedId = 'preset_id' in aoi ? aoi.preset_id : null;
   const drawn = 'geometry' in aoi ? aoi.geometry : null;
@@ -143,11 +155,16 @@ export function MapPanel({
       center: [-99.8, 21.3],
       zoom: 7.5,
       attributionControl: { compact: false },
-      dragRotate: false,
-      pitchWithRotate: false,
+      dragRotate: tools,
+      pitchWithRotate: tools,
+      maxPitch: 70,
       fadeDuration: 120,
     });
-    map.touchZoomRotate.disableRotation();
+    if (!tools) map.touchZoomRotate.disableRotation();
+    else {
+      map.on('mousemove', (e) => setHud({ cursor: { lat: e.lngLat.lat, lon: e.lngLat.lng } }));
+      map.on('mouseout', () => setHud({ cursor: null }));
+    }
     mapRef.current = map;
     // Errores de teselas o estilo: a la consola, sin romper la app.
     map.on('error', (e) => console.warn('[mapa]', e.error?.message ?? e));
@@ -163,6 +180,29 @@ export function MapPanel({
       if (map.getLayer('waterway')) map.setPaintProperty('waterway', 'line-color', MAP.water);
       // Las regiones van debajo de la primera capa de etiquetas: los nombres siguen legibles.
       const firstLabel = map.getStyle().layers.find((l) => l.type === 'symbol')?.id;
+
+      if (tools) {
+        // Relieve sombreado + terreno 3D. Si las teselas no cargan, el mapa sigue funcionando plano.
+        map.addSource('dem', {
+          type: 'raster-dem',
+          tiles: [DEM_TILES],
+          encoding: 'terrarium',
+          tileSize: 256,
+          maxzoom: 12,
+          attribution: 'Mapzen Terrain Tiles',
+        });
+        map.addLayer({
+          id: 'hillshade',
+          type: 'hillshade',
+          source: 'dem',
+          paint: {
+            'hillshade-exaggeration': 0.45,
+            'hillshade-shadow-color': MAP.hillShadow,
+            'hillshade-highlight-color': MAP.hillLight,
+            'hillshade-accent-color': MAP.hillShadow,
+          },
+        }, firstLabel);
+      }
 
       map.addSource('regions', { type: 'geojson', data: EMPTY });
       map.addSource('draw', { type: 'geojson', data: EMPTY });
@@ -260,12 +300,34 @@ export function MapPanel({
     const instant = firstFit.current || reducedMotion();
     firstFit.current = false;
     map.fitBounds(bboxOf(target), {
-      padding: { top: 80, bottom: 50, left: 40, right: padRight },
+      padding: { top: 80, bottom: tools ? 90 : 50, left: 40, right: padRight },
       maxZoom: 9,
       duration: instant ? 0 : 650,
       easing: easeOutCubic,
+      ...(tools ? (view3d ? CAM_3D : CAM_2D) : {}),
     });
-  }, [ready, target, padRight]);
+  }, [ready, target, padRight, view3d, fitNonce]);
+
+  // Vista 3D: el terreno se levanta con la elevación real (exagerada 1.6× para que se lea a esta escala).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map || !tools) return;
+    map.setTerrain(view3d ? { source: 'dem', exaggeration: 1.6 } : null);
+  }, [ready, view3d]);
+
+  // Atajos 1–3: regiones de ejemplo (no mientras se escribe en un campo).
+  useEffect(() => {
+    if (!tools) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
+      const f = features[Number(e.key) - 1];
+      if (f) setAoiRef.current({ preset_id: f.id });
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [features]);
 
   // Pulso sutil del borde al elegir o cambiar de región: 2 latidos y se detiene.
   useEffect(() => {
@@ -440,12 +502,17 @@ export function MapPanel({
             type="button"
             aria-pressed={f.id === selectedId}
             onClick={() => setAoi({ preset_id: f.id })}
-            className={`btn whitespace-nowrap bg-bg/85 px-2 py-1 text-[11.5px] backdrop-blur ${f.id === selectedId ? 'btn-on' : ''}`}
+            className={`btn flex items-center gap-1.5 whitespace-nowrap bg-bg/85 px-2 py-1 text-[11.5px] backdrop-blur ${f.id === selectedId ? 'btn-on' : ''}`}
           >
+            {tools && (
+              <kbd aria-hidden="true" className="rounded-sm border border-line-2 px-1 font-mono text-[10px] text-mute">
+                {features.indexOf(f) + 1}
+              </kbd>
+            )}
             {presetName(f)}
           </button>
         ))}
-        <button
+        {!tools && <button
           type="button"
           aria-expanded={panel}
           aria-controls="custom-area"
@@ -456,7 +523,7 @@ export function MapPanel({
         >
           <MapPinPlusIcon ref={pinIcon.ref} size={14} aria-hidden="true" className="flex text-cyan" />
           {t('map.custom')}
-        </button>
+        </button>}
       </div>
 
       <AnimatePresence>
@@ -486,7 +553,7 @@ export function MapPanel({
           role="status"
           // Centrado en el espacio visible (a la izquierda de un panel abierto).
           style={{ left: `calc((100% - ${padRight - 40}px) / 2)` }}
-          className="absolute bottom-9 z-[500] flex max-w-[90%] -translate-x-1/2 items-center gap-3 rounded border border-cyan/60 bg-bg/90 px-3 py-2 text-[12.5px] backdrop-blur"
+          className={`absolute ${tools ? 'bottom-[4.75rem]' : 'bottom-9'} z-[500] flex max-w-[90%] -translate-x-1/2 items-center gap-3 rounded border border-cyan/60 bg-bg/90 px-3 py-2 text-[12.5px] backdrop-blur`}
         >
           <span className={drawMsg ? 'text-warn' : ''}>
             {drawMsg ?? t(drawMode === 'rect' ? 'map.hintRect' : 'map.hintPoly')}
@@ -507,8 +574,71 @@ export function MapPanel({
         </button>
       )}
 
+      {/* Barra de herramientas flotante (consola de Experto): un clic por herramienta. */}
+      {tools && (
+        <div
+          role="toolbar"
+          aria-label={t('tool.bar')}
+          style={{ left: `calc((100% - ${padRight - 40}px) / 2)` }}
+          className="hud absolute bottom-7 z-[500] flex -translate-x-1/2 items-stretch gap-0.5 p-1"
+        >
+          <Tool label={t('tool.rect')} pressed={drawMode === 'rect'} onClick={() => (drawMode === 'rect' ? setDrawMode(null) : startDraw('rect'))}>
+            <rect x="4" y="6" width="16" height="12" rx="1" strokeDasharray="3 2" />
+          </Tool>
+          <Tool label={t('tool.poly')} pressed={drawMode === 'poly'} onClick={() => (drawMode === 'poly' ? setDrawMode(null) : startDraw('poly'))}>
+            <path d="M5 17 3.5 8.5 12 4l8.5 6L17 19z" />
+          </Tool>
+          <Tool label={t('tool.coords')} pressed={panel} onClick={() => setPanel((v) => !v)}>
+            <path d="M12 21s-6.5-5.6-6.5-10.5a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z" />
+            <circle cx="12" cy="10.5" r="2.2" />
+          </Tool>
+          <span aria-hidden="true" className="mx-1 w-px self-stretch bg-line" />
+          <Tool label={t('tool.3d')} pressed={view3d} title={t('tool.hint3d')} onClick={() => setView3d((v) => !v)}>
+            <path d="M12 3 20 7.5v9L12 21l-8-4.5v-9z" />
+            <path d="M4 7.5 12 12l8-4.5M12 12v9" />
+          </Tool>
+          <Tool label={t('tool.north')} onClick={() => mapRef.current?.easeTo({ bearing: 0, duration: 400 })}>
+            <path d="M12 3 16.5 20 12 16.5 7.5 20z" />
+          </Tool>
+          <Tool label={t('tool.fit')} onClick={() => setFitNonce((n) => n + 1)}>
+            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+          </Tool>
+          <span aria-hidden="true" className="mx-1 w-px self-stretch bg-line" />
+          <Tool label={t('tool.zoomOut')} onClick={() => mapRef.current?.zoomOut()}>
+            <path d="M5 12h14" />
+          </Tool>
+          <Tool label={t('tool.zoomIn')} onClick={() => mapRef.current?.zoomIn()}>
+            <path d="M5 12h14M12 5v14" />
+          </Tool>
+        </div>
+      )}
+
       {children}
     </div>
+  );
+}
+
+/** Botón de la barra flotante: icono de trazo + etiqueta corta. */
+function Tool({
+  label,
+  pressed,
+  title,
+  onClick,
+  children,
+}: {
+  label: string;
+  pressed?: boolean;
+  title?: string;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button type="button" className="tool" aria-pressed={pressed} title={title ?? label} onClick={onClick}>
+      <svg width="17" height="17" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+        {children}
+      </svg>
+      <span className="whitespace-nowrap">{label}</span>
+    </button>
   );
 }
 

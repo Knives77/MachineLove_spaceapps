@@ -40,6 +40,10 @@
     outline: 2px solid var(--color-cyan);
     outline-offset: 2px;
   }
+  /* Cifras tabulares en todo lo monoespaciado: los números no bailan al animarse. */
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
   button {
     cursor: pointer;
   }
@@ -53,6 +57,75 @@
     background: color-mix(in srgb, var(--color-panel) 92%, transparent);
     border: 1px solid var(--color-line);
     border-radius: 4px;
+  }
+  /* Tarjeta técnica: borde fino con acentos de 7 px en las 4 esquinas. */
+  .bracket {
+    --c: var(--color-line-2);
+    border: 1px solid var(--color-line);
+    border-radius: 2px;
+    background:
+      linear-gradient(var(--c), var(--c)) top left / 7px 1px no-repeat,
+      linear-gradient(var(--c), var(--c)) top left / 1px 7px no-repeat,
+      linear-gradient(var(--c), var(--c)) top right / 7px 1px no-repeat,
+      linear-gradient(var(--c), var(--c)) top right / 1px 7px no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom left / 7px 1px no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom left / 1px 7px no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom right / 7px 1px no-repeat,
+      linear-gradient(var(--c), var(--c)) bottom right / 1px 7px no-repeat,
+      color-mix(in srgb, var(--color-panel) 60%, transparent);
+  }
+  .bracket-on {
+    --c: var(--color-cyan);
+  }
+  /* Controles flotantes sobre el mapa (barra de herramientas, píldoras). */
+  .hud {
+    border: 1px solid var(--color-line);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--color-drawer) 88%, transparent);
+    backdrop-filter: blur(8px);
+  }
+  .tool {
+    display: flex;
+    min-width: 3.4rem;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    border-radius: 3px;
+    border: 1px solid transparent;
+    padding: 0.3rem 0.45rem;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-mute);
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .tool:hover {
+    color: var(--color-ink);
+    border-color: var(--color-line-2);
+  }
+  .tool[aria-pressed='true'] {
+    color: var(--color-select);
+    border-color: var(--color-cyan);
+    background: var(--color-cyan-deep);
+  }
+  /* Mosaico del calendario: cuadrado redondeado con separación (se agranda al pasar el cursor). */
+  .tile {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 3px;
+    transition: transform 0.12s;
+  }
+  /* Laptop baja (1366 × 657): mosaicos un poco más bajos para que quepan los 12 meses. */
+  @media (max-height: 720px) {
+    .tile {
+      aspect-ratio: 5 / 4;
+    }
+  }
+  .tile:hover,
+  .tile:focus-visible {
+    transform: scale(1.25);
+    z-index: 5;
   }
   .kicker {
     font-family: var(--font-mono);

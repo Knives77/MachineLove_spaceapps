@@ -64,4 +64,6 @@ export const MAP = {
   regionActive: UI.accent,
   regionIdle: NEUTRAL.zero,
   draw: UI.select,
+  hillShadow: '#02050a', // sombra del relieve
+  hillLight: '#3b4a60', // ladera iluminada
 } as const;

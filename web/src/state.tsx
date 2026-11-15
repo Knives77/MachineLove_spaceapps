@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { getCalendar, getPresets } from './api';
+import { getCalendar, getPresets, usingMocks } from './api';
+import { setHud } from './lib/hud';
 import { initialLang, saveLang, translate } from './i18n';
 import { centroid, fmtLatLon } from './lib/geo';
 import {
@@ -78,7 +79,10 @@ function fetchCalendar(aoi: Aoi, basis: Basis, fresh = false): Promise<CalendarR
   const key = JSON.stringify([aoi, basis]);
   let p = fresh ? undefined : calendarCache.get(key);
   if (!p) {
+    const t0 = performance.now();
     p = getCalendar({ aoi, start_year: 2000, end_year: 2026, basis });
+    // Latencia real de la API para la barra inferior (con mocks no se mide).
+    if (!usingMocks) p.then(() => setHud({ latencyMs: Math.round(performance.now() - t0) })).catch(() => {});
     calendarCache.set(key, p);
     p.catch(() => calendarCache.delete(key)); // los errores no se guardan
   }
@@ -113,8 +117,8 @@ export function useCalendar(aoi: Aoi | null, basis: Basis = 'modis_primary') {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(initialLang);
-  // La app siempre arranca en General; el modo se cambia desde el menú de la barra superior.
-  const [tab, setTabState] = useState<Tab>('general');
+  // La app arranca en Experto (la consola de la demo); las otras vistas están en el menú de la barra superior.
+  const [tab, setTabState] = useState<Tab>('expert');
   const [mode, setMode] = useState<Mode>('harmonized');
   const [basis, setBasis] = useState<Basis>('modis_primary');
   const [palette, setPaletteState] = useState<Palette>(() =>

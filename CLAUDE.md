@@ -38,8 +38,9 @@ Frase brújula: *que no importe qué satélite tomó el dato, sino saber si el f
 
 ## Frontend: reglas de UI/UX (detalle en `.claude/skills/frontend/`)
 
-- **Mapa:** solo `maplibre-gl` (WebGL). Cámara con `fitBounds`/`easeTo` nativos y `padding` sincronizado con el panel del calendario. Nada de bucles manuales de animación.
+- **Mapa:** solo `maplibre-gl` (WebGL). En Experto, vista 3D nativa (inclinación + relieve con `setTerrain`) y barra flotante de herramientas. Cámara con `fitBounds`/`easeTo` nativos y `padding` sincronizado con el panel del calendario. Nada de bucles manuales de animación.
 - **Colores:** todos salen de `web/src/theme/tokens.ts` (espejo en `web/src/index.css`): superficies `#090D14` / `#111827`, interacción `#38BDF8` / `#F8FAFC`, niveles Sin incendios `#64748B`, Bajo `#A855F7`, Normal `#E06D53`, Alto `#F97316`, Extremo `#FDE047`, más la paleta para daltonismo. Sin colores escritos a mano en componentes.
+- **Vista inicial: Experto** (consola 60 % mapa / 40 % panel analítico, sin scroll global).
 - **Progressive disclosure:** `Vista: General` limpia (una barra de tiempo 2000–2026, sin trazas de sensores, sin interruptor crudo ni descargas). Lo técnico va en Aprendizaje, Educacional y Experto.
 - **Antes de cada commit del frontend:** `pnpm run build` y verificación visual en navegador (abrir/cerrar el calendario, cambiar de región).
 

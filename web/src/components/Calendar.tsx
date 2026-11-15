@@ -268,7 +268,7 @@ export function Calendar({
   );
 }
 
-function Tooltip({
+export function Tooltip({
   x,
   y,
   below,

@@ -38,6 +38,9 @@ pnpm build                       # debe pasar antes de abrir PR
 | `src/theme/tokens.ts` | **Única fuente de colores** en TS: superficies, acentos de UI, niveles por paleta, rampas, mapa. `@theme` de `src/index.css` es su espejo para Tailwind |
 | `src/lib/color.ts` | Rampas, color por nivel (`statusColor`), contraste de símbolos (`inkOn`, `readableOn`), escala raíz |
 | `src/components/` | Calendario (vista por año `YearView` + matriz `Calendar`), tarjeta del mes, leyenda, mapa (`MapPanel`, cargado con `LazyMapPanel`), línea de tiempo, barras anuales, inspector de k, serie mensual, descargas |
+| `src/components/CalendarTiles.tsx` | Calendario en mosaicos de Experto (años en columnas). Reusa `cellValue`, `useScaleMax` y `Tooltip` de `Calendar.tsx` |
+| `src/components/HudBar.tsx`, `src/lib/hud.ts` | Barra de telemetría y su almacén fuera de React (cursor, latencia) |
+| `src/components/AnimatedNumber.tsx` | Cifra que rueda al valor nuevo en 600 ms (solo presentación) |
 | `src/components/icons/` | Iconos animados de lucide-animated (MIT) + `useIconAnim` (el botón completo dispara la animación) |
 | `src/views/` | `General`, `Learn` (Aprendizaje), `Edu` (Educacional), `Expert` |
 | `src/mocks/` | Copias de la API real por preset + generador DEMO para polígonos dibujados (`demoCalendar.ts`) |
@@ -75,14 +78,14 @@ Qué implica:
 
 ## Vistas
 
-La barra superior es igual en todas: nombre a la izquierda; a la derecha 3 botones de 44 px: idioma (🌐), accesibilidad (paletas Estándar / Daltónicos / Alto contraste + sonificación) y **Vista: <modo>** (menú de las 4 vistas). La app arranca siempre en General.
+La barra superior es igual en todas: nombre a la izquierda; a la derecha 3 botones de 44 px: idioma (🌐), accesibilidad (paletas Estándar / Daltónicos / Alto contraste + sonificación) y **Vista: <modo>** (menú de las 4 vistas). La app arranca siempre en **Experto** (la consola de la demo). Abajo, una barra de telemetría de 28 px (`HudBar`): fuente, coordenadas del cursor, área, estado de sensores y latencia de la API.
 
 | Vista | Contenido |
 |---|---|
 | General | Tarjeta del mes con flechas ‹ › · mapa a todo el centro con regiones, área personalizada y botón **Calendario** · el calendario es un panel flotante sobre el mapa (cerrado al inicio): 12 meses del año con selector ‹ año › y "Hoy", comparativa histórica 2000–2026 bajo demanda · botón **"Simular fin de MODIS"** al pie de la tarjeta · una sola barra de tiempo 2000–2026 con los totales anuales como mini histograma. **Nada se desplaza**: la vista cabe completa en la ventana (probado a 1366×657). **Sin** interruptor crudo, puntos crudos, pistas de sensores ni descargas |
 | Aprendizaje | Cuaderno de Don Modesto en 4 pasos (crudo → fuentes fijas → celdas-día → factor k) con barras mensuales de `raw_points`, `viirs_cell_days`/`modis_cell_days` y `harmonized`; 3 preguntas |
 | Educacional | Dos regiones lado a lado (Sierra Gorda y Bajío queretano) con `k` y `seasonality` en la misma escala; MODIS vs VIIRS; qué es la mediana |
-| Experto | Capas del calendario, inspector de k (`calibration`), mapa, calendario, serie del mes con banda p25–p75, descargas |
+| Experto | **Consola a pantalla completa, sin scroll global.** 60 % mapa 3D (`MapPanel tools`) con regiones `[1] [2] [3]` (atajos de teclado) y barra flotante de herramientas (rectángulo, polígono, coordenadas, vista 3D, norte, encuadrar, zoom). 40 % panel analítico: (A) interruptor maestro Armonizado/Crudo con aviso ámbar en crudo, (B) 3 indicadores: estado del mes, `calibration.k`, error `loyo_annual_mape` / `monthly_mape`, (C) barras anuales alineadas con el calendario en mosaicos (`CalendarTiles`: columnas = años, filas = meses; color por valor o por nivel). Pie fijo: "Simular fin de MODIS" y descargas. Plegado: inspector de k y serie del mes. Probado a 1366×657 y 1920×1080 |
 
 ## Reglas de visualización
 
@@ -90,6 +93,7 @@ La barra superior es igual en todas: nombre a la izquierda; a la derecha 3 boton
 - Superficies `#090D14` (lienzo) y `#111827` (paneles y tarjetas) con borde `#1E293B`. El blanco `#F8FAFC` con resplandor cian `#38BDF8` es **solo** para interacción (mes elegido, región activa, botón activo), nunca para datos.
 - Niveles (Estándar): Sin incendios `#64748B`, Bajo `#A855F7`, Normal `#E06D53`, Alto `#F97316`, Extremo `#FDE047`. Daltónicos: `#2B5C8F`, `#5698A3`, `#D4AF37`, `#FDE725`. La misma escala en tarjeta del mes, vista por año, comparativa histórica y leyenda.
 - Un mes con `harmonized = 0` se muestra "Sin incendios (0)" en gris neutro, aunque la API diga `normal` (mediana 0).
+- Clases de la consola en `src/index.css`: `.bracket` (tarjeta con acentos en las esquinas), `.hud` y `.tool` (controles flotantes), `.tile` (mosaico). Esquinas de 2–4 px como máximo; todas las cifras en monoespaciada con `tabular-nums`.
 - **Armonizado:** color de celda por `harmonized`. **Crudo:** color por `raw_points`. Cada modo con su propia escala; la leyenda avisa que no son comparables.
 - Rampas Inferno o Cividis, recortadas para que el valor más bajo se vea sobre fondo oscuro. Luminancia monótona: se leen en grises y con daltonismo. Escala de raíz cuadrada.
 - Cero = celda oscura con "0". `harmonized = null` (`status = "no_data"`) → trama gris, nunca el color del cero. Mes que no viene en la respuesta → borde punteado.
@@ -106,6 +110,8 @@ La barra superior es igual en todas: nombre a la izquierda; a la derecha 3 boton
 **Solo `maplibre-gl`** (WebGL). Mapa base vectorial "dark" de OpenFreeMap (sin API key). Regiones como capas GeoJSON nativas (`fill` / `line`), debajo de las etiquetas.
 
 - Cámara: `fitBounds` nativo con `padding` dinámico `{ top: 80, bottom: 50, left: 40, right: 410 | 40 }` según el panel del calendario esté abierto o cerrado. **Nunca** animar la cámara con bucles manuales (`requestAnimationFrame` + `setView`/`jumpTo`).
+- **Vista 3D (solo Experto, prop `tools`):** inclinación y giro nativos (`pitch` 55°, `bearing` −18° dentro del mismo `fitBounds`) y relieve real con `setTerrain` + capa `hillshade` sobre las teselas abiertas de elevación de Mapzen/AWS (sin API key). Se apaga con el botón "Vista 3D". Si las teselas no cargan, el mapa queda plano y sigue funcionando. General conserva el mapa plano.
+- **No hay hexágonos H3, Deck.gl, capa de fuentes industriales ni puntos sobre el mapa:** la malla del contrato es 0.01° y la API no devuelve celdas. Para agregarlos, primero se cambia el contrato.
 - El mapa ocupa siempre toda su caja; los paneles flotan encima (el canvas no se redimensiona al abrir/cerrar).
 - Dibujo nativo de rectángulo y polígono (sin `mapbox-gl-draw`), con validación de autointersección y máximo de 200,000 km². El polígono se envía como GeoJSON `[lon, lat]`, cerrado (primer punto = último).
 - El worker se carga con `?url` + `setWorkerUrl`. Si cambias dependencias del mapa y el servidor de desarrollo da `504 Outdated Optimize Dep`, reinícialo con `vite --force`.

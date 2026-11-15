@@ -29,6 +29,9 @@ Resumen para quien llega: **hagan `git pull`**. Front instala desde la raíz; el
 | **Mes parcial = sin dato.** Un mes con `partial_month` conserva `harmonized` y `baseline`, pero lleva `status = "no_data"` y `anomaly_ratio = null`. Antes, noviembre de 2026 (con un día de datos) salía `normal` o `below` | Front | Nada: ya pinta en gris todo mes `no_data` |
 | **Procesamiento A y B pasan a apoyar el pitch** | Procesamiento | Tareas nuevas en `docs/CHECKLIST.md` |
 
+### Front
+- **Rediseño de Experto como consola y vista inicial.** La app abre en Experto: mapa 3D con relieve (MapLibre nativo) y barra flotante de herramientas, atajos 1–3 para las regiones, panel analítico con interruptor maestro Crudo/Armonizado, 3 indicadores, barras anuales alineadas con el calendario en mosaicos, y barra inferior de telemetría. General, Aprendizaje y Educacional no cambian. Skill de frontend y `CLAUDE.md` actualizados. Analista: la ruta de la demo ya no necesita cambiar de vista para el acto 1 (Crudo).
+
 ### Base de datos
 - `docs/POBLAR_BASE.md`: cómo poblar la base desde cero (esquema + ETL, **125 s** medidos) o restaurando un respaldo (**96 s**). Probado en bases nuevas que después se borraron.
 - Corregido el comando de restauración de `BITACORA_BASE.md`: `pg_restore -j` no funciona leyendo de la entrada estándar; ahora el respaldo se copia dentro del contenedor.
