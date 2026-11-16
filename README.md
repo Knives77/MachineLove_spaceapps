@@ -1,4 +1,4 @@
-# MachineLove · NASA Space Apps 2026
+# MODIIRS · NASA Space Apps 2026
 
 **Harmonization of MODIS and VIIRS Hot Spots.** A burn activity calendar where it does not matter which satellite took the data: each month is compared against its own history (2000–2026) to tell whether it is normal or anomalous. MVP: Mexico.
 
@@ -51,22 +51,58 @@ data/       FIRMS CSV files (not in Git; downloaded with the scripts)
 
 ## How to run it
 
-Requirements: podman, `uv`, Node 24, `pnpm` and `unzip`.
+Tested on Linux. Everything runs on one machine and listens only on `127.0.0.1`.
+
+### Requirements
+
+| Tool | Version | Used for |
+|---|---|---|
+| `git`, `bash`, `curl`, `unzip` | any recent | cloning and the download scripts |
+| `podman` | 4 or later | PostgreSQL 16 + PostGIS container |
+| `uv` | recent | Python 3.12 and the ETL/API dependencies (installed on first `uv run`) |
+| Node | 24 | frontend |
+| `pnpm` | 12.18 (pinned in `package.json`; `corepack enable` provides it) | frontend |
+
+About 5 GB of free disk (1.4 GB of CSV plus the database) and an internet connection: the data comes from FIRMS and GitHub, and the base map tiles are loaded online.
+
+### Quick look, no database
 
 ```bash
-scripts/db_up.sh                                   # Postgres + PostGIS on 127.0.0.1:5432
-psql postgresql://firms:firms_local@127.0.0.1:5432/firms -f docs/contracts/db_schema.sql
-scripts/download_history.sh                        # FIRMS history 2000–2025 into data/
-scripts/download_requests.sh MX                    # 2024–2026 requests (GitHub release)
-uv run python -m etl.run --all                     # full ETL
-uv run uvicorn backend.main:app --port 8000        # API
-cp web/.env.example web/.env                       # then set VITE_API_URL=http://localhost:8000/api/v1
-pnpm install --frozen-lockfile && pnpm dev         # frontend at http://localhost:5173
+git clone https://github.com/Knives77/MachineLove_spaceapps.git && cd MachineLove_spaceapps
+pnpm install --frozen-lockfile && pnpm dev         # http://localhost:5173 with sample data ("DEMO (mocks)")
 ```
 
-Without `VITE_API_URL`, the frontend runs on its own with sample data. Details of each step: [`docs/DATABASE_SETUP.md`](docs/DATABASE_SETUP.md).
+### Full setup, with real data
 
-Tests: `uv run pytest etl backend` and `uv run python -m etl.verify`.
+```bash
+# 1. Database
+scripts/db_up.sh                                   # Postgres + PostGIS on 127.0.0.1:5432
+podman exec -i firms_postgis psql -U firms -d firms < docs/contracts/db_schema.sql
+
+# 2. Data (about 1.4 GB)
+scripts/download_history.sh                        # FIRMS history 2000–2025 into data/
+scripts/download_requests.sh MX                    # 2024–2026 requests, from this repo's GitHub release
+
+# 3. Load and verify (about 2 minutes)
+uv run python -m etl.run --all                     # Mexico and Argentina (Argentina is phase 2)
+uv run python -m etl.verify                        # control figures: must say 54/54
+
+# 4. API
+uv run uvicorn backend.main:app --port 8000
+curl -s localhost:8000/api/v1/health               # {"status":"ok","data_through":"2026-11-01"}
+
+# 5. Frontend, in another terminal
+cp web/.env.example web/.env                       # then set VITE_API_URL=http://localhost:8000/api/v1
+pnpm install --frozen-lockfile && pnpm dev         # http://localhost:5173
+```
+
+The bottom bar of the app shows the API response time in milliseconds when it is connected, and "DEMO (mocks)" when it is not.
+
+To stop: `Ctrl+C` in the API and frontend terminals, and `podman stop firms_postgis`. The data stays in the `firms_pgdata` volume.
+
+Step-by-step details, backups, restore and common problems: [`docs/DATABASE_SETUP.md`](docs/DATABASE_SETUP.md). How to use the app: [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md).
+
+Tests: `uv run pytest etl backend`.
 
 ## Documentation
 

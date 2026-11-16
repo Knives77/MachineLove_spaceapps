@@ -12,7 +12,7 @@ from backend.models import ApiException
 from backend.routes import router
 
 app = FastAPI(
-    title="MachineLove Burn Activity Calendar API",
+    title="MODIIRS Burn Activity Calendar API",
     version="1.0.0",
 )
 

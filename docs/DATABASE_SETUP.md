@@ -30,7 +30,7 @@ podman exec firms_postgis createdb -U firms firms_dev    # test database
 ## Path A · Restore a backup
 
 ```bash
-DUMP=~/backups/machinelove/firms_20261114_1634.dump
+DUMP=~/backups/modiirs/firms_20261114_1634.dump
 podman exec firms_postgis createdb -U firms firms_restore
 podman cp "$DUMP" firms_postgis:/tmp/restore.dump
 podman exec firms_postgis pg_restore -U firms -d firms_restore -j 4 /tmp/restore.dump
@@ -127,8 +127,8 @@ curl -s localhost:8000/api/v1/health      # {"status":"ok","data_through":"2026-
 - Take a backup:
 
 ```bash
-mkdir -p ~/backups/machinelove
-podman exec firms_postgis pg_dump -U firms -Fc -d firms > ~/backups/machinelove/firms_$(date +%Y%m%d_%H%M).dump
+mkdir -p ~/backups/modiirs
+podman exec firms_postgis pg_dump -U firms -Fc -d firms > ~/backups/modiirs/firms_$(date +%Y%m%d_%H%M).dump
 ```
 
 ## Common problems

@@ -1,4 +1,4 @@
-# MachineLove · NASA Space Apps 2026 · Harmonization of MODIS and VIIRS Hot Spots
+# MODIIRS · NASA Space Apps 2026 · Harmonization of MODIS and VIIRS Hot Spots
 
 **MVP scope: Mexico only.** Argentina stays loaded in the database for phase 2; after that, the world.
 

@@ -1,6 +1,6 @@
 // Textos en español. Cada clave debe existir también en en.ts.
 export const es: Record<string, string> = {
-  'app.name': 'MachineLove',
+  'app.name': 'MODIIRS',
   'app.subtitle': 'Calendario de actividad de quema',
   'skip': 'Saltar al contenido',
   'top.views': 'Modos',

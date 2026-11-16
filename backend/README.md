@@ -1,6 +1,6 @@
 # Backend · Harmonized Burn Activity Calendar (FastAPI)
 
-This module implements the REST server of the **MachineLove (NASA Space Apps 2026)** project, following the frozen contracts in [`docs/contracts/`](../docs/contracts/).
+This module implements the REST server of the **MODIIRS (NASA Space Apps 2026)** project, following the frozen contracts in [`docs/contracts/`](../docs/contracts/).
 
 ---
 
@@ -13,7 +13,7 @@ This module implements the REST server of the **MachineLove (NASA Space Apps 202
 | `aoi.py` | Geometric validation of GeoJSON polygons in WGS84, area calculation ($\le 200,000\text{ km}^2$), Mexico presets (`qro-sierra-gorda`, `qro-bajio`, `qro-recuadro`) and the MVP coverage restriction to Mexico (`MX`). |
 | `queries.py` | Parameterized SQL queries over PostgreSQL 16 + PostGIS (`preset`, `cell`, `cell_day`, `detection`, `sensor_outage`, `calibration_country`) and a streaming server-side cursor for `/hotspots.csv`. |
 | `harmonize.py` | Pure functions (no database): calibration of $k = \frac{\sum M}{\sum V}$ over the `2012-02` to `2025-12` overlap (falling back to the national $k$ if $\sum M < 100$), annual LOYO validation and monthly MAPE, `modis_primary` and `viirs_primary` series, quality flags, historical baseline ($\ge 10$ years excluding months with outages or incomplete months), percentiles (`p25`, `median`, `p75`, `p90`), `status`, yearly aggregates, seasonality and `latest`. |
-| `routes.py` | REST endpoints (`/health`, `/presets`, `/calendar`, `/calendar.csv`, `/hotspots.csv`, `/hotspots`), `API_MOCK=1` mode and in-memory cache (TTL 60 s) for presets. |
+| `routes.py` | REST endpoints (`/health`, `/presets`, `/calendar`, `/calendar.csv`, `/hotspots.csv`, `/hotspots`), `API_MOCK=1` mode and in-memory cache (TTL 600 s; 30 s for `/health`). |
 | `tests/` | Unit tests (`test_harmonize.py`), endpoint tests (`test_api.py`) and an end-to-end system simulation (`test_system_e2e.py`). |
 
 ---

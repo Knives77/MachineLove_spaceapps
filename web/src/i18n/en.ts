@@ -1,6 +1,6 @@
 // English texts. Every key must also exist in es.ts.
 export const en: Record<string, string> = {
-  'app.name': 'MachineLove',
+  'app.name': 'MODIIRS',
   'app.subtitle': 'Burn activity calendar',
   'skip': 'Skip to content',
   'top.views': 'Modes',
