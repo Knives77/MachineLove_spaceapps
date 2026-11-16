@@ -1,11 +1,11 @@
--- Contrato de base de datos. PostgreSQL 16 + PostGIS.
--- Aplicar: psql "$DATABASE_URL" -f docs/contracts/db_schema.sql
+-- Database contract. PostgreSQL 16 + PostGIS.
+-- Apply: psql "$DATABASE_URL" -f docs/contracts/db_schema.sql
 CREATE EXTENSION IF NOT EXISTS postgis;
 
--- 1. Detecciones normalizadas (una fila por hotspot). Alimenta el modo crudo y el CSV.
+-- 1. Normalized detections (one row per hot spot). Feeds raw mode and the CSV.
 CREATE TABLE IF NOT EXISTS detection (
     id             BIGSERIAL PRIMARY KEY,
-    country        CHAR(2)  NOT NULL,              -- MX | AR (AR fuera del MVP)
+    country        CHAR(2)  NOT NULL,              -- MX | AR (AR outside the MVP)
     latitude       DOUBLE PRECISION NOT NULL,
     longitude      DOUBLE PRECISION NOT NULL,
     acq_date       DATE     NOT NULL,
@@ -18,17 +18,17 @@ CREATE TABLE IF NOT EXISTS detection (
     scan           REAL     NOT NULL,
     track          REAL     NOT NULL,
     daynight       CHAR(1)  NOT NULL,              -- D | N
-    type           SMALLINT,                       -- NULL en NRT
+    type           SMALLINT,                       -- NULL in NRT
     source         TEXT     NOT NULL,              -- country | archive | nrt
     is_veg         BOOLEAN  NOT NULL,
     cy             INTEGER  NOT NULL,              -- floor(lat*100)
     cx             INTEGER  NOT NULL               -- floor(lon*100)
 );
--- Índices: crearlos DESPUÉS del COPY.
+-- Indexes: create them AFTER the COPY.
 CREATE INDEX IF NOT EXISTS detection_cell_date ON detection (cy, cx, acq_date);
 CREATE INDEX IF NOT EXISTS detection_date      ON detection (acq_date);
 
--- 2. Celdas con fuente estática recurrente (type = 2 en >= 3 fechas).
+-- 2. Cells with a recurring static source (type = 2 on >= 3 dates).
 CREATE TABLE IF NOT EXISTS static_cell (
     cy INTEGER NOT NULL,
     cx INTEGER NOT NULL,
@@ -36,33 +36,33 @@ CREATE TABLE IF NOT EXISTS static_cell (
     PRIMARY KEY (cy, cx)
 );
 
--- 3. Catálogo de celdas con al menos una detección. Es lo que se cruza con el polígono.
+-- 3. Catalog of cells with at least one detection. This is what is intersected with the polygon.
 CREATE TABLE IF NOT EXISTS cell (
     cy INTEGER NOT NULL,
     cx INTEGER NOT NULL,
     country CHAR(2) NOT NULL,
-    geom GEOMETRY(Point, 4326) NOT NULL,           -- centro: ((cx+0.5)/100, (cy+0.5)/100)
+    geom GEOMETRY(Point, 4326) NOT NULL,           -- center: ((cx+0.5)/100, (cy+0.5)/100)
     PRIMARY KEY (cy, cx)
 );
 CREATE INDEX IF NOT EXISTS cell_geom ON cell USING GIST (geom);
 
--- 4. Celda-día: la unidad de actividad. Una fila por celda y fecha con alguna detección.
+-- 4. Cell-day: the unit of activity. One row per cell and date with any detection.
 CREATE TABLE IF NOT EXISTS cell_day (
     cy        INTEGER  NOT NULL,
     cx        INTEGER  NOT NULL,
     acq_date  DATE     NOT NULL,
-    modis_veg BOOLEAN  NOT NULL,                   -- alguna detección MODIS con is_veg
-    viirs_veg BOOLEAN  NOT NULL,                   -- alguna detección is_veg del VIIRS de referencia de ese día
-    raw_points SMALLINT NOT NULL,                  -- todas las detecciones, todos los satélites, todos los type
+    modis_veg BOOLEAN  NOT NULL,                   -- any MODIS detection with is_veg
+    viirs_veg BOOLEAN  NOT NULL,                   -- any is_veg detection from that day's reference VIIRS
+    raw_points SMALLINT NOT NULL,                  -- all detections, all satellites, all types
     raw_modis  SMALLINT NOT NULL,
     raw_viirs  SMALLINT NOT NULL,
-    frp_modis  REAL,                               -- suma FRP MODIS is_veg (mejora opcional)
-    frp_viirs  REAL,                               -- suma FRP del VIIRS de referencia is_veg
+    frp_modis  REAL,                               -- sum of MODIS is_veg FRP (optional enhancement)
+    frp_viirs  REAL,                               -- sum of the reference VIIRS is_veg FRP
     PRIMARY KEY (cy, cx, acq_date)
 );
 CREATE INDEX IF NOT EXISTS cell_day_date ON cell_day (acq_date);
 
--- 5. Días sin datos por satélite y país.
+-- 5. Days without data per satellite and country.
 CREATE TABLE IF NOT EXISTS sensor_outage (
     satellite  TEXT NOT NULL,
     country    CHAR(2) NOT NULL,
@@ -72,7 +72,7 @@ CREATE TABLE IF NOT EXISTS sensor_outage (
     PRIMARY KEY (satellite, country, start_date)
 );
 
--- 6. Factor de respaldo por país (cuando el área consultada tiene poco traslape).
+-- 6. Fallback factor per country (when the queried area has little overlap).
 CREATE TABLE IF NOT EXISTS calibration_country (
     country CHAR(2) PRIMARY KEY,
     k DOUBLE PRECISION NOT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS calibration_country (
     loyo_annual_mape DOUBLE PRECISION NOT NULL
 );
 
--- 7. Regiones predefinidas.
+-- 7. Predefined regions.
 CREATE TABLE IF NOT EXISTS preset (
     id      TEXT PRIMARY KEY,                      -- qro-sierra-gorda | qro-bajio | qro-recuadro
     name_es TEXT NOT NULL,
@@ -98,4 +98,4 @@ INSERT INTO preset VALUES
  ('qro-recuadro', 'Querétaro completo (recuadro)', 'Querétaro (full box)', 'MX',
   ST_MakeEnvelope(-100.6, 20.0, -99.0, 21.7, 4326))
 ON CONFLICT (id) DO NOTHING;
--- Los presets son rectángulos provisionales. Mejora: sustituirlos por los polígonos oficiales.
+-- The presets are provisional rectangles. Enhancement: replace them with the official polygons.

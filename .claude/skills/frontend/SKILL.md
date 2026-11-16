@@ -1,140 +1,139 @@
 ---
 name: frontend
-description: Guía para el frontend (carpeta web/) en React + Vite + Tailwind - 4 vistas (General, Aprendizaje, Educacional, Experto), mapa, calendario año x mes, interruptor crudo/armonizado, bilingüe, tema oscuro del diseño de Figma. Úsala antes de tocar web/ o de redactar un prompt para Figma Make.
+description: Guide for the frontend (web/ folder) in React + Vite + Tailwind - 4 views (Overview, Learn, Educational, Expert), map, year x month calendar, raw/harmonized switch, bilingual, dark theme from the Figma design. Use it before touching web/ or drafting a prompt for Figma Make.
 ---
 
 # Frontend
 
-El frontend **solo pinta** lo que devuelve la API. No calcula medianas, estados ni factores. La forma de los datos está en `docs/contracts/api.md` y los ejemplos en `docs/contracts/examples/`. La referencia visual está en `docs/design/` (capturas de Figma y tabla de qué se tomó del diseño).
+The frontend **only draws** what the API returns. It does not compute medians, statuses or factors. The shape of the data is in `docs/contracts/api.md` and the examples in `docs/contracts/examples/`.
 
-## Correr
+## Running
 
 ```bash
-pnpm install --frozen-lockfile   # desde la RAÍZ del repo: es un workspace de pnpm que incluye web/
-pnpm dev                         # http://localhost:5173 (desde la raíz o desde web/)
-pnpm typecheck                   # revisar tipos antes de subir
-pnpm build                       # debe pasar antes de abrir PR
+pnpm install --frozen-lockfile   # from the repo ROOT: it is a pnpm workspace that includes web/
+pnpm dev                         # http://localhost:5173 (from the root or from web/)
+pnpm typecheck                   # check types before pushing
+pnpm build                       # must pass before opening a PR
 ```
 
-### Versiones (pnpm)
+### Versions (pnpm)
 
-- Solo **pnpm 12.18.0** y **Node 24**. Están fijados en el `package.json` de la raíz (`packageManager`, `engines`); pnpm cambia solo a la versión fijada.
-- Nunca `npm install` ni `yarn`. Si aparece `package-lock.json` o `yarn.lock`, se borra.
-- Hay **un solo lockfile**: `pnpm-lock.yaml` en la raíz. Instalar siempre con `--frozen-lockfile`. Si falla, avisar; no borrarlo.
-- Dependencia nueva solo si hace falta y con versión exacta: `pnpm --filter machinelove-web add -E <paquete>` (o `pnpm add -E` dentro de `web/`). `web/package.json` y el `pnpm-lock.yaml` de la raíz van en el mismo commit.
-- El `pnpm-workspace.yaml` de la raíz no se toca sin avisar: `minimumReleaseAge: 1440` rechaza paquetes de menos de 1 día (regla de la máquina anfitriona), el `override` de `postcss` existe por eso, y `allowBuilds` deja correr el instalador de `esbuild`.
+- Only **pnpm 12.18.0** and **Node 24**. They are pinned in the root `package.json` (`packageManager`, `engines`); pnpm switches to the pinned version by itself.
+- Never `npm install` or `yarn`. If `package-lock.json` or `yarn.lock` shows up, delete it.
+- There is **a single lockfile**: `pnpm-lock.yaml` at the root. Always install with `--frozen-lockfile`. If it fails, say so; do not delete it.
+- A new dependency only if needed and with an exact version: `pnpm --filter machinelove-web add -E <package>` (or `pnpm add -E` inside `web/`). `web/package.json` and the root `pnpm-lock.yaml` go in the same commit.
+- The root `pnpm-workspace.yaml` is not touched without notice: `minimumReleaseAge: 1440` rejects packages less than 1 day old, the `postcss` `override` exists because of that, and `allowBuilds` lets the `esbuild` installer run.
 
-`web/.env` (copiar de `.env.example`): `VITE_API_URL` vacío → mocks; `VITE_API_URL=http://localhost:8000/api/v1` → API por túnel.
+`web/.env` (copy from `.env.example`): empty `VITE_API_URL` → mocks; `VITE_API_URL=http://localhost:8000/api/v1` → local API.
 
-## Estructura
+## Structure
 
-| Archivo | Qué hace |
+| File | What it does |
 |---|---|
-| `src/api.ts` | **Única puerta a la API.** `getPresets()`, `getCalendar(req)`, `downloadCalendarCsv(req)`, `downloadHotspotsCsv(req)`, `downloadAoiGeoJson(geom, name)` |
-| `src/types.ts` | Tipos del contrato. Si el contrato cambia, se cambia aquí primero |
-| `src/i18n/` | `es.ts` y `en.ts` (un diccionario por idioma, mismas claves) e `index.ts` (`translate`, idioma guardado). Incluye `status.*`, `flag.*`, `source.*`, `error.*` |
-| `src/state.tsx` | Estado global: idioma, pestaña, modo, `basis` ("Simular fin de MODIS"), paleta, área (`aoi`), calendario cargado, mes elegido. La caché de calendarios va por área **y** `basis`; cambiar solo `basis` conserva el mes elegido |
-| `src/components/ModisSwitch.tsx` | Botón "Apagar MODIS": cambia `basis` a `viirs_primary`. Las barras anuales (`YearBars` en Experto, histograma de la línea de tiempo en General) dibujan entonces la serie con MODIS como línea punteada |
-| `src/theme/tokens.ts` | **Única fuente de colores** en TS: superficies, acentos de UI, niveles por paleta, rampas, mapa. `@theme` de `src/index.css` es su espejo para Tailwind |
-| `src/lib/color.ts` | Rampas, color por nivel (`statusColor`), contraste de símbolos (`inkOn`, `readableOn`), escala raíz |
-| `src/components/` | Calendario (vista por año `YearView` + matriz `Calendar`), tarjeta del mes, leyenda, mapa (`MapPanel`, cargado con `LazyMapPanel`), línea de tiempo, barras anuales, inspector de k, serie mensual, descargas |
-| `src/components/CalendarTiles.tsx` | Calendario en mosaicos de Experto (años en columnas). Reusa `cellValue`, `useScaleMax` y `Tooltip` de `Calendar.tsx` |
-| `src/components/HudBar.tsx`, `src/lib/hud.ts` | Barra de telemetría y su almacén fuera de React (cursor, latencia) |
-| `src/mocks/index.ts` | Todos los mocks en un módulo que `api.ts` importa bajo demanda (`import('./mocks')`): con la API real no se descargan |
-| `src/components/CoordSearch.tsx` | Buscador por coordenadas de Experto (junto a la franja de arriba a la derecha): `parseLatLon` + `boxAround` de `lib/geo.ts`, atajo `/` |
-| `src/components/AnimatedNumber.tsx` | Cifra que rueda al valor nuevo en 600 ms (solo presentación) |
-| `src/components/icons/` | Iconos animados de lucide-animated (MIT) + `useIconAnim` (el botón completo dispara la animación) |
-| `src/components/map/` | El mapa, por piezas: `MapPanel.tsx` (orquesta: crea el mapa, cámara, datos, controles), `layers.ts` (fuentes y capas: tono, relieve, regiones, fuego, dibujo), `fire.ts` (hotspots del mes + parpadeo), `useDrawTool.ts` (rectángulo y polígono), `Toolbar.tsx` (barra flotante), `CustomAreaPanel.tsx` (coordenadas + radio), `geometry.ts` (utilidades puras). Se importa siempre por `components/LazyMapPanel.tsx` |
-| `src/views/` | `General`, `Learn` (Aprendizaje), `Edu` (Educacional) y `expert/` |
-| `src/views/expert/` | La consola, por piezas: `Expert.tsx` (arma la pantalla), `Controls.tsx` (panel izquierdo), `Kpis.tsx` (indicadores), `CalendarSide.tsx` (panel derecho), `panels.tsx` (`FloatPanel`, `Section`, `StripButton`), `hooks.ts` (paneles abiertos, ancho de pantalla) |
-| `src/mocks/` | Copias de la API real por preset + generador DEMO para polígonos dibujados (`demoCalendar.ts`) |
+| `src/api.ts` | **The only door to the API.** `getPresets()`, `getCalendar(req)`, `downloadCalendarCsv(req)`, `downloadHotspotsCsv(req)`, `downloadAoiGeoJson(geom, name)` |
+| `src/types.ts` | Contract types. If the contract changes, it changes here first |
+| `src/i18n/` | `es.ts` and `en.ts` (one dictionary per language, same keys) and `index.ts` (`translate`, saved language). Includes `status.*`, `flag.*`, `source.*`, `error.*` |
+| `src/state.tsx` | Global state: language, tab, mode, `basis` ("Simulate the end of MODIS"), palette, area (`aoi`), loaded calendar, selected month. The calendar cache is keyed by area **and** `basis`; changing only `basis` keeps the selected month |
+| `src/components/ModisSwitch.tsx` | "Switch MODIS off" button: changes `basis` to `viirs_primary`. The yearly bars (`YearBars` in Expert, the timeline histogram in Overview) then draw the series with MODIS as a dashed line |
+| `src/theme/tokens.ts` | **The only source of colors** in TS: surfaces, UI accents, levels per palette, ramps, map. `@theme` in `src/index.css` is its mirror for Tailwind |
+| `src/lib/color.ts` | Ramps, color per level (`statusColor`), symbol contrast (`inkOn`, `readableOn`), square-root scale |
+| `src/components/` | Calendar (per-year view `YearView` + matrix `Calendar`), month card, legend, map (`MapPanel`, loaded with `LazyMapPanel`), timeline, yearly bars, k inspector, monthly series, downloads |
+| `src/components/CalendarTiles.tsx` | Expert tile calendar (years in columns). Reuses `cellValue`, `useScaleMax` and `Tooltip` from `Calendar.tsx` |
+| `src/components/HudBar.tsx`, `src/lib/hud.ts` | Telemetry bar and its store outside React (cursor, latency) |
+| `src/mocks/index.ts` | All mocks in one module that `api.ts` imports on demand (`import('./mocks')`): with the real API they are not downloaded |
+| `src/components/CoordSearch.tsx` | Expert coordinate search (next to the strip at the top right): `parseLatLon` + `boxAround` from `lib/geo.ts`, shortcut `/` |
+| `src/components/AnimatedNumber.tsx` | A figure that rolls to the new value in 600 ms (presentation only) |
+| `src/components/icons/` | Animated icons from lucide-animated (MIT) + `useIconAnim` (the whole button triggers the animation) |
+| `src/components/map/` | The map, in pieces: `MapPanel.tsx` (orchestrates: creates the map, camera, data, controls), `layers.ts` (sources and layers: tone, terrain, regions, fire, drawing), `fire.ts` (month hot spots + flicker), `useDrawTool.ts` (rectangle and polygon), `Toolbar.tsx` (floating bar), `CustomAreaPanel.tsx` (coordinates + radius), `geometry.ts` (pure utilities). Always imported through `components/LazyMapPanel.tsx` |
+| `src/views/` | `General` (Overview), `Learn`, `Edu` (Educational) and `expert/` |
+| `src/views/expert/` | The console, in pieces: `Expert.tsx` (assembles the screen), `Controls.tsx` (left panel), `Kpis.tsx` (indicators), `CalendarSide.tsx` (right panel), `panels.tsx` (`FloatPanel`, `Section`, `StripButton`), `hooks.ts` (open panels, screen width) |
+| `src/mocks/` | Copies of the real API per preset + DEMO generator for drawn polygons (`demoCalendar.ts`) |
 
-Ningún componente hace `fetch` directo. **CSV del calendario:** el endpoint es `POST`, así que no existe una URL directa; `downloadCalendarCsv` hace el `POST` y guarda el archivo.
+No component calls `fetch` directly. **Calendar CSV:** the endpoint is `POST`, so there is no direct URL; `downloadCalendarCsv` does the `POST` and saves the file.
 
 ## Mocks
 
-- `presets.response.json` y `calendar.response.json`: copias de `docs/contracts/examples/`.
-- `calendar.demo.*.json` (`modis_primary`), `calendar.viirs.*.json` (`viirs_primary`) y `presets.response.json`: **copias de la API real** (base `firms`). Sin túnel, los presets se ven igual que con la API. Se actualizan con `python3 scripts/snapshot_mocks.py` (con la API en 8000).
-- Con mocks, un polígono dibujado devuelve un calendario **inventado** (`demoCalendar.ts`) y el CSV de hotspots trae solo la cabecera. La interfaz muestra "DEMO" mientras se usen mocks.
-- Los valores reales son 4–7 veces más bajos que los del DEMO viejo y hay muchos meses en 0 (58 en Sierra Gorda): el diseño tiene que verse bien con eso.
+- `presets.response.json` and `calendar.response.json`: copies of `docs/contracts/examples/`.
+- `calendar.demo.*.json` (`modis_primary`), `calendar.viirs.*.json` (`viirs_primary`) and `presets.response.json`: **copies of the real API** (`firms` database). Without an API, the presets look the same as with the API. They are updated with `python3 scripts/snapshot_mocks.py` (with the API on 8000).
+- With mocks, a drawn polygon returns an **invented** calendar (`demoCalendar.ts`) and the hot spots CSV carries only the header. The interface shows "DEMO" while mocks are in use.
+- Real values are 4–7 times lower than those of the old DEMO and there are many months at 0 (58 in Sierra Gorda): the design has to look good with that.
 
-## Datos reales (lo que cambia frente al DEMO viejo)
+## Real data (what changes compared with the old DEMO)
 
-Medido el 14-nov comparando los mocks DEMO contra la API real. La **forma** es idéntica (mismas claves, mismos códigos); los **valores** no.
+Measured on Nov 14 comparing the DEMO mocks against the real API. The **shape** is identical (same keys, same codes); the **values** are not.
 
-| | DEMO viejo | Real |
+| | Old DEMO | Real |
 |---|---|---|
-| Máximo mensual armonizado | 234 (Sierra Gorda) a 1,155 | **64** (Sierra Gorda), 150 (Bajío), 166 (Querétaro) |
-| Mediana mensual | 12–37 | **3** (Sierra Gorda), 11, 17 |
-| Meses en 0 | 12 | **58** en Sierra Gorda |
-| Meses `no_data` | 1 | **12**: ene–oct de 2000 (sin MODIS todavía), nov-2026 (parcial) y dic-2026 |
-| `source = viirs_scaled` | nunca | nunca en `modis_primary`; solo aparece con `basis = viirs_primary` |
-| Bandera `viirs_outage` | 1 | ninguna en los presets |
-| Temporada | pico en abril en todos | Bajío **ene–mar** (+ dic), Sierra Gorda **abr–jun**, Querétaro marzo |
-| Tarjeta al abrir (`latest`) | — | oct-2026: Sierra Gorda **0.0**, Bajío 7.0 |
-| Peor año en validación | 19–43 % | 15–55 % |
+| Harmonized monthly maximum | 234 (Sierra Gorda) to 1,155 | **64** (Sierra Gorda), 150 (Bajío), 166 (Querétaro) |
+| Monthly median | 12–37 | **3** (Sierra Gorda), 11, 17 |
+| Months at 0 | 12 | **58** in Sierra Gorda |
+| `no_data` months | 1 | **12**: Jan–Oct 2000 (no MODIS yet), Nov 2026 (partial) and Dec 2026 |
+| `source = viirs_scaled` | never | never in `modis_primary`; it only appears with `basis = viirs_primary` |
+| `viirs_outage` flag | 1 | none in the presets |
+| Season | peak in April for all | Bajío **Jan–Mar** (+ Dec), Sierra Gorda **Apr–Jun**, Querétaro March |
+| Card on open (`latest`) | — | Oct 2026: Sierra Gorda **0.0**, Bajío 7.0 |
+| Worst year in validation | 19–43 % | 15–55 % |
 
-Qué implica:
-- La escala y las barras tienen que leerse bien con números chicos y muchos ceros.
-- La fila 2000 sale casi toda en gris: es correcto ("sin dato" no es cero).
-- `k` solo cambia lo que se ve con el botón "Simular fin de MODIS" (`basis = viirs_primary`). Sin él, el modo armonizado es MODIS en celdas-día.
-- Los textos y capturas de `docs/design/` (abril de 2026 alto, abril de 2012 extremo, marzo de 2007 sin dato) eran del DEMO y **no se cumplen** con datos reales.
+What this implies:
+- The scale and the bars have to read well with small numbers and many zeros.
+- The 2000 row comes out almost entirely gray: that is correct ("no data" is not zero).
+- `k` only changes what is shown with the "Simulate the end of MODIS" button (`basis = viirs_primary`). Without it, harmonized mode is MODIS in cell-days.
 
-## Vistas
+## Views
 
-La barra superior es igual en todas: nombre a la izquierda; a la derecha 3 botones de 44 px: idioma (🌐), accesibilidad (paletas Estándar / Daltónicos / Alto contraste + sonificación) y **Vista: <modo>** (menú de las 4 vistas). La app arranca siempre en **Experto** (la consola de la demo). **Para la demo y el MVP el menú Vista solo ofrece Aprendizaje y Experto** (`TABS` en `TopBar.tsx`); General y Educacional siguen en el código. Abajo, una barra de telemetría de 28 px (`HudBar`): fuente, coordenadas del cursor, área, estado de sensores y latencia de la API.
+The top bar is the same in all of them: name on the left; on the right 3 buttons of 44 px: language (🌐), accessibility (Standard / Colorblind-safe / High contrast palettes + sonification) and **View: <mode>** (menu of the 4 views). The app always starts in **Expert** (the demo console). **For the demo and the MVP the View menu only offers Learn and Expert** (`TABS` in `TopBar.tsx`); Overview and Educational are still in the code. At the bottom, a 28 px telemetry bar (`HudBar`): source, cursor coordinates, area, sensor status and API latency.
 
-| Vista | Contenido |
+| View | Contents |
 |---|---|
-| General | Tarjeta del mes con flechas ‹ › · mapa a todo el centro con regiones, área personalizada y botón **Calendario** · el calendario es un panel flotante sobre el mapa (cerrado al inicio): 12 meses del año con selector ‹ año › y "Hoy", comparativa histórica 2000–2026 bajo demanda · botón **"Simular fin de MODIS"** al pie de la tarjeta · una sola barra de tiempo 2000–2026 con los totales anuales como mini histograma. **Nada se desplaza**: la vista cabe completa en la ventana (probado a 1366×657). **Sin** interruptor crudo, puntos crudos, pistas de sensores ni descargas |
-| Aprendizaje | Cuaderno de Don Modesto en 4 pasos (crudo → fuentes fijas → celdas-día → factor k) con barras mensuales de `raw_points`, `viirs_cell_days`/`modis_cell_days` y `harmonized`; 3 preguntas |
-| Educacional | Dos regiones lado a lado (Sierra Gorda y Bajío queretano) con `k` y `seasonality` en la misma escala; MODIS vs VIIRS; qué es la mediana |
-| Experto | **Consola a pantalla completa, sin scroll global y sin barra superior.** El mapa 3D (`MapPanel tools`) ocupa toda la ventana; encima flotan dos paneles que se ocultan con un botón (se recuerda en `localStorage`). **Izquierda, Controles**, con secciones plegables: Regiones `[1] [2] [3]` (atajos de teclado), Datos (interruptor Armonizado/Crudo con aviso ámbar en crudo), Indicadores (estado del mes, `calibration.k`, error `loyo_annual_mape` / `monthly_mape`), "Simular fin de MODIS", y cerradas al inicio Descargas e Inspector de k. **Derecha, Calendario**: barras anuales alineadas con los mosaicos (`CalendarTiles`: columnas = años, filas = meses; color por valor o por nivel), avisos del mes y la serie del mes plegada. Arriba a la derecha, una sola franja flotante de botones de 36 px: Calendario (muestra u oculta el panel), idioma, accesibilidad y Vista (`<TopBar floating lead=… />`, sin el nombre de la app). Con Controles oculto queda un botón igual arriba a la izquierda. Barra de herramientas del mapa abajo al centro (dibujo, vista 3D, fuego, norte, encuadrar, zoom) (solo iconos si los dos paneles están abiertos en pantalla angosta). El mapa encuadra la región en el espacio libre entre paneles (`padLeft` / `padRight`). Probado a 1366×657 y 1920×1080 |
+| Overview | Month card with ‹ › arrows · map across the center with regions, custom area and a **Calendar** button · the calendar is a floating panel over the map (closed at first): 12 months of the year with a ‹ year › selector and "Today", historical comparison 2000–2026 on demand · **"Simulate the end of MODIS"** button at the foot of the card · a single 2000–2026 time bar with the yearly totals as a mini histogram. **Nothing scrolls**: the view fits fully in the window (tested at 1366×657). **No** raw switch, raw points, sensor tracks or downloads |
+| Learn | Don Modesto's notebook in 4 steps (raw → static sources → cell-days → factor k) with monthly bars of `raw_points`, `viirs_cell_days`/`modis_cell_days` and `harmonized`; 3 questions |
+| Educational | Two regions side by side (Sierra Gorda and Querétaro Bajío) with `k` and `seasonality` on the same scale; MODIS vs VIIRS; what the median is |
+| Expert | **Full-screen console, no global scroll and no top bar.** The 3D map (`MapPanel tools`) fills the whole window; two panels float on top and are hidden with a button (remembered in `localStorage`). **Left, Controls**, with collapsible sections: Regions `[1] [2] [3]` (keyboard shortcuts), Data (Harmonized/Raw switch with an amber warning in raw), Indicators (month status, `calibration.k`, `loyo_annual_mape` / `monthly_mape` error), "Simulate the end of MODIS", and closed at first Downloads and k inspector. **Right, Calendar**: yearly bars aligned with the tiles (`CalendarTiles`: columns = years, rows = months; color by value or by level), the month's notes and the month's series collapsed. At the top right, a single floating strip of 36 px buttons: Calendar (shows or hides the panel), language, accessibility and View (`<TopBar floating lead=… />`, without the app name). With Controls hidden, an identical button remains at the top left. Map toolbar at the bottom center (drawing, 3D view, fire, north, fit, zoom) (icons only if both panels are open on a narrow screen). The map fits the region in the free space between panels (`padLeft` / `padRight`). Tested at 1366×657 and 1920×1080 |
 
-## Reglas de visualización
+## Visualization rules
 
-- Tema oscuro con los tokens de `src/theme/tokens.ts` (espejo en `src/index.css`). **Nada de colores escritos a mano en componentes.**
-- Superficies `#090D14` (lienzo) y `#111827` (paneles y tarjetas) con borde `#1E293B`. El blanco `#F8FAFC` con resplandor cian `#38BDF8` es **solo** para interacción (mes elegido, región activa, botón activo), nunca para datos.
-- Niveles (Estándar): Sin incendios `#64748B`, Bajo `#A855F7`, Normal `#E06D53`, Alto `#F97316`, Extremo `#FDE047`. Daltónicos: `#2B5C8F`, `#5698A3`, `#D4AF37`, `#FDE725`. La misma escala en tarjeta del mes, vista por año, comparativa histórica y leyenda.
-- Un mes con `harmonized = 0` se muestra "Sin incendios (0)" en gris neutro, aunque la API diga `normal` (mediana 0).
-- **Tipografía:** Space Grotesk (`font-display`: títulos, botones, selectores), Inter (texto corrido) y JetBrains Mono (`font-mono`: cifras, etiquetas técnicas). Paquetes `@fontsource-variable/*`, sin red.
-- **Animación (todo respeta "reducir movimiento"):** paneles que entran y salen deslizándose y secciones que se pliegan (`motion`), marcador deslizante en `Segmented`, letras que aparecen una por una al cambiar región, mes o nivel (`Reveal` en `ui.tsx`), mosaicos que aparecen por año al cargar y se agrandan con un aro al pasar el cursor, menús con `.pop`. Sin iconos de llama.
-- **Rendimiento:** nada de `backdrop-filter` / `backdrop-blur` sobre el mapa (obliga a recomponer en cada cuadro del lienzo WebGL); animar solo `transform` y `opacity`; el mapa pinta a `pixelRatio` ≤ 1.5 y su único repintado en reposo es el parpadeo del fuego (~9 cambios por segundo = ~18 cuadros, porque MapLibre pinta uno extra tras cada cambio de estilo; ninguno si no hay fuego). Toda propiedad que se anime desde código (`setPaintProperty` en un temporizador o `requestAnimationFrame`) lleva `'<propiedad>-transition': { duration: 0 }`: con la transición de 300 ms por defecto el mapa nunca queda quieto y se repinta a 60 cuadros por segundo; el tooltip del calendario guarda su propio estado (`TipHost`) para que pasar el cursor no repinte los 324 mosaicos; General, Aprendizaje y Educacional se cargan con `lazy`.
-- Clases de la consola en `src/index.css`: `.bracket` (tarjeta con acentos en las esquinas), `.hud` y `.tool` (controles flotantes), `.tile` (mosaico). Esquinas de 2–4 px como máximo; todas las cifras en monoespaciada con `tabular-nums`.
-- **Armonizado:** color de celda por `harmonized`. **Crudo:** color por `raw_points`. Cada modo con su propia escala; la leyenda avisa que no son comparables.
-- Rampas Inferno o Cividis, recortadas para que el valor más bajo se vea sobre fondo oscuro. Luminancia monótona: se leen en grises y con daltonismo. Escala de raíz cuadrada.
-- Cero = celda oscura con "0". `harmonized = null` (`status = "no_data"`) → trama gris, nunca el color del cero. Mes que no viene en la respuesta → borde punteado.
-- El nivel se comunica con texto y marca además del color: `below` ↓ Bajo, `normal` Normal, `above` • Alto (p75–p90), `critical` •• Extremo (> p90), `insufficient_baseline` ? Historia insuficiente.
-- Banderas (`flags`) → triángulo cian en la esquina de la celda y explicación en el tooltip y en la tarjeta.
-- Tooltip de celda: mes, valor, puntos crudos, mediana (n), rango p25–p75, razón, fuente, banderas.
-- Panel de validación: `k`, `scope`, meses de traslape, sumas, errores LOYO y mensual en porcentaje. Si `scope = "country"`, aviso de poco traslape.
-- El margen que se muestra es `calibration.monthly_mape`, no un ±30 % fijo.
-- Mientras carga, esqueleto; si la API responde error, mensaje según `error.code` con botón de reintentar.
-- **Fuego sobre el mapa: en General y en Experto** (el mismo `MapPanel`), solo con lo que devuelve `POST /hotspots` (api.md) para el mes elegido (`getHotspots` en `api.ts`; los meses ya consultados se guardan). Son **puntos por detección al estilo CONAE** (capa `circle` `hot-core`: rojo `FIRE.dotLow` → naranja → amarillo `FIRE.dotPeak` según `frp`, más grandes con más `frp` y los más intensos encima con `circle-sort-key`) sobre una **mancha térmica rojiza** de fondo (capa `heatmap` `hot-fire`, rampa `FIRE.ramp` de tokens, opacidad 0.78, sin lavar a blanco) en las zonas con detecciones `is_vegetation_fire`. El brillo de la mancha se normaliza según cuántas detecciones hay (pocas → cada una brilla más; miles → se atenúa para no quemarse a blanco): es solo presentación, la mancha dice **dónde** y el calendario **cuánto**. En la consola el relleno de la región activa es más tenue (4 %) para no lavar el fuego. Aro gris = detección en fuente fija. Pasar el cursor sobre un punto abre su ficha (`components/map/hotspotPopup.ts`): satélite, fecha, FRP, tipo y coordenadas de `POST /hotspots`; se abre hacia el centro de la pantalla, sin robar el foco, y se cierra al salir del punto o cambiar de mes, área, modo o capa. La mancha parpadea cambiando `heatmap-intensity` ~9 veces por segundo (temporizador, no en cada cuadro; se detiene sin fuego, con la pestaña oculta o con "reducir movimiento"). **Nada de iconos de llama.** En Experto se apaga con el botón "Fuego" (General no tiene ese botón: siempre encendido); la barra inferior dice cuántos hotspots hay. Más de 20,000 → la API responde `aoi_too_large` y la barra lo avisa. Con mocks no hay puntos. No hay mapa de píxeles de 1 km: la API no devuelve celdas.
+- Dark theme with the tokens in `src/theme/tokens.ts` (mirrored in `src/index.css`). **No hand-written colors in components.**
+- Surfaces `#090D14` (canvas) and `#111827` (panels and cards) with border `#1E293B`. White `#F8FAFC` with a cyan `#38BDF8` glow is **only** for interaction (selected month, active region, active button), never for data.
+- Levels (Standard): No fires `#64748B`, Low `#A855F7`, Normal `#E06D53`, High `#F97316`, Extreme `#FDE047`. Colorblind-safe: `#2B5C8F`, `#5698A3`, `#D4AF37`, `#FDE725`. The same scale in the month card, per-year view, historical comparison and legend.
+- A month with `harmonized = 0` is shown as "No fires (0)" in neutral gray, even if the API says `normal` (median 0).
+- **Typography:** Space Grotesk (`font-display`: titles, buttons, selectors), Inter (body text) and JetBrains Mono (`font-mono`: figures, technical labels). `@fontsource-variable/*` packages, no network.
+- **Animation (everything respects "reduce motion"):** panels that slide in and out and sections that collapse (`motion`), sliding marker in `Segmented`, letters that appear one by one when the region, month or level changes (`Reveal` in `ui.tsx`), tiles that appear by year on load and grow with a ring on hover, menus with `.pop`. No flame icons.
+- **Performance:** no `backdrop-filter` / `backdrop-blur` over the map (it forces recompositing on every frame of the WebGL canvas); animate only `transform` and `opacity`; the map paints at `pixelRatio` ≤ 1.5 and its only repaint at rest is the fire flicker (~9 changes per second = ~18 frames, because MapLibre paints an extra one after each style change; none if there is no fire). Every property animated from code (`setPaintProperty` in a timer or `requestAnimationFrame`) carries `'<property>-transition': { duration: 0 }`: with the default 300 ms transition the map never settles and repaints at 60 frames per second; the calendar tooltip keeps its own state (`TipHost`) so that hovering does not repaint the 324 tiles; Overview, Learn and Educational are loaded with `lazy`.
+- Console classes in `src/index.css`: `.bracket` (card with corner accents), `.hud` and `.tool` (floating controls), `.tile` (tile). Corners of 2–4 px at most; all figures in monospace with `tabular-nums`.
+- **Harmonized:** cell color by `harmonized`. **Raw:** color by `raw_points`. Each mode with its own scale; the legend warns that they are not comparable.
+- Inferno or Cividis ramps, clipped so the lowest value is visible on a dark background. Monotonic luminance: they read in grayscale and with colorblindness. Square-root scale.
+- Zero = dark cell with "0". `harmonized = null` (`status = "no_data"`) → gray hatch, never the color of zero. A month not in the response → dashed border.
+- The level is communicated with text and a mark in addition to color: `below` ↓ Low, `normal` Normal, `above` • High (p75–p90), `critical` •• Extreme (> p90), `insufficient_baseline` ? Not enough history.
+- Flags (`flags`) → cyan triangle in the corner of the cell and an explanation in the tooltip and in the card.
+- Cell tooltip: month, value, raw points, median (n), p25–p75 range, ratio, source, flags.
+- Validation panel: `k`, `scope`, overlap months, sums, LOYO and monthly errors as percentages. If `scope = "country"`, a low-overlap warning.
+- The margin shown is `calibration.monthly_mape`, not a fixed ±30 %.
+- While loading, a skeleton; if the API returns an error, a message per `error.code` with a retry button.
+- **Fire on the map: in Overview and in Expert** (the same `MapPanel`), only with what `POST /hotspots` (api.md) returns for the selected month (`getHotspots` in `api.ts`; months already queried are kept). They are **points per detection in the CONAE style** (`circle` layer `hot-core`: red `FIRE.dotLow` → orange → yellow `FIRE.dotPeak` by `frp`, larger with more `frp` and the most intense on top with `circle-sort-key`) over a **reddish thermal patch** in the background (`heatmap` layer `hot-fire`, `FIRE.ramp` from tokens, opacity 0.78, without washing out to white) in the areas with `is_vegetation_fire` detections. The brightness of the patch is normalized by how many detections there are (few → each one glows more; thousands → it is attenuated so it does not burn out to white): this is presentation only, the patch says **where** and the calendar says **how much**. In the console the fill of the active region is fainter (4 %) so it does not wash out the fire. Gray ring = detection at a static source. Hovering over a point opens its card (`components/map/hotspotPopup.ts`): satellite, date, FRP, type and coordinates from `POST /hotspots`; it opens toward the center of the screen, without stealing focus, and closes on leaving the point or changing month, area, mode or layer. The patch flickers by changing `heatmap-intensity` ~9 times per second (a timer, not on every frame; it stops with no fire, with the tab hidden or with "reduce motion"). **No flame icons.** In Expert it is turned off with the "Fire" button (Overview does not have that button: always on); the bottom bar says how many hot spots there are. More than 20,000 → the API answers `aoi_too_large` and the bar says so. With mocks there are no points. There is no 1 km pixel map: the API does not return cells.
 
-## Mapa
+## Map
 
-**Solo `maplibre-gl`** (WebGL). Mapa base vectorial "dark" de OpenFreeMap (sin API key). Regiones como capas GeoJSON nativas (`fill` / `line`), debajo de las etiquetas.
+**`maplibre-gl` only** (WebGL). OpenFreeMap "dark" vector base map (no API key). Regions as native GeoJSON layers (`fill` / `line`), below the labels.
 
-- Cámara: `fitBounds` nativo con `padding` dinámico `{ top: 80, bottom: 50, left: 40, right: 410 | 40 }` según el panel del calendario esté abierto o cerrado. **Nunca** animar la cámara con bucles manuales (`requestAnimationFrame` + `setView`/`jumpTo`).
-- **Vista 3D (solo Experto, prop `tools`):** inclinación y giro nativos (`pitch` 55°, `bearing` −18° dentro del mismo `fitBounds`) y relieve real con `setTerrain` + capa `hillshade` sobre las teselas abiertas de elevación de Mapzen/AWS (sin API key). Se apaga con el botón "Vista 3D". Si las teselas no cargan, el mapa queda plano y sigue funcionando. General conserva el mapa plano.
-- **No hay hexágonos H3, Deck.gl, capa de fuentes industriales ni puntos sobre el mapa:** la malla del contrato es 0.01° y la API no devuelve celdas. Para agregarlos, primero se cambia el contrato.
-- El mapa ocupa siempre toda su caja; los paneles flotan encima (el canvas no se redimensiona al abrir/cerrar).
-- Dibujo nativo de rectángulo y polígono (sin `mapbox-gl-draw`), con validación de autointersección y máximo de 200,000 km². El polígono se envía como GeoJSON `[lon, lat]`, cerrado (primer punto = último).
-- El worker se carga con `?url` + `setWorkerUrl`. Si cambias dependencias del mapa y el servidor de desarrollo da `504 Outdated Optimize Dep`, reinícialo con `vite --force`.
+- Camera: native `fitBounds` with dynamic `padding` `{ top: 80, bottom: 50, left: 40, right: 410 | 40 }` depending on whether the calendar panel is open or closed. **Never** animate the camera with manual loops (`requestAnimationFrame` + `setView`/`jumpTo`).
+- **3D view (Expert only, `tools` prop):** native tilt and rotation (`pitch` 55°, `bearing` −18° within the same `fitBounds`) and real terrain with `setTerrain` + a `hillshade` layer over the open Mapzen/AWS elevation tiles (no API key). It is turned off with the "3D view" button. If the tiles do not load, the map stays flat and keeps working. Overview keeps the flat map.
+- **There are no H3 hexagons, Deck.gl, industrial-source layer or points on the map:** the contract grid is 0.01° and the API does not return cells. To add them, the contract is changed first.
+- The map always fills its box; the panels float on top (the canvas is not resized on open/close).
+- Native rectangle and polygon drawing (no `mapbox-gl-draw`), with self-intersection validation and a maximum of 200,000 km². The polygon is sent as GeoJSON `[lon, lat]`, closed (first point = last).
+- The worker is loaded with `?url` + `setWorkerUrl`. If you change map dependencies and the dev server gives `504 Outdated Optimize Dep`, restart it with `vite --force`.
 
-## Bilingüe
+## Bilingual
 
-`src/i18n/es.ts` y `src/i18n/en.ts` con claves para todos los textos. Idioma guardado en `localStorage`; por defecto, español. Los nombres de preset vienen en `name_es` / `name_en`. Texto nuevo → clave nueva en **los dos** diccionarios.
+`src/i18n/es.ts` and `src/i18n/en.ts` with keys for every text. Language saved in `localStorage`; Spanish by default. Preset names come in `name_es` / `name_en`. New text → new key in **both** dictionaries.
 
-## Prompt base para Figma Make (solo para rediseños grandes)
+## Base prompt for Figma Make (only for large redesigns)
 
-El código ya existe; Figma Make solo para rediseñar un componente y re-exportarlo. Si se usa, pedir: React + Vite + Tailwind, tema oscuro con los tokens de `src/index.css`, datos solo desde `src/api.ts`, todos los textos por `t(key)`, sin calcular estadísticas en la interfaz, nivel con texto e icono, "sin dato" con trama distinta del cero.
+The code already exists; Figma Make is only for redesigning a component and re-exporting it. If used, ask for: React + Vite + Tailwind, dark theme with the tokens in `src/index.css`, data only from `src/api.ts`, every text through `t(key)`, no statistics computed in the interface, level with text and icon, "no data" with a pattern different from zero.
 
-## Antes de decir que está listo
+## Before saying it is ready
 
-Pasar la sección Frontend de `docs/contracts/acceptance.md`: primero con mocks, después con la API real por túnel.
+Pass the Frontend section of `docs/contracts/acceptance.md`: first with mocks, then with the real API.
 
-Antes de **cada commit**:
-1. `pnpm typecheck` y `pnpm build` sin errores.
-2. Verificación visual en un navegador real sobre el servidor de desarrollo (Playwright o Chrome por CDP): abrir y cerrar el calendario, cambiar de región, dibujar un área, y revisar que el mapa encuadre la región sin quedar tapada. Una captura sin animación no basta para decir que "se siente fluido": dilo como no verificado.
+Before **every commit**:
+1. `pnpm typecheck` and `pnpm build` without errors.
+2. Visual check in a real browser on the dev server (Playwright or Chrome over CDP): open and close the calendar, switch region, draw an area, and check that the map fits the region without being covered. A screenshot without animation is not enough to say it "feels smooth": state it as not verified.

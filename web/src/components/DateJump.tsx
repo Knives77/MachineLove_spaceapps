@@ -6,7 +6,7 @@ import type { CalendarResponse } from '../types';
 /** Primer mes con VIIRS completo (harmonization.md): antes solo hay MODIS. */
 const VIIRS_FIRST = ymKey(2012, 2);
 
-/** Hitos de la demo (docs/PITCH.md). */
+/** Saltos rápidos a episodios conocidos. */
 const JUMPS: { year: number; month: number; label: string }[] = [
   { year: 2011, month: 5, label: 'jump.c2011' },
   { year: 2019, month: 5, label: 'jump.c2019' },

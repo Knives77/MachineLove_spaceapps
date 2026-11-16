@@ -120,8 +120,8 @@ export const en: Record<string, string> = {
   'error.invalid_range': 'Invalid year range (2000–2026).',
   'error.unknown_preset': 'That region does not exist.',
   'error.aoi_outside_coverage': 'The area is outside the covered zone (Mexico).',
-  'error.network': 'Cannot reach the API. Is the tunnel open?',
-  'error.db_unavailable': 'The database is not responding. Tell the team lead.',
+  'error.network': 'Cannot reach the API. Is it running?',
+  'error.db_unavailable': 'The database is not responding.',
   'error.generic': 'The API returned an error ({code}).',
   'error.retry': 'Retry',
 

@@ -1,64 +1,64 @@
-# Contrato de ingesta: de los CSV de FIRMS a `detection`
+# Ingestion contract: from the FIRMS CSVs to `detection`
 
-La ingesta carga México y Argentina; **el MVP solo usa México** (Argentina es fase 2).
+Ingestion loads Mexico and Argentina; **the MVP only uses Mexico** (Argentina is phase 2).
 
-## Fuentes y precedencia
+## Sources and precedence
 
-| Fuente | Ruta | Se usa para |
+| Source | Path | Used for |
 |---|---|---|
-| A. Por país y año | `data/historico_pais/<Pais>/<sensor>/<sensor>_<año>_<Pais>.csv` | Todo hasta **2025-12-31** |
-| B. Solicitudes `archive` | `data/México-Querétaro/*/fire_archive_*.csv`, `data/Argentina/*/fire_archive_*.csv` | Solo filas con `acq_date >= 2026-01-01` |
-| C. Solicitudes `nrt` | `.../fire_nrt_*.csv` | Solo filas con `acq_date >= 2026-01-01` |
+| A. By country and year | `data/historico_pais/<Pais>/<sensor>/<sensor>_<año>_<Pais>.csv` | Everything up to **2025-12-31** |
+| B. `archive` requests | `data/México-Querétaro/*/fire_archive_*.csv`, `data/Argentina/*/fire_archive_*.csv` | Only rows with `acq_date >= 2026-01-01` |
+| C. `nrt` requests | `.../fire_nrt_*.csv` | Only rows with `acq_date >= 2026-01-01` |
 
-Las filas de B y C anteriores a 2026 se descartan (ya están en A), salvo **NOAA-21 2024–2025**, que no existe en A y sí se carga desde B.
+Rows in B and C before 2026 are discarded (they are already in A), except **NOAA-21 2024–2025**, which does not exist in A and is loaded from B.
 
-Las rutas tienen acentos (`México-Querétaro`) y un typo (`J1-VIRS-C2`): buscar con comodines, no escribir la ruta a mano.
+The paths have accents (`México-Querétaro`) and a typo (`J1-VIRS-C2`): search with wildcards, do not type the path by hand.
 
-## Esquemas reales
+## Real schemas
 
-| Columna canónica | Fuente A MODIS | Fuente A VIIRS | Fuentes B y C (todas) |
+| Canonical column | Source A MODIS | Source A VIIRS | Sources B and C (all) |
 |---|---|---|---|
-| `latitude`, `longitude` | igual | igual | igual |
+| `latitude`, `longitude` | same | same | same |
 | `brightness` | `brightness` | **`bright_ti4`** | `brightness` |
 | `bright_t31` | `bright_t31` | **`bright_ti5`** | `bright_t31` |
-| `scan`, `track`, `acq_date`, `acq_time`, `frp`, `daynight`, `confidence`, `version` | igual | igual | igual |
+| `scan`, `track`, `acq_date`, `acq_time`, `frp`, `daynight`, `confidence`, `version` | same | same | same |
 | `satellite` | `Terra`, `Aqua` | S-NPP = **`N`**, NOAA-20 = `N20` | `Terra`, `Aqua`, `SNPP`, `N20`, `N21` |
-| `instrument` | `MODIS` | `VIIRS` | S-NPP trae **`SNPP`** |
-| `type` | sí | sí | `archive` sí; **`nrt` no tiene la columna** |
+| `instrument` | `MODIS` | `VIIRS` | S-NPP carries **`SNPP`** |
+| `type` | yes | yes | `archive` yes; **`nrt` does not have the column** |
 
-Leer siempre por nombre de columna, nunca por posición.
+Always read by column name, never by position.
 
-## Normalización obligatoria
+## Mandatory normalization
 
-| Campo destino | Regla |
+| Target field | Rule |
 |---|---|
-| `satellite` | `N` → `SNPP`. Valores finales: `Terra`, `Aqua`, `SNPP`, `N20`, `N21` |
-| `family` | `MODIS` si Terra/Aqua, si no `VIIRS`. **No usar la columna `instrument`** |
-| `acq_time` | Leer como texto, 4 caracteres `HHMM`. Como número pierde los ceros (`0055` → `55`) |
-| `acq_ts` | `acq_date` + `acq_time` en UTC |
-| `confidence_raw` | Texto tal cual (`0`–`100` en MODIS; `l`/`n`/`h` en VIIRS) |
-| `type` | Entero o `NULL` (NRT) |
-| `source` | `country`, `archive` o `nrt` |
-| `country` | `MX` o `AR` |
-| `cy`, `cx` | `floor(latitude * 100)`, `floor(longitude * 100)` como enteros. Cuidado: `floor`, no truncar (las longitudes son negativas) |
-| `is_veg` | Ver abajo |
+| `satellite` | `N` → `SNPP`. Final values: `Terra`, `Aqua`, `SNPP`, `N20`, `N21` |
+| `family` | `MODIS` if Terra/Aqua, otherwise `VIIRS`. **Do not use the `instrument` column** |
+| `acq_time` | Read as text, 4 characters `HHMM`. As a number it loses its zeros (`0055` → `55`) |
+| `acq_ts` | `acq_date` + `acq_time` in UTC |
+| `confidence_raw` | Text as is (`0`–`100` in MODIS; `l`/`n`/`h` in VIIRS) |
+| `type` | Integer or `NULL` (NRT) |
+| `source` | `country`, `archive` or `nrt` |
+| `country` | `MX` or `AR` |
+| `cy`, `cx` | `floor(latitude * 100)`, `floor(longitude * 100)` as integers. Careful: `floor`, not truncate (longitudes are negative) |
+| `is_veg` | See below |
 
-No usar clave primaria natural: hay filas con la misma (lat, lon, fecha, hora, satélite) y distinto FRP.
+Do not use a natural primary key: there are rows with the same (lat, lon, date, time, satellite) and a different FRP.
 
-## Fuego de vegetación (`is_veg`)
+## Vegetation fire (`is_veg`)
 
 - `type = 0` → `true`
-- `type` en (1, 2, 3) → `false`
-- `type IS NULL` (NRT) → `true` salvo que la celda esté en `static_cell`
+- `type` in (1, 2, 3) → `false`
+- `type IS NULL` (NRT) → `true` unless the cell is in `static_cell`
 
-## Máscara estática (`static_cell`)
+## Static mask (`static_cell`)
 
-Una celda `(cy, cx)` es estática si tiene detecciones con `type = 2` en **al menos 3 fechas distintas** (cualquier satélite, cualquier año). Se guarda también cuántas fechas.
+A cell `(cy, cx)` is static if it has detections with `type = 2` on **at least 3 different dates** (any satellite, any year). The number of dates is stored too.
 
-## Volumen esperado
+## Expected volume
 
-México y Argentina, 2000–2026: del orden de 20 millones de filas en CSV (1.4 GB). Cargar con `COPY`, crear índices al final.
+Mexico and Argentina, 2000–2026: on the order of 20 million CSV rows (1.4 GB). Load with `COPY`, create indexes at the end.
 
-## Verificación de la ingesta
+## Verifying the ingestion
 
-Ver `acceptance.md`, sección ETL.
+See `acceptance.md`, ETL section.

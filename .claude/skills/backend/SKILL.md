@@ -1,40 +1,40 @@
 ---
 name: backend
-description: Guía para construir o modificar el backend FastAPI (carpeta backend/) - endpoints /presets, /calendar, /calendar.csv y /hotspots.csv sobre Postgres + PostGIS. Úsala antes de tocar cualquier archivo de backend/.
+description: Guide for building or modifying the FastAPI backend (backend/ folder) - /presets, /calendar, /calendar.csv and /hotspots.csv endpoints over Postgres + PostGIS. Use it before touching any file in backend/.
 ---
 
-# Backend FastAPI
+# FastAPI backend
 
-La especificación es `docs/contracts/api.md` (forma de peticiones y respuestas) y `docs/contracts/harmonization.md` (fórmulas). Las tablas están en `docs/contracts/db_schema.sql`. No inventes campos.
+The specification is `docs/contracts/api.md` (shape of requests and responses) and `docs/contracts/harmonization.md` (formulas). The tables are in `docs/contracts/db_schema.sql`. Do not invent fields.
 
-## Entorno
+## Environment
 
 ```bash
 uv add fastapi "uvicorn[standard]" "psycopg[binary,pool]" pydantic shapely pytest httpx
 export DATABASE_URL=postgresql://firms:firms_local@localhost:5432/firms
-uv run uvicorn backend.main:app --reload --port 8001     # desarrollo
-uv run uvicorn backend.main:app --port 8000              # estable, la que usa frontend
+uv run uvicorn backend.main:app --reload --port 8001     # development
+uv run uvicorn backend.main:app --port 8000              # stable, the one the frontend uses
 ```
 
-## Archivos
+## Files
 
-| Archivo | Contenido |
+| File | Contents |
 |---|---|
-| `backend/main.py` | App, CORS (`http://localhost:*`), manejador de errores con la forma `{"error": {code, detail}}` |
-| `backend/models.py` | Modelos Pydantic idénticos al contrato |
-| `backend/aoi.py` | Resolver `preset_id` o `geometry`, validar, área, país |
+| `backend/main.py` | App, CORS (`http://localhost:*`), error handler with the `{"error": {code, detail}}` shape |
+| `backend/models.py` | Pydantic models identical to the contract |
+| `backend/aoi.py` | Resolve `preset_id` or `geometry`, validate, area, country |
 | `backend/queries.py` | SQL |
-| `backend/harmonize.py` | `k`, serie, línea base, estados. Funciones puras, sin base de datos |
-| `backend/routes.py` | Los endpoints |
-| `backend/tests/` | Pruebas |
+| `backend/harmonize.py` | `k`, series, baseline, statuses. Pure functions, no database |
+| `backend/routes.py` | The endpoints |
+| `backend/tests/` | Tests |
 
-## Trabajar antes de que exista la base
+## Working before the database exists
 
-Hasta el hito H1 no hay datos. Empieza por `backend/harmonize.py` y sus pruebas con listas escritas a mano, y haz que los endpoints devuelvan los JSON de `docs/contracts/examples/` detrás de la variable `API_MOCK=1`. Así frontend puede apuntar a la API desde el primer momento.
+Without a loaded database there is no data. Start with `backend/harmonize.py` and its tests with hand-written lists, and make the endpoints return the JSON files in `docs/contracts/examples/` behind the `API_MOCK=1` variable. That way the frontend can point at the API from the very beginning.
 
-## Consulta central de `/calendar`
+## Core query of `/calendar`
 
-Una sola consulta devuelve los conteos mensuales; todo lo demás se calcula en Python.
+A single query returns the monthly counts; everything else is computed in Python.
 
 ```sql
 WITH aoi AS (SELECT ST_GeomFromGeoJSON(%(geojson)s)::geometry(Polygon, 4326) AS g),
@@ -48,26 +48,26 @@ WHERE d.acq_date >= %(start)s AND d.acq_date < %(end)s
 GROUP BY 1 ORDER BY 1;
 ```
 
-- Siempre parámetros; nunca concatenar texto en el SQL.
-- Para `k` se necesita el traslape 2012-02 → 2025-12 completo aunque el usuario pida otro rango: consultar siempre 2000–2026 y recortar al final.
-- Los meses sin filas no aparecen en el resultado: generar la lista completa de meses en Python y rellenar. Un mes sin filas pero con cobertura vale **0**, no `null`. Es `null` solo si hay `no_coverage` o caída total.
-- **MVP solo México.** Filtrar siempre `cell.country = 'MX'`. Si el área no tiene celdas de México y no toca el rectángulo de México (lat 14.5–32.8, lon −118.5 a −86.5) → 422 `aoi_outside_coverage`. Argentina está en la base pero se rechaza hasta la fase 2.
-- Área en km²: `ST_Area(g::geography) / 1e6`. Rechazar más de 200,000.
-- Banderas de caída: contar por mes los días de `sensor_outage` del país.
+- Always parameters; never concatenate text into the SQL.
+- `k` needs the full 2012-02 → 2025-12 overlap even if the user asks for another range: always query 2000–2026 and trim at the end.
+- Months without rows do not appear in the result: generate the full list of months in Python and fill it in. A month without rows but with coverage is worth **0**, not `null`. It is `null` only if there is `no_coverage` or a total outage.
+- **MVP Mexico only.** Always filter `cell.country = 'MX'`. If the area has no cells in Mexico and does not touch the Mexico rectangle (lat 14.5–32.8, lon −118.5 to −86.5) → 422 `aoi_outside_coverage`. Argentina is in the database but is rejected until phase 2.
+- Area in km²: `ST_Area(g::geography) / 1e6`. Reject more than 200,000.
+- Outage flags: count per month the country's `sensor_outage` days.
 
 ## `/hotspots.csv`
 
-Mismo CTE de celdas, `JOIN detection USING (cy, cx)`, filtro por fechas, y además `ST_Intersects` del punto exacto con el polígono para no incluir puntos de celdas de borde. Devolver con `StreamingResponse` y un cursor del lado del servidor; no armar el CSV en memoria.
+Same cell CTE, `JOIN detection USING (cy, cx)`, date filter, plus `ST_Intersects` of the exact point with the polygon so that points from edge cells are not included. Return it with `StreamingResponse` and a server-side cursor; do not build the CSV in memory.
 
-## Pruebas
+## Tests
 
-- `backend/harmonize.py`: una prueba por cada fila de las tablas de `harmonization.md` (estados, banderas, `basis`, respaldo a `k` de país con menos de 100 celdas-día).
-- Endpoints: las casillas de la sección API de `docs/contracts/acceptance.md`, con `httpx` y `TestClient`.
-- Antes de avisar que algo está listo: `uv run pytest backend` y una llamada real con `curl` al preset `qro-sierra-gorda`.
+- `backend/harmonize.py`: one test for each row of the tables in `harmonization.md` (statuses, flags, `basis`, fallback to the country `k` with fewer than 100 cell-days).
+- Endpoints: the checkboxes in the API section of `docs/contracts/acceptance.md`, with `httpx` and `TestClient`.
+- Before saying something is ready: `uv run pytest backend` and a real `curl` call to the `qro-sierra-gorda` preset.
 
-## No hacer
+## Do not
 
-- No devolver textos para humanos; solo códigos.
-- No calcular nada que el contrato asigne al ETL (`is_veg`, VIIRS de referencia).
-- No cambiar la forma de una respuesta sin que el analista cambie antes `api.md` y los ejemplos.
-- No añadir autenticación, caché distribuida ni tareas en segundo plano.
+- Do not return human-readable text; only codes.
+- Do not compute anything the contract assigns to the ETL (`is_veg`, reference VIIRS).
+- Do not change the shape of a response without first changing `api.md` and the examples.
+- Do not add authentication, a distributed cache or background tasks.

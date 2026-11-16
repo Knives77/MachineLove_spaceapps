@@ -240,7 +240,7 @@ def test_db_queries_mx_only_and_health_date() -> None:
 
 
 def test_psycopg_error_returns_503_json(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Si la BD o el túnel SSH cae, todos los endpoints devuelven 503 con error.code."""
+    """Si la BD no responde, todos los endpoints devuelven 503 con error.code."""
     import psycopg
     import backend.routes as routes_mod
 
@@ -335,7 +335,7 @@ def test_gzip_and_aoi_cache_reuse_across_basis_and_csv(
 def test_host_5432_and_tunnel_15432_auto_fallback(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Verifica que sin DATABASE_URL explícita funcione tanto en la anfitriona (5432) como por túnel (15432)."""
+    """Verifica que sin DATABASE_URL explícita funcione con Postgres en 5432 o en el puerto alterno 15432."""
     import psycopg
     import backend.queries as queries_mod
 

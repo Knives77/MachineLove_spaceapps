@@ -59,7 +59,7 @@ def _is_local_port_open(port: int) -> bool:
 
 
 def resolve_database_url(dsn: str | None = None) -> str:
-    """Devuelve DATABASE_URL activa (explícita, descubierta en 5432 anfitrión o 15432 túnel)."""
+    """Devuelve DATABASE_URL activa (explícita, o descubierta en 5432 o 15432)."""
     if dsn:
         return dsn
     env_url = os.environ.get("DATABASE_URL")
@@ -75,7 +75,7 @@ def resolve_database_url(dsn: str | None = None) -> str:
 
 
 def get_connection(dsn: str | None = None) -> psycopg.Connection:
-    """Abre conexión a PostgreSQL; sin DATABASE_URL explícita prueba 5432 (host) y 15432 (túnel)."""
+    """Abre conexión a PostgreSQL; sin DATABASE_URL explícita prueba los puertos locales 5432 y 15432."""
     global _ACTIVE_DEFAULT_DSN
     env_url = os.environ.get("DATABASE_URL")
     if dsn or env_url:

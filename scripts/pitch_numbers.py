@@ -1,6 +1,6 @@
-"""Cifras del pitch sacadas de la API real (las mismas que ve el jurado en pantalla).
+"""Cifras de resultados sacadas de la API real (las mismas que se ven en pantalla).
 
-Uso (con la API en 8000, directo o por túnel):
+Uso (con la API en 8000):
     python3 scripts/pitch_numbers.py                 # los 3 presets
     python3 scripts/pitch_numbers.py qro-bajio       # uno solo
     API_URL=http://localhost:8000/api/v1 python3 scripts/pitch_numbers.py
@@ -41,7 +41,7 @@ def como_en_pantalla(x: float, decimales: int = 3) -> str:
     """Redondea como el front (Intl/toLocaleString: valor decimal tal como llega, mitades hacia arriba).
 
     La API manda k con 4 decimales (p. ej. 0.3035). `f"{x:.3f}"` redondea el binario 0.30349999… → 0.303,
-    pero la pantalla muestra 0.304: el guion tiene que decir lo mismo que ve el jurado.
+    pero la pantalla muestra 0.304: el reporte tiene que decir lo mismo que la pantalla.
     """
     return str(Decimal(repr(x)).quantize(Decimal(1).scaleb(-decimales), rounding=ROUND_HALF_UP))
 

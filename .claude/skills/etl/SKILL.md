@@ -1,77 +1,77 @@
 ---
 name: etl
-description: Guía para construir o modificar el ETL de FIRMS (carpeta etl/) - ingesta de CSV, máscara estática, celdas-día, caídas de sensor y calibración. Úsala antes de tocar cualquier archivo de etl/ o de cargar datos a Postgres.
+description: Guide for building or modifying the FIRMS ETL (etl/ folder) - CSV ingestion, static mask, cell-days, sensor outages and calibration. Use it before touching any file in etl/ or loading data into Postgres.
 ---
 
-# ETL de hotspots FIRMS
+# FIRMS hot spot ETL
 
-Lee primero `docs/contracts/ingest.md`, `docs/contracts/db_schema.sql` y `docs/contracts/harmonization.md`. Son la especificación; este archivo solo dice cómo trabajar.
+Read `docs/contracts/ingest.md`, `docs/contracts/db_schema.sql` and `docs/contracts/harmonization.md` first. They are the specification; this file only says how to work.
 
-## Entorno
+## Environment
 
 ```bash
-uv init --python 3.12        # solo si no existe pyproject.toml
+uv init --python 3.12        # only if pyproject.toml does not exist
 uv add polars "psycopg[binary]" pytest
-export DATABASE_URL=postgresql://firms:firms_local@localhost:5432/firms_dev   # pruebas; la ingesta oficial usa /firms
-export FIRMS_DATA_DIR=<ruta a data/>     # en tu laptop, la muestra; en el anfitrión, data/ completa
+export DATABASE_URL=postgresql://firms:firms_local@localhost:5432/firms_dev   # tests; the official ingestion uses /firms
+export FIRMS_DATA_DIR=<path to data/>     # by default, data/ at the repo root
 ```
 
-No instales nada con `pip` global ni `sudo`.
+Do not install anything with global `pip` or `sudo`.
 
-## Módulos y orden
+## Modules and order
 
-| Paso | Módulo | Qué hace | Salida |
+| Step | Module | What it does | Output |
 |---|---|---|---|
-| 1 ✅ | `etl/ingest.py` | **Hecho.** Lee las fuentes A, B y C, normaliza, calcula `cy`/`cx`, `COPY`. Carga completa: 15.9 M filas en ~90 s. Pruebas en `etl/tests/test_ingest.py` | `detection` (sin `is_veg` final para NRT) |
-| 2 ✅ | `etl/mask.py` | **Hecho.** Celdas con `type = 2` en ≥ 3 fechas; luego fija `is_veg` de NRT. Validado sobre archive 2024+: atrapa 94% (MODIS) y 99.9% (VIIRS) de los `type = 2` y quita por error ~2% del fuego real | `static_cell`, `detection.is_veg` |
-| 3 ✅ | `etl/outages.py` | **Hecho.** Días sin detecciones por satélite y país (`detected`), huecos exactos del Readme (`firms_readme`) y periodos sin archivos (`coverage`). Pruebas en `etl/tests/test_outages.py` | `sensor_outage` |
-| 4 ✅ | `etl/cells.py` | **Hecho.** Agrega a celda-día con la regla del VIIRS de referencia (`etl/reference.py`). 1.48 M celdas y 8.72 M celdas-día en ~60 s. Reproduce las 42 cifras de control | `cell`, `cell_day` |
-| 5 ✅ | `etl/calibrate.py` | **Hecho.** `k` por país y validación dejando un año fuera. MX 0.332, AR 0.464. `etl/verify.py` compara todo contra `acceptance.md` | `calibration_country` |
-| 6 | `etl/run.py` | `--all` o `--step N`; `--country MX|AR`; `--limit-years 2019,2020` para pruebas | |
+| 1 ✅ | `etl/ingest.py` | **Done.** Reads sources A, B and C, normalizes, computes `cy`/`cx`, `COPY`. Full load: 15.9 M rows in ~90 s. Tests in `etl/tests/test_ingest.py` | `detection` (without the final `is_veg` for NRT) |
+| 2 ✅ | `etl/mask.py` | **Done.** Cells with `type = 2` on ≥ 3 dates; then sets `is_veg` for NRT. Validated on archive 2024+: catches 94% (MODIS) and 99.9% (VIIRS) of the `type = 2` and wrongly removes ~2% of real fire | `static_cell`, `detection.is_veg` |
+| 3 ✅ | `etl/outages.py` | **Done.** Days without detections per satellite and country (`detected`), exact gaps from the Readme (`firms_readme`) and periods without files (`coverage`). Tests in `etl/tests/test_outages.py` | `sensor_outage` |
+| 4 ✅ | `etl/cells.py` | **Done.** Aggregates to cell-days with the reference VIIRS rule (`etl/reference.py`). 1.48 M cells and 8.72 M cell-days in ~60 s. Reproduces the 42 control figures | `cell`, `cell_day` |
+| 5 ✅ | `etl/calibrate.py` | **Done.** `k` per country and leave-one-year-out validation. MX 0.332, AR 0.464. `etl/verify.py` compares everything against `acceptance.md` | `calibration_country` |
+| 6 | `etl/run.py` | `--all` or `--step N`; `--country MX|AR`; `--limit-years 2019,2020` for tests | |
 
-Cada paso debe poder repetirse sin duplicar filas (`TRUNCATE` de sus tablas al empezar, o borrar por país).
+Every step must be repeatable without duplicating rows (`TRUNCATE` its tables at the start, or delete by country).
 
-## Reglas
+## Rules
 
-- Leer los CSV con polars indicando `schema_overrides={"acq_time": pl.Utf8, "confidence": pl.Utf8, "version": pl.Utf8}`. Seleccionar columnas por nombre.
-- Fuente A VIIRS: renombrar `bright_ti4` → `brightness`, `bright_ti5` → `bright_t31`, y `satellite` `N` → `SNPP`.
-- `family` se deriva de `satellite`, nunca de `instrument`.
-- `cy = floor(latitude * 100)`, `cx = floor(longitude * 100)` como enteros de 32 bits. Con longitudes negativas `floor` y truncar dan resultados distintos.
-- Fuentes B y C: conservar solo `acq_date >= 2026-01-01`, excepto N21, que se conserva completo.
-- Carga con `cursor.copy("COPY detection (...) FROM STDIN")` por archivo. Los índices se crean al final del paso 1.
-- Buscar archivos con comodines (`glob`), porque hay rutas con acentos y un typo en `J1-VIRS-C2`.
-- Procesar un archivo a la vez: la máquina tiene 16 GB compartidos. No cargar todos los CSV en memoria.
-- Los pasos 2 a 5 son SQL (`INSERT ... SELECT ... GROUP BY`) ejecutado desde Python; no traer `detection` a memoria.
+- Read the CSVs with polars passing `schema_overrides={"acq_time": pl.Utf8, "confidence": pl.Utf8, "version": pl.Utf8}`. Select columns by name.
+- Source A VIIRS: rename `bright_ti4` → `brightness`, `bright_ti5` → `bright_t31`, and `satellite` `N` → `SNPP`.
+- `family` is derived from `satellite`, never from `instrument`.
+- `cy = floor(latitude * 100)`, `cx = floor(longitude * 100)` as 32-bit integers. With negative longitudes `floor` and truncation give different results.
+- Sources B and C: keep only `acq_date >= 2026-01-01`, except N21, which is kept in full.
+- Load with `cursor.copy("COPY detection (...) FROM STDIN")` per file. Indexes are created at the end of step 1.
+- Find files with wildcards (`glob`), because there are paths with accents and a typo in `J1-VIRS-C2`.
+- Process one file at a time: the machine has 16 GB shared. Do not load all the CSVs into memory.
+- Steps 2 to 5 are SQL (`INSERT ... SELECT ... GROUP BY`) run from Python; do not bring `detection` into memory.
 
-## Regla del VIIRS de referencia (paso 4)
+## Reference VIIRS rule (step 4)
 
-Para cada fecha y país: referencia = `SNPP` antes de 2018-04-01, `N20` después. Si la referencia tiene caída ese día en `sensor_outage`, usar el otro; si faltan ambos, `N21`. `cell_day.viirs_veg` es verdadero solo si hay una detección `is_veg` de **ese** satélite.
+For each date and country: reference = `SNPP` before 2018-04-01, `N20` after. If the reference has an outage that day in `sensor_outage`, use the other; if both are missing, `N21`. `cell_day.viirs_veg` is true only if there is an `is_veg` detection from **that** satellite.
 
-## Cómo probar
+## How to test
 
-El MVP solo usa México; el ETL procesa ambos países porque cuesta poco y deja lista la fase 2.
+The MVP only uses Mexico; the ETL processes both countries because it costs little and leaves phase 2 ready.
 
-1. Primero con poco: `uv run python -m etl.run --all --country MX --limit-years 2011,2012,2019`.
-2. Comparar contra la tabla de `docs/contracts/acceptance.md` con esta consulta:
+1. First with a little: `uv run python -m etl.run --all --country MX --limit-years 2011,2012,2019`.
+2. Compare against the table in `docs/contracts/acceptance.md` with this query:
 
 ```sql
 SELECT extract(year FROM acq_date) AS y,
        count(*) FILTER (WHERE modis_veg) AS modis,
        count(*) FILTER (WHERE viirs_veg) AS viirs
 FROM cell_day
-WHERE cy BETWEEN 2000 AND 2169 AND cx BETWEEN -10060 AND -9901   -- recuadro Querétaro
+WHERE cy BETWEEN 2000 AND 2169 AND cx BETWEEN -10060 AND -9901   -- Querétaro box
 GROUP BY 1 ORDER BY 1;
 ```
 
-   Debe dar MODIS 410 (2011), 190 (2012), 414 (2019). El límite superior es **exclusivo** (`ceil(max·100) − 1`): la celda `cy` cubre `[cy/100, (cy+1)/100)`, así que `2170` y `-9900` ya quedan fuera del recuadro y suman 4–6 % de más. Si difieren por 1–3 celdas-día son puntos justo en el borde; si difieren más de 1 %, hay un error.
+   It must give MODIS 410 (2011), 190 (2012), 414 (2019). The upper bound is **exclusive** (`ceil(max·100) − 1`): cell `cy` covers `[cy/100, (cy+1)/100)`, so `2170` and `-9900` already fall outside the box and add 4–6 % too much. If they differ by 1–3 cell-days those are points right on the edge; if they differ by more than 1 %, there is a bug.
 
-   Todo junto: `uv run python -m etl.verify` (o `--sandbox` para correr 4 y 5 en tablas temporales sin escribir nada).
-3. Solo entonces correr todo: `uv run python -m etl.run --all`.
-4. Escribir en `etl/tests/` una prueba por cada casilla de la sección ETL de `acceptance.md`.
+   All at once: `uv run python -m etl.verify` (or `--sandbox` to run 4 and 5 in temporary tables without writing anything).
+3. Only then run everything: `uv run python -m etl.run --all`.
+4. Write in `etl/tests/` one test for each checkbox in the ETL section of `acceptance.md`.
 
-## No hacer
+## Do not
 
-- No usar H3, geopandas ni PostGIS para asignar celdas: es aritmética.
-- No filtrar por `confidence` (no está en el método).
-- No cambiar nombres de tablas o columnas sin cambiar antes el contrato.
-- No modificar ni borrar nada dentro de `data/`.
+- Do not use H3, geopandas or PostGIS to assign cells: it is arithmetic.
+- Do not filter by `confidence` (it is not in the method).
+- Do not rename tables or columns without first changing the contract.
+- Do not modify or delete anything inside `data/`.

@@ -120,8 +120,8 @@ export const es: Record<string, string> = {
   'error.invalid_range': 'El rango de años no es válido (2000–2026).',
   'error.unknown_preset': 'Esa región no existe.',
   'error.aoi_outside_coverage': 'El área está fuera de la zona con datos (México).',
-  'error.network': 'No hay conexión con la API. ¿Está abierto el túnel?',
-  'error.db_unavailable': 'La base de datos no responde. Avisa al líder.',
+  'error.network': 'No hay conexión con la API. ¿Está corriendo?',
+  'error.db_unavailable': 'La base de datos no responde.',
   'error.generic': 'La API respondió con un error ({code}).',
   'error.retry': 'Reintentar',
 

@@ -1,6 +1,6 @@
 """Copia las respuestas reales de la API a los mocks del front (web/src/mocks/).
 
-Así el front, sin túnel, ve los mismos datos que con la API real.
+Así el front, sin API, ve los mismos datos que con la API real.
 Uso (API en 8000): python3 scripts/snapshot_mocks.py
 """
 from __future__ import annotations

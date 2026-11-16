@@ -1,19 +1,14 @@
-# Datos de FIRMS: solo se suben los .zip de las solicitudes (el perfilado está en docs/referencia/).
-# El histórico se regenera con scripts/download_history.sh
-data/*
-!data/*/
-data/*/*
-!data/*/*.zip
+# FIRMS data: not committed (the profiling is in docs/reference/).
+# Regenerated with scripts/download_history.sh and scripts/download_requests.sh
+data/
 
 # Respaldos de la base
 *.dump
 
-# Secretos y llaves
+# Secretos
 .env
 .env.*
 !.env.example
-authorized_keys
-id_ed25519*
 *.pem
 
 # Python

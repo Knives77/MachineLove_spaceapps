@@ -1,60 +1,59 @@
-# Backend · Calendario Armonizado de Actividad de Quema (FastAPI)
+# Backend · Harmonized Burn Activity Calendar (FastAPI)
 
-Este módulo implementa el servidor REST del proyecto **MachineLove (NASA Space Apps 2026)** siguiendo los contratos congelados en [`docs/contracts/`](../docs/contracts/).
+This module implements the REST server of the **MachineLove (NASA Space Apps 2026)** project, following the frozen contracts in [`docs/contracts/`](../docs/contracts/).
 
 ---
 
-## 1. Arquitectura y Archivos
+## 1. Architecture and files
 
-| Archivo | Responsabilidad |
+| File | Responsibility |
 |---|---|
-| `main.py` | Instancia FastAPI, configuración CORS (`localhost` / `127.0.0.1`) y manejadores globales de errores con el formato `{"error": {"code": "...", "detail": "..."}}`. |
-| `models.py` | Esquemas Pydantic v2 estrictos (`extra="forbid"`) para peticiones y respuestas según [`docs/contracts/api.md`](../docs/contracts/api.md). |
-| `aoi.py` | Validación geométrica de polígonos GeoJSON en WGS84, cálculo de área ($\le 200,000\text{ km}^2$), presets de México (`qro-sierra-gorda`, `qro-bajio`, `qro-recuadro`) y restricción de cobertura del MVP a México (`MX`). |
-| `queries.py` | Consultas SQL parametrizadas sobre PostgreSQL 16 + PostGIS (`preset`, `cell`, `cell_day`, `detection`, `sensor_outage`, `calibration_country`) y cursor de servidor en streaming para `/hotspots.csv`. |
-| `harmonize.py` | Funciones puras (sin base de datos): calibración de $k = \frac{\sum M}{\sum V}$ en el traslape `2012-02` a `2025-12` (con respaldo a $k$ nacional si $\sum M < 100$), validación LOYO anual y MAPE mensual, series `modis_primary` y `viirs_primary`, banderas de calidad, línea base histórica ($\ge 10$ años excluyendo meses con caídas/incompletos), percentiles (`p25`, `median`, `p75`, `p90`), `status`, agregados anuales, estacionalidad y `latest`. |
-| `routes.py` | Endpoints REST (`/health`, `/presets`, `/calendar`, `/calendar.csv`, `/hotspots.csv`, `/hotspots`), modo `API_MOCK=1` y caché en memoria (TTL 60 s) para presets. |
-| `tests/` | Suite de pruebas unitarias (`test_harmonize.py`), de endpoints (`test_api.py`) y de simulación de sistema extremo a extremo (`test_system_e2e.py`). |
+| `main.py` | FastAPI instance, CORS configuration (`localhost` / `127.0.0.1`) and global error handlers in the `{"error": {"code": "...", "detail": "..."}}` format. |
+| `models.py` | Strict Pydantic v2 schemas (`extra="forbid"`) for requests and responses per [`docs/contracts/api.md`](../docs/contracts/api.md). |
+| `aoi.py` | Geometric validation of GeoJSON polygons in WGS84, area calculation ($\le 200,000\text{ km}^2$), Mexico presets (`qro-sierra-gorda`, `qro-bajio`, `qro-recuadro`) and the MVP coverage restriction to Mexico (`MX`). |
+| `queries.py` | Parameterized SQL queries over PostgreSQL 16 + PostGIS (`preset`, `cell`, `cell_day`, `detection`, `sensor_outage`, `calibration_country`) and a streaming server-side cursor for `/hotspots.csv`. |
+| `harmonize.py` | Pure functions (no database): calibration of $k = \frac{\sum M}{\sum V}$ over the `2012-02` to `2025-12` overlap (falling back to the national $k$ if $\sum M < 100$), annual LOYO validation and monthly MAPE, `modis_primary` and `viirs_primary` series, quality flags, historical baseline ($\ge 10$ years excluding months with outages or incomplete months), percentiles (`p25`, `median`, `p75`, `p90`), `status`, yearly aggregates, seasonality and `latest`. |
+| `routes.py` | REST endpoints (`/health`, `/presets`, `/calendar`, `/calendar.csv`, `/hotspots.csv`, `/hotspots`), `API_MOCK=1` mode and in-memory cache (TTL 60 s) for presets. |
+| `tests/` | Unit tests (`test_harmonize.py`), endpoint tests (`test_api.py`) and an end-to-end system simulation (`test_system_e2e.py`). |
 
 ---
 
-## 2. Flujo del Proceso de Armonización en cada petición `POST /calendar`
+## 2. Harmonization flow on each `POST /calendar` request
 
-1. **Resolución y validación del AOI (`aoi.py` / `queries.py`):**
-   - Si recibe `preset_id`, verifica que sea uno de los 3 presets oficiales de México (`qro-sierra-gorda`, `qro-bajio`, `qro-recuadro`); si no existe → `404 unknown_preset`.
-   - Si recibe `geometry` (GeoJSON `Polygon`), valida anillo cerrado, coordenadas WGS84 y geometría válida → si falla, `400 invalid_geometry`.
-   - Calcula el área en $\text{km}^2$ con `ST_Area(g::geography) / 1e6` → si supera $200,000\text{ km}^2$, devuelve `400 aoi_too_large`.
-   - Verifica intersección con celdas de México (`cell.country = 'MX'`) o el rectángulo de México → si cae en el océano o en Argentina (fuera del MVP), devuelve `422 aoi_outside_coverage`.
+1. **AOI resolution and validation (`aoi.py` / `queries.py`):**
+   - If it receives a `preset_id`, it checks that it is one of the 3 official Mexico presets (`qro-sierra-gorda`, `qro-bajio`, `qro-recuadro`); if it does not exist → `404 unknown_preset`.
+   - If it receives a `geometry` (GeoJSON `Polygon`), it validates a closed ring, WGS84 coordinates and valid geometry → if it fails, `400 invalid_geometry`.
+   - It computes the area in $\text{km}^2$ with `ST_Area(g::geography) / 1e6` → if it exceeds $200,000\text{ km}^2$, it returns `400 aoi_too_large`.
+   - It checks intersection with cells in Mexico (`cell.country = 'MX'`) or the Mexico rectangle → if it falls in the ocean or in Argentina (outside the MVP), it returns `422 aoi_outside_coverage`.
 
-2. **Consulta mensual (`queries.py`):**
-   - Cruza `cell` con `cell_day` para obtener $M(m)$ (`modis_cell_days`), $V(m)$ (`viirs_cell_days`) y $R(m)$ (`raw_points`) para todos los meses de `2000–2026`.
-   - Recupera `sensor_outage`, `calibration_country` y meses con datos provisionales (`source = 'nrt'`).
+2. **Monthly query (`queries.py`):**
+   - It joins `cell` with `cell_day` to get $M(m)$ (`modis_cell_days`), $V(m)$ (`viirs_cell_days`) and $R(m)$ (`raw_points`) for every month in `2000–2026`.
+   - It retrieves `sensor_outage`, `calibration_country` and the months with provisional data (`source = 'nrt'`).
 
-3. **Calibración y Serie Armonizada (`harmonize.py`):**
-   - Identifica los meses válidos del traslape (`2012-02` a `2025-12` sin `modis_outage`, `viirs_outage` ni `no_coverage`).
-   - Calcula $k = \frac{\sum M}{\sum V}$ (`scope = "aoi"`, o `scope = "country"` si $\sum M < 100$).
-   - Calcula el error dejando un año fuera (`loyo_annual_mape`, `loyo_annual_max`) y el error mensual mediano (`monthly_mape`).
-   - Construye la serie mensual en **celdas-día equivalentes MODIS**:
-     - `modis_primary`: $M(m)$ cuando MODIS tiene cobertura; $k \cdot V(m)$ cuando no.
-     - `viirs_primary` (simulación de retiro de MODIS): $k \cdot V(m)$ desde `2012-02`; $M(m)$ antes.
-   - Calcula para cada mes su línea base contra los demás años del mismo mes calendario (excluyendo meses con banderas de caída o incompletos) y clasifica `status` (`no_data`, `insufficient_baseline`, `below`, `normal`, `above`, `critical`).
+3. **Calibration and harmonized series (`harmonize.py`):**
+   - It identifies the valid overlap months (`2012-02` to `2025-12` without `modis_outage`, `viirs_outage` or `no_coverage`).
+   - It computes $k = \frac{\sum M}{\sum V}$ (`scope = "aoi"`, or `scope = "country"` if $\sum M < 100$).
+   - It computes the leave-one-year-out error (`loyo_annual_mape`, `loyo_annual_max`) and the median monthly error (`monthly_mape`).
+   - It builds the monthly series in **MODIS-equivalent cell-days**:
+     - `modis_primary`: $M(m)$ when MODIS has coverage; $k \cdot V(m)$ when it does not.
+     - `viirs_primary` (simulation of MODIS retirement): $k \cdot V(m)$ from `2012-02`; $M(m)$ before.
+   - For each month it computes the baseline against the other years of the same calendar month (excluding months with outage flags or incomplete months) and classifies `status` (`no_data`, `insufficient_baseline`, `below`, `normal`, `above`, `critical`).
 
 ---
 
-## 3. Cómo ejecutar y probar
+## 3. How to run and test
 
-### Levantar el servidor
+### Start the server
 ```bash
-# 1. Modo Mock (sin base de datos ni túnel SSH):
+# 1. Mock mode (no database):
 API_MOCK=1 uv run uvicorn backend.main:app --reload --port 8001
 
-# 2. Modo Real (con túnel SSH en 5432 o en el anfitrión):
+# 2. Real mode (with Postgres on 127.0.0.1:5432):
 export DATABASE_URL=postgresql://firms:firms_local@127.0.0.1:5432/firms
 uv run uvicorn backend.main:app --reload --port 8001
 ```
 
-### Correr todas las pruebas (unitarias + aceptación + simulación de sistema)
+### Run all tests (unit + acceptance + system simulation)
 ```bash
 uv run pytest backend -v
 ```
-

@@ -5,7 +5,7 @@ import { useApp, useCalendar } from '../state';
 import type { CalendarResponse, PresetFeature } from '../types';
 import { TEXT, UI } from '../theme/tokens';
 
-// Cerro forestal vs valle agrícola (diseño: docs/design/exports/10-*). MVP solo México.
+// Cerro forestal vs valle agrícola. MVP solo México.
 const PAIR = ['qro-sierra-gorda', 'qro-bajio'];
 
 export function Edu() {
